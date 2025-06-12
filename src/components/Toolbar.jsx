@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, RotateCw, Type, Edit3 } from 'lucide-react';
+import { Trash2, RotateCw, Edit3, Maximize2, Minimize2 } from 'lucide-react';
 
 const Toolbar = ({ selectedBlock, onUpdate, onDelete }) => {
   const [isEditingText, setIsEditingText] = useState(false);
@@ -107,6 +107,47 @@ const Toolbar = ({ selectedBlock, onUpdate, onDelete }) => {
         )}
       </div>
 
+      {/* Font Size Control */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs text-gray-400">Font Size</label>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onUpdate({ autoResize: !selectedBlock.autoResize })}
+              className={`p-1 rounded transition-colors ${
+                selectedBlock.autoResize 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-dark-700 text-gray-400 hover:bg-dark-600'
+              }`}
+              title={selectedBlock.autoResize ? "Disable auto-fit" : "Enable auto-fit"}
+            >
+              {selectedBlock.autoResize ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+            </button>
+            <span className="text-xs text-gray-500">
+              {selectedBlock.autoResize ? 'Auto-fit' : 'Fixed size'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <input
+            type="range"
+            min="8"
+            max="72"
+            value={selectedBlock.fontSize}
+            onChange={(e) => onUpdate({ fontSize: parseInt(e.target.value) })}
+            className="flex-1"
+          />
+          <span className="text-xs text-gray-500 w-12 text-right">{selectedBlock.fontSize}px</span>
+        </div>
+        
+        {selectedBlock.autoResize && (
+          <div className="text-xs text-gray-500 mt-1">
+            Auto-fit enabled: Font adjusts to block size
+          </div>
+        )}
+      </div>
+
       {/* Text Formatting */}
       <div className="mb-4">
         <label className="block text-xs text-gray-400 mb-2">Text Formatting</label>
@@ -159,18 +200,24 @@ const Toolbar = ({ selectedBlock, onUpdate, onDelete }) => {
         </div>
       </div>
 
-      {/* Font Size */}
+      {/* Quick Font Size Buttons */}
       <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-2">Font Size</label>
-        <input
-          type="range"
-          min="8"
-          max="72"
-          value={selectedBlock.fontSize}
-          onChange={(e) => onUpdate({ fontSize: parseInt(e.target.value) })}
-          className="w-full"
-        />
-        <div className="text-xs text-gray-500 mt-1">{selectedBlock.fontSize}px</div>
+        <label className="block text-xs text-gray-400 mb-2">Quick Sizes</label>
+        <div className="grid grid-cols-4 gap-1">
+          {[12, 16, 24, 32].map((size) => (
+            <button
+              key={size}
+              onClick={() => onUpdate({ fontSize: size })}
+              className={`px-2 py-1 rounded text-xs transition-colors ${
+                selectedBlock.fontSize === size 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
+              }`}
+            >
+              {size}px
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Text Color */}

@@ -14,10 +14,12 @@ const TextBlock = ({
   backgroundColor,
   rotation,
   textAlign = 'center',
-  autoResize = false, // New prop to control auto-sizing
+  autoResize = false,
   isSelected,
   onSelect,
-  onChange
+  onChange,
+  onDragStart,
+  onDragEnd
 }) => {
   const groupRef = useRef();
   const transformerRef = useRef();
@@ -30,11 +32,24 @@ const TextBlock = ({
     }
   }, [isSelected]);
 
+  const handleDragStart = (e) => {
+    // Notify parent that a block is being dragged
+    if (onDragStart) {
+      onDragStart();
+    }
+  };
+
   const handleDragEnd = (e) => {
+    // Update block position
     onChange({
       x: e.target.x(),
       y: e.target.y()
     });
+    
+    // Notify parent that block drag ended
+    if (onDragEnd) {
+      onDragEnd();
+    }
   };
 
   const handleTransformEnd = () => {
@@ -89,6 +104,7 @@ const TextBlock = ({
         rotation={rotation}
         draggable
         onClick={onSelect}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       >
@@ -114,7 +130,7 @@ const TextBlock = ({
           align={textAlign}
           verticalAlign="middle"
           wrap="word"
-          ellipsis={!autoResize} // Only ellipsis when not auto-resizing
+          ellipsis={!autoResize}
         />
       </Group>
       

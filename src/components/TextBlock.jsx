@@ -14,6 +14,7 @@ const TextBlock = ({
   backgroundColor,
   rotation,
   textAlign = 'center',
+  autoResize = false, // New prop to control auto-sizing
   isSelected,
   onSelect,
   onChange
@@ -53,8 +54,12 @@ const TextBlock = ({
     });
   };
 
-  // Calculate font size to fit
+  // Calculate font size to fit (only if autoResize is enabled)
   const calculateFontSize = () => {
+    if (!autoResize) {
+      return fontSize; // Use exact font size when auto-resize is off
+    }
+
     const maxWidth = width - 20;
     const maxHeight = height - 20;
     const textLength = text.length;
@@ -67,7 +72,8 @@ const TextBlock = ({
     const widthBasedSize = Math.floor(maxWidth / (avgCharsPerLine * 0.6));
     const heightBasedSize = Math.floor(maxHeight / (lines * 1.2));
     
-    return Math.min(Math.max(Math.min(widthBasedSize, heightBasedSize), 8), fontSize || 16);
+    // Don't go bigger than the set fontSize, only smaller if needed
+    return Math.min(Math.max(Math.min(widthBasedSize, heightBasedSize), 8), fontSize);
   };
 
   const displayFontSize = calculateFontSize();
@@ -108,7 +114,7 @@ const TextBlock = ({
           align={textAlign}
           verticalAlign="middle"
           wrap="word"
-          ellipsis={true}
+          ellipsis={!autoResize} // Only ellipsis when not auto-resizing
         />
       </Group>
       

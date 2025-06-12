@@ -4,8 +4,10 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import TextBlock from './TextBlock';
+import RotatingQuoteBlock from './RotatingQuoteBlock';
 import Toolbar from './Toolbar';
-import { LogOut, Plus } from 'lucide-react';
+import RotatingQuoteToolbar from './RotatingQuoteToolbar';
+import { LogOut, Plus, RotateCw, Type } from 'lucide-react';
 
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",
@@ -13,6 +15,13 @@ const SAMPLE_QUOTES = [
   "Well done is better than well said. - Benjamin Franklin",
   "The best time to plant a tree was 20 years ago. The second best time is now. - Chinese Proverb",
   "Success is not final, failure is not fatal: it is the courage to continue that counts. - Winston Churchill"
+];
+
+const ROTATING_SAMPLE_QUOTES = [
+  "The way to get started is to quit talking and begin doing. - Walt Disney",
+  "Innovation distinguishes between a leader and a follower. - Steve Jobs",
+  "Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. - Steve Jobs",
+  "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt"
 ];
 
 const MainBoard = ({ user }) => {
@@ -39,20 +48,41 @@ const MainBoard = ({ user }) => {
           setStageScale(data.stageScale || 1);
         } else {
           // Create initial sample blocks for new users
-          const initialBlocks = SAMPLE_QUOTES.slice(0, 3).map((quote, index) => ({
-            id: `initial-${index}`,
-            x: 100 + (index * 300),
-            y: 100 + (index * 150),
-            width: 250,
-            height: 100,
-            text: quote,
-            fontSize: 16,
-            fontWeight: 'normal',
-            textColor: '#ffffff',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            rotation: 0,
-            autoResize: false
-          }));
+          const initialBlocks = [
+            // Regular text blocks
+            ...SAMPLE_QUOTES.slice(0, 2).map((quote, index) => ({
+              id: `initial-${index}`,
+              type: 'text',
+              x: 100 + (index * 300),
+              y: 100 + (index * 150),
+              width: 250,
+              height: 100,
+              text: quote,
+              fontSize: 16,
+              fontWeight: 'normal',
+              textColor: '#ffffff',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              rotation: 0,
+              autoResize: false
+            })),
+            // One rotating quote block
+            {
+              id: 'initial-rotating',
+              type: 'rotating-quote',
+              x: 100,
+              y: 400,
+              width: 300,
+              height: 120,
+              quotes: ROTATING_SAMPLE_QUOTES,
+              fontSize: 16,
+              fontWeight: 'normal',
+              textColor: '#ffffff',
+              backgroundColor: 'rgba(139, 92, 246, 0.1)',
+              rotation: 0,
+              autoRotate: true,
+              rotationSpeed: 5000
+            }
+          ];
           setBlocks(initialBlocks);
         }
       } catch (error) {
@@ -87,20 +117,46 @@ const MainBoard = ({ user }) => {
     }
   }, [blocks, stagePos, stageScale, loading]);
 
-  const addNewBlock = () => {
+  const addNewTextBlock = () => {
     const newBlock = {
       id: Date.now().toString(),
+      type: 'text',
       x: Math.random() * 400 + 100,
       y: Math.random() * 300 + 100,
       width: 200,
       height: 80,
-      text: 'Double-click to edit',
+      text: 'Click to edit this text',
       fontSize: 16,
       fontWeight: 'normal',
       textColor: '#ffffff',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
       rotation: 0,
       autoResize: false
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewRotatingQuoteBlock = () => {
+    const newBlock = {
+      id: Date.now().toString() + '-rotating',
+      type: 'rotating-quote',
+      x: Math.random() * 400 + 100,
+      y: Math.random() * 300 + 100,
+      width: 300,
+      height: 120,
+      quotes: [
+        "Add your inspiring quotes...",
+        "Each quote will rotate automatically",
+        "Double-click to pause/play"
+      ],
+      fontSize: 16,
+      fontWeight: 'normal',
+      textColor: '#ffffff',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      rotation: 0,
+      autoRotate: true,
+      rotationSpeed: 5000
     };
     setBlocks([...blocks, newBlock]);
     setSelectedId(newBlock.id);
@@ -170,6 +226,8 @@ const MainBoard = ({ user }) => {
     }
   };
 
+  const selectedBlock = blocks.find(b => b.id === selectedId);
+
   if (loading) {
     return (
       <div className="w-full h-full bg-dark-900 flex items-center justify-center">
@@ -189,11 +247,18 @@ const MainBoard = ({ user }) => {
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={addNewBlock}
+              onClick={addNewTextBlock}
               className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
             >
-              <Plus className="h-4 w-4" />
-              <span>Add Block</span>
+              <Type className="h-4 w-4" />
+              <span>Text Block</span>
+            </button>
+            <button
+              onClick={addNewRotatingQuoteBlock}
+              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <RotateCw className="h-4 w-4" />
+              <span>Quote Rotator</span>
             </button>
             <button
               onClick={() => signOut(auth)}
@@ -206,13 +271,23 @@ const MainBoard = ({ user }) => {
         </div>
       </div>
 
-      {/* Toolbar */}
-      {selectedId && (
-        <Toolbar
-          selectedBlock={blocks.find(b => b.id === selectedId)}
-          onUpdate={(updates) => updateBlock(selectedId, updates)}
-          onDelete={deleteSelectedBlock}
-        />
+      {/* Conditional Toolbar based on block type */}
+      {selectedBlock && (
+        <>
+          {selectedBlock.type === 'rotating-quote' ? (
+            <RotatingQuoteToolbar
+              selectedBlock={selectedBlock}
+              onUpdate={(updates) => updateBlock(selectedId, updates)}
+              onDelete={deleteSelectedBlock}
+            />
+          ) : (
+            <Toolbar
+              selectedBlock={selectedBlock}
+              onUpdate={(updates) => updateBlock(selectedId, updates)}
+              onDelete={deleteSelectedBlock}
+            />
+          )}
+        </>
       )}
 
       {/* Canvas */}
@@ -225,24 +300,40 @@ const MainBoard = ({ user }) => {
           y={stagePos.y}
           scaleX={stageScale}
           scaleY={stageScale}
-          draggable={!isDraggingBlock} // Disable stage dragging when block is being dragged
+          draggable={!isDraggingBlock}
           onDragStart={handleStageDragStart}
           onDragEnd={handleStageDragEnd}
           onWheel={handleWheel}
           onClick={handleStageClick}
         >
           <Layer>
-            {blocks.map((block) => (
-              <TextBlock
-                key={block.id}
-                {...block}
-                isSelected={block.id === selectedId}
-                onSelect={() => setSelectedId(block.id)}
-                onChange={(updates) => updateBlock(block.id, updates)}
-                onDragStart={handleBlockDragStart}
-                onDragEnd={handleBlockDragEnd}
-              />
-            ))}
+            {blocks.map((block) => {
+              if (block.type === 'rotating-quote') {
+                return (
+                  <RotatingQuoteBlock
+                    key={block.id}
+                    {...block}
+                    isSelected={block.id === selectedId}
+                    onSelect={() => setSelectedId(block.id)}
+                    onChange={(updates) => updateBlock(block.id, updates)}
+                    onDragStart={handleBlockDragStart}
+                    onDragEnd={handleBlockDragEnd}
+                  />
+                );
+              } else {
+                return (
+                  <TextBlock
+                    key={block.id}
+                    {...block}
+                    isSelected={block.id === selectedId}
+                    onSelect={() => setSelectedId(block.id)}
+                    onChange={(updates) => updateBlock(block.id, updates)}
+                    onDragStart={handleBlockDragStart}
+                    onDragEnd={handleBlockDragEnd}
+                  />
+                );
+              }
+            })}
           </Layer>
         </Stage>
       </div>
@@ -252,7 +343,7 @@ const MainBoard = ({ user }) => {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-gray-500">
             <p className="text-lg mb-2">Welcome to your MindBinder</p>
-            <p>Click "Add Block" to start building your inspiration board</p>
+            <p>Add text blocks or rotating quote blocks to start building your inspiration board</p>
           </div>
         </div>
       )}

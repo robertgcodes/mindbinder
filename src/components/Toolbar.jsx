@@ -1,126 +1,132 @@
-import React from 'react';
-import { Trash2, RotateCw } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { Group, Rect, Text, Transformer } from 'react-konva';
 
-const Toolbar = ({ selectedBlock, onUpdate, onDelete }) => {
-  if (!selectedBlock) return null;
+const TextBlock = ({
+  id,
+  x,
+  y,
+  width,
+  height,
+  text,
+  fontSize,
+  fontWeight,
+  textColor,
+  backgroundColor,
+  rotation,
+  textAlign = 'center',
+  isSelected,
+  onSelect,
+  onChange
+}) => {
+  const groupRef = useRef();
+  const transformerRef = useRef();
+  const textRef = useRef();
 
-  const colors = [
-    '#ffffff', '#f3f4f6', '#e5e7eb', '#d1d5db',
-    '#ef4444', '#f97316', '#eab308', '#22c55e',
-    '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'
-  ];
+  useEffect(() => {
+    if (isSelected && transformerRef.current && groupRef.current) {
+      transformerRef.current.nodes([groupRef.current]);
+      transformerRef.current.getLayer().batchDraw();
+    }
+  }, [isSelected]);
 
-  const backgroundColors = [
-    'rgba(0,0,0,0)', 'rgba(59, 130, 246, 0.1)', 'rgba(34, 197, 94, 0.1)',
-    'rgba(239, 68, 68, 0.1)', 'rgba(249, 115, 22, 0.1)', 'rgba(139, 92, 246, 0.1)',
-    'rgba(236, 72, 153, 0.1)', 'rgba(6, 182, 212, 0.1)'
-  ];
+  const handleDragEnd = (e) => {
+    onChange({
+      x: e.target.x(),
+      y: e.target.y()
+    });
+  };
+
+  const handleTransformEnd = () => {
+    const node = groupRef.current;
+    const scaleX = node.scaleX();
+    const scaleY = node.scaleY();
+    
+    node.scaleX(1);
+    node.scaleY(1);
+    
+    onChange({
+      x: node.x(),
+      y: node.y(),
+      width: Math.max(50, node.width() * scaleX),
+      height: Math.max(30, node.height() * scaleY),
+      rotation: node.rotation()
+    });
+  };
+
+  // Calculate font size to fit
+  const calculateFontSize = () => {
+    const maxWidth = width - 20;
+    const maxHeight = height - 20;
+    const textLength = text.length;
+    
+    if (textLength === 0) return fontSize;
+    
+    const lines = text.split('\n').length;
+    const avgCharsPerLine = textLength / lines;
+    
+    const widthBasedSize = Math.floor(maxWidth / (avgCharsPerLine * 0.6));
+    const heightBasedSize = Math.floor(maxHeight / (lines * 1.2));
+    
+    return Math.min(Math.max(Math.min(widthBasedSize, heightBasedSize), 8), fontSize || 16);
+  };
+
+  const displayFontSize = calculateFontSize();
 
   return (
-    <div className="absolute top-20 left-6 z-20 bg-dark-800/95 backdrop-blur-sm border border-dark-700 rounded-lg p-4 shadow-lg min-w-64">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-white">Block Settings</h3>
-        <button
-          onClick={onDelete}
-          className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
-          title="Delete block"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Font Size */}
-      <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-2">Font Size</label>
-        <input
-          type="range"
-          min="10"
-          max="48"
-          value={selectedBlock.fontSize}
-          onChange={(e) => onUpdate({ fontSize: parseInt(e.target.value) })}
-          className="w-full"
+    <>
+      <Group
+        ref={groupRef}
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rotation={rotation}
+        draggable
+        onClick={onSelect}
+        onDragEnd={handleDragEnd}
+        onTransformEnd={handleTransformEnd}
+      >
+        <Rect
+          width={width}
+          height={height}
+          fill={backgroundColor}
+          stroke={isSelected ? '#3b82f6' : 'transparent'}
+          strokeWidth={isSelected ? 2 : 0}
+          cornerRadius={8}
         />
-        <div className="text-xs text-gray-500 mt-1">{selectedBlock.fontSize}px</div>
-      </div>
-
-      {/* Font Weight */}
-      <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-2">Font Weight</label>
-        <select
-          value={selectedBlock.fontWeight}
-          onChange={(e) => onUpdate({ fontWeight: e.target.value })}
-          className="w-full bg-dark-700 border border-dark-600 text-white text-sm rounded px-2 py-1"
-        >
-          <option value="normal">Normal</option>
-          <option value="bold">Bold</option>
-          <option value="300">Light</option>
-          <option value="600">Semi Bold</option>
-        </select>
-      </div>
-
-      {/* Text Color */}
-      <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-2">Text Color</label>
-        <div className="grid grid-cols-6 gap-1">
-          {colors.map((color) => (
-            <button
-              key={color}
-              onClick={() => onUpdate({ textColor: color })}
-              className={`w-6 h-6 rounded border-2 ${
-                selectedBlock.textColor === color ? 'border-white' : 'border-dark-600'
-              }`}
-              style={{ backgroundColor: color }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Background Color */}
-      <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-2">Background</label>
-        <div className="grid grid-cols-4 gap-1">
-          {backgroundColors.map((color, index) => (
-            <button
-              key={index}
-              onClick={() => onUpdate({ backgroundColor: color })}
-              className={`w-6 h-6 rounded border-2 ${
-                selectedBlock.backgroundColor === color ? 'border-white' : 'border-dark-600'
-              }`}
-              style={{ 
-                backgroundColor: color,
-                backgroundImage: index === 0 ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none',
-                backgroundSize: index === 0 ? '8px 8px' : 'auto',
-                backgroundPosition: index === 0 ? '0 0, 0 4px, 4px -4px, -4px 0px' : 'auto'
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Rotation */}
-      <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-2">Rotation</label>
-        <div className="flex items-center space-x-2">
-          <input
-            type="range"
-            min="-180"
-            max="180"
-            value={selectedBlock.rotation}
-            onChange={(e) => onUpdate({ rotation: parseInt(e.target.value) })}
-            className="flex-1"
-          />
-          <button
-            onClick={() => onUpdate({ rotation: 0 })}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-            title="Reset rotation"
-          >
-            <RotateCw className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="text-xs text-gray-500 mt-1">{selectedBlock.rotation}°</div>
-      </div>
-    </div>
+        <Text
+          ref={textRef}
+          text={text}
+          x={10}
+          y={10}
+          width={width - 20}
+          height={height - 20}
+          fontSize={displayFontSize}
+          fontFamily="Inter"
+          fontStyle={fontWeight}
+          fill={textColor}
+          align={textAlign}
+          verticalAlign="middle"
+          wrap="word"
+          ellipsis={true}
+        />
+      </Group>
+      
+      {isSelected && (
+        <Transformer
+          ref={transformerRef}
+          boundBoxFunc={(oldBox, newBox) => {
+            if (newBox.width < 50 || newBox.height < 30) {
+              return oldBox;
+            }
+            return newBox;
+          }}
+          rotateEnabled={true}
+          resizeEnabled={true}
+        />
+      )}
+    </>
   );
 };
 
-export default Toolbar;
+export default TextBlock;

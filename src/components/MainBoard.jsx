@@ -21,6 +21,8 @@ const MainBoard = ({ user }) => {
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [stageScale, setStageScale] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [isDraggingStage, setIsDraggingStage] = useState(false);
+  const [isDraggingBlock, setIsDraggingBlock] = useState(false);
   const stageRef = useRef();
 
   // Load user's board data
@@ -48,7 +50,8 @@ const MainBoard = ({ user }) => {
             fontWeight: 'normal',
             textColor: '#ffffff',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            rotation: 0
+            rotation: 0,
+            autoResize: false
           }));
           setBlocks(initialBlocks);
         }
@@ -76,7 +79,7 @@ const MainBoard = ({ user }) => {
     }
   };
 
-  // Auto-save every 5 seconds
+  // Auto-save every 2 seconds
   useEffect(() => {
     if (!loading && blocks.length > 0) {
       const timer = setTimeout(saveBoard, 2000);
@@ -96,7 +99,8 @@ const MainBoard = ({ user }) => {
       fontWeight: 'normal',
       textColor: '#ffffff',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      rotation: 0
+      rotation: 0,
+      autoResize: false
     };
     setBlocks([...blocks, newBlock]);
     setSelectedId(newBlock.id);
@@ -116,9 +120,33 @@ const MainBoard = ({ user }) => {
   };
 
   const handleStageClick = (e) => {
+    // Only deselect if clicking on the stage itself (not on any objects)
     if (e.target === e.target.getStage()) {
       setSelectedId(null);
     }
+  };
+
+  const handleStageDragStart = () => {
+    setIsDraggingStage(true);
+  };
+
+  const handleStageDragEnd = (e) => {
+    // Only update stage position if we were actually dragging the stage
+    if (isDraggingStage && !isDraggingBlock) {
+      setStagePos({
+        x: e.target.x(),
+        y: e.target.y()
+      });
+    }
+    setIsDraggingStage(false);
+  };
+
+  const handleBlockDragStart = () => {
+    setIsDraggingBlock(true);
+  };
+
+  const handleBlockDragEnd = () => {
+    setIsDraggingBlock(false);
   };
 
   const handleWheel = (e) => {
@@ -197,13 +225,9 @@ const MainBoard = ({ user }) => {
           y={stagePos.y}
           scaleX={stageScale}
           scaleY={stageScale}
-          draggable
-          onDragEnd={(e) => {
-            setStagePos({
-              x: e.target.x(),
-              y: e.target.y()
-            });
-          }}
+          draggable={!isDraggingBlock} // Disable stage dragging when block is being dragged
+          onDragStart={handleStageDragStart}
+          onDragEnd={handleStageDragEnd}
           onWheel={handleWheel}
           onClick={handleStageClick}
         >
@@ -215,6 +239,8 @@ const MainBoard = ({ user }) => {
                 isSelected={block.id === selectedId}
                 onSelect={() => setSelectedId(block.id)}
                 onChange={(updates) => updateBlock(block.id, updates)}
+                onDragStart={handleBlockDragStart}
+                onDragEnd={handleBlockDragEnd}
               />
             ))}
           </Layer>

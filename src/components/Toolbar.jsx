@@ -1,132 +1,241 @@
-import React, { useRef, useEffect } from 'react';
-import { Group, Rect, Text, Transformer } from 'react-konva';
+import React, { useState } from 'react';
+import { Trash2, RotateCw, Type, Edit3 } from 'lucide-react';
 
-const TextBlock = ({
-  id,
-  x,
-  y,
-  width,
-  height,
-  text,
-  fontSize,
-  fontWeight,
-  textColor,
-  backgroundColor,
-  rotation,
-  textAlign = 'center',
-  isSelected,
-  onSelect,
-  onChange
-}) => {
-  const groupRef = useRef();
-  const transformerRef = useRef();
-  const textRef = useRef();
+const Toolbar = ({ selectedBlock, onUpdate, onDelete }) => {
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [editText, setEditText] = useState(selectedBlock?.text || '');
 
-  useEffect(() => {
-    if (isSelected && transformerRef.current && groupRef.current) {
-      transformerRef.current.nodes([groupRef.current]);
-      transformerRef.current.getLayer().batchDraw();
+  if (!selectedBlock) return null;
+
+  const colors = [
+    '#ffffff', '#f3f4f6', '#e5e7eb', '#d1d5db',
+    '#ef4444', '#f97316', '#eab308', '#22c55e',
+    '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4'
+  ];
+
+  const backgroundColors = [
+    'rgba(0,0,0,0)', 'rgba(59, 130, 246, 0.1)', 'rgba(34, 197, 94, 0.1)',
+    'rgba(239, 68, 68, 0.1)', 'rgba(249, 115, 22, 0.1)', 'rgba(139, 92, 246, 0.1)',
+    'rgba(236, 72, 153, 0.1)', 'rgba(6, 182, 212, 0.1)'
+  ];
+
+  const handleStartEdit = () => {
+    setEditText(selectedBlock.text);
+    setIsEditingText(true);
+  };
+
+  const handleSaveText = () => {
+    onUpdate({ text: editText.trim() || 'Empty text' });
+    setIsEditingText(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditText(selectedBlock.text);
+    setIsEditingText(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      handleSaveText();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
     }
-  }, [isSelected]);
-
-  const handleDragEnd = (e) => {
-    onChange({
-      x: e.target.x(),
-      y: e.target.y()
-    });
   };
-
-  const handleTransformEnd = () => {
-    const node = groupRef.current;
-    const scaleX = node.scaleX();
-    const scaleY = node.scaleY();
-    
-    node.scaleX(1);
-    node.scaleY(1);
-    
-    onChange({
-      x: node.x(),
-      y: node.y(),
-      width: Math.max(50, node.width() * scaleX),
-      height: Math.max(30, node.height() * scaleY),
-      rotation: node.rotation()
-    });
-  };
-
-  // Calculate font size to fit
-  const calculateFontSize = () => {
-    const maxWidth = width - 20;
-    const maxHeight = height - 20;
-    const textLength = text.length;
-    
-    if (textLength === 0) return fontSize;
-    
-    const lines = text.split('\n').length;
-    const avgCharsPerLine = textLength / lines;
-    
-    const widthBasedSize = Math.floor(maxWidth / (avgCharsPerLine * 0.6));
-    const heightBasedSize = Math.floor(maxHeight / (lines * 1.2));
-    
-    return Math.min(Math.max(Math.min(widthBasedSize, heightBasedSize), 8), fontSize || 16);
-  };
-
-  const displayFontSize = calculateFontSize();
 
   return (
-    <>
-      <Group
-        ref={groupRef}
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        rotation={rotation}
-        draggable
-        onClick={onSelect}
-        onDragEnd={handleDragEnd}
-        onTransformEnd={handleTransformEnd}
-      >
-        <Rect
-          width={width}
-          height={height}
-          fill={backgroundColor}
-          stroke={isSelected ? '#3b82f6' : 'transparent'}
-          strokeWidth={isSelected ? 2 : 0}
-          cornerRadius={8}
+    <div className="absolute top-20 left-6 z-20 bg-dark-800/95 backdrop-blur-sm border border-dark-700 rounded-lg p-4 shadow-lg min-w-80 max-w-96">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-white">Block Settings</h3>
+        <button
+          onClick={onDelete}
+          className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
+          title="Delete block"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Text Editing Section */}
+      <div className="mb-6 p-4 bg-dark-700/50 rounded-lg border border-dark-600">
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-sm font-medium text-white flex items-center">
+            <Edit3 className="h-4 w-4 mr-2" />
+            Edit Text
+          </label>
+          {!isEditingText && (
+            <button
+              onClick={handleStartEdit}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+
+        {isEditingText ? (
+          <div className="space-y-3">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full h-24 bg-dark-800 text-white p-3 rounded border border-dark-600 resize-none focus:outline-none focus:border-blue-400 text-sm"
+              placeholder="Enter your text..."
+              autoFocus
+            />
+            <div className="text-xs text-gray-500">
+              {editText.length} characters • Ctrl+Enter to save, Esc to cancel
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={handleCancelEdit}
+                className="px-3 py-1 bg-dark-600 text-white text-sm rounded hover:bg-dark-500 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveText}
+                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-400 bg-dark-800 p-2 rounded border truncate">
+            "{selectedBlock.text.length > 50 ? selectedBlock.text.substring(0, 50) + '...' : selectedBlock.text}"
+          </div>
+        )}
+      </div>
+
+      {/* Text Formatting */}
+      <div className="mb-4">
+        <label className="block text-xs text-gray-400 mb-2">Text Formatting</label>
+        <div className="flex space-x-2 mb-3">
+          {/* Bold Button */}
+          <button
+            onClick={() => onUpdate({ fontWeight: selectedBlock.fontWeight === 'bold' ? 'normal' : 'bold' })}
+            className={`px-3 py-2 rounded text-sm font-bold transition-colors ${
+              selectedBlock.fontWeight === 'bold' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
+            }`}
+          >
+            B
+          </button>
+          
+          {/* Font Weight Dropdown */}
+          <select
+            value={selectedBlock.fontWeight || 'normal'}
+            onChange={(e) => onUpdate({ fontWeight: e.target.value })}
+            className="bg-dark-700 border border-dark-600 text-white text-xs rounded px-2 py-1 flex-1"
+          >
+            <option value="300">Light</option>
+            <option value="normal">Normal</option>
+            <option value="500">Medium</option>
+            <option value="600">Semi Bold</option>
+            <option value="bold">Bold</option>
+          </select>
+        </div>
+
+        {/* Text Alignment */}
+        <div className="flex space-x-1">
+          {[
+            { value: 'left', label: 'Left' },
+            { value: 'center', label: 'Center' },
+            { value: 'right', label: 'Right' }
+          ].map((align) => (
+            <button
+              key={align.value}
+              onClick={() => onUpdate({ textAlign: align.value })}
+              className={`px-3 py-1 rounded text-xs transition-colors flex-1 ${
+                (selectedBlock.textAlign || 'center') === align.value 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-dark-700 text-gray-300 hover:bg-dark-600'
+              }`}
+            >
+              {align.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Font Size */}
+      <div className="mb-4">
+        <label className="block text-xs text-gray-400 mb-2">Font Size</label>
+        <input
+          type="range"
+          min="8"
+          max="72"
+          value={selectedBlock.fontSize}
+          onChange={(e) => onUpdate({ fontSize: parseInt(e.target.value) })}
+          className="w-full"
         />
-        <Text
-          ref={textRef}
-          text={text}
-          x={10}
-          y={10}
-          width={width - 20}
-          height={height - 20}
-          fontSize={displayFontSize}
-          fontFamily="Inter"
-          fontStyle={fontWeight}
-          fill={textColor}
-          align={textAlign}
-          verticalAlign="middle"
-          wrap="word"
-          ellipsis={true}
-        />
-      </Group>
-      
-      {isSelected && (
-        <Transformer
-          ref={transformerRef}
-          boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 50 || newBox.height < 30) {
-              return oldBox;
-            }
-            return newBox;
-          }}
-          rotateEnabled={true}
-          resizeEnabled={true}
-        />
-      )}
-    </>
+        <div className="text-xs text-gray-500 mt-1">{selectedBlock.fontSize}px</div>
+      </div>
+
+      {/* Text Color */}
+      <div className="mb-4">
+        <label className="block text-xs text-gray-400 mb-2">Text Color</label>
+        <div className="grid grid-cols-6 gap-1">
+          {colors.map((color) => (
+            <button
+              key={color}
+              onClick={() => onUpdate({ textColor: color })}
+              className={`w-6 h-6 rounded border-2 ${
+                selectedBlock.textColor === color ? 'border-white' : 'border-dark-600'
+              }`}
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Background Color */}
+      <div className="mb-4">
+        <label className="block text-xs text-gray-400 mb-2">Background</label>
+        <div className="grid grid-cols-4 gap-1">
+          {backgroundColors.map((color, index) => (
+            <button
+              key={index}
+              onClick={() => onUpdate({ backgroundColor: color })}
+              className={`w-6 h-6 rounded border-2 ${
+                selectedBlock.backgroundColor === color ? 'border-white' : 'border-dark-600'
+              }`}
+              style={{ 
+                backgroundColor: color,
+                backgroundImage: index === 0 ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)' : 'none',
+                backgroundSize: index === 0 ? '8px 8px' : 'auto',
+                backgroundPosition: index === 0 ? '0 0, 0 4px, 4px -4px, -4px 0px' : 'auto'
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Rotation */}
+      <div className="mb-4">
+        <label className="block text-xs text-gray-400 mb-2">Rotation</label>
+        <div className="flex items-center space-x-2">
+          <input
+            type="range"
+            min="-180"
+            max="180"
+            value={selectedBlock.rotation}
+            onChange={(e) => onUpdate({ rotation: parseInt(e.target.value) })}
+            className="flex-1"
+          />
+          <button
+            onClick={() => onUpdate({ rotation: 0 })}
+            className="p-1 text-gray-400 hover:text-white transition-colors"
+            title="Reset rotation"
+          >
+            <RotateCw className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="text-xs text-gray-500 mt-1">{selectedBlock.rotation}°</div>
+      </div>
+    </div>
   );
 };
 
-export default TextBlock;
+export default Toolbar;

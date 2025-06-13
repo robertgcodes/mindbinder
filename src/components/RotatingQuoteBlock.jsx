@@ -98,16 +98,27 @@ const RotatingQuoteBlock = ({
     });
   };
 
+  // Fixed click handler
   const handleClick = (e) => {
-    if (e.detail === 1) {
-      // Single click - select (this will show the toolbar)
+    // Stop event propagation to prevent stage deselection
+    e.cancelBubble = true;
+    e.evt.stopPropagation();
+    
+    // Always call onSelect for single clicks
+    if (onSelect) {
       onSelect();
-    } else if (e.detail === 2) {
-      // Double click - toggle play/pause
-      const newIsPlaying = !isPlaying;
-      setIsPlaying(newIsPlaying);
-      onChange({ autoRotate: newIsPlaying });
     }
+  };
+
+  // Separate double-click handler
+  const handleDoubleClick = (e) => {
+    e.cancelBubble = true;
+    e.evt.stopPropagation();
+    
+    // Double click - toggle play/pause
+    const newIsPlaying = !isPlaying;
+    setIsPlaying(newIsPlaying);
+    onChange({ autoRotate: newIsPlaying });
   };
 
   // Get current quote object (support both old string format and new object format)
@@ -173,9 +184,11 @@ const RotatingQuoteBlock = ({
         rotation={rotation}
         draggable
         onClick={handleClick}
+        onDblClick={handleDoubleClick}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
+        listening={true} // Ensure the group listens to events
       >
         {/* Background with rotating quote indicator */}
         <Rect
@@ -185,6 +198,7 @@ const RotatingQuoteBlock = ({
           stroke={isSelected ? '#8b5cf6' : 'transparent'}
           strokeWidth={isSelected ? 2 : 0}
           cornerRadius={8}
+          listening={true} // Ensure the rect listens to clicks
         />
         
         {/* Rotation indicator dots */}
@@ -199,6 +213,7 @@ const RotatingQuoteBlock = ({
                 height={4}
                 fill={index === currentQuoteIndex ? '#8b5cf6' : 'rgba(255,255,255,0.3)'}
                 cornerRadius={2}
+                listening={false} // Don't interfere with main clicks
               />
             ))}
           </>
@@ -212,6 +227,7 @@ const RotatingQuoteBlock = ({
           fontSize={10}
           fill={isPlaying ? '#22c55e' : '#ef4444'}
           align="center"
+          listening={false} // Don't interfere with main clicks
         />
 
         {/* Quote counter */}
@@ -222,6 +238,7 @@ const RotatingQuoteBlock = ({
           fontSize={8}
           fill="rgba(255,255,255,0.6)"
           align="right"
+          listening={false} // Don't interfere with main clicks
         />
 
         {/* Settings indicator when selected */}
@@ -233,6 +250,7 @@ const RotatingQuoteBlock = ({
             fontSize={10}
             fill="#8b5cf6"
             align="center"
+            listening={false} // Don't interfere with main clicks
           />
         )}
 
@@ -252,6 +270,7 @@ const RotatingQuoteBlock = ({
           verticalAlign="middle"
           wrap="word"
           ellipsis={!autoResize}
+          listening={false} // Text doesn't need to handle clicks separately
         />
       </Group>
       

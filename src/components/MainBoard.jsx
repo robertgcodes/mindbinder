@@ -6,7 +6,7 @@ import { db, auth } from '../firebase';
 import TextBlock from './TextBlock';
 import RotatingQuoteBlock from './RotatingQuoteBlock';
 import Toolbar from './Toolbar';
-import RotatingQuoteToolbar from './RotatingQuoteToolbar';
+import EnhancedRotatingQuoteToolbar from './EnhancedRotatingQuoteToolbar';
 import { LogOut, Plus, RotateCw, Type } from 'lucide-react';
 
 const SAMPLE_QUOTES = [
@@ -73,14 +73,22 @@ const MainBoard = ({ user }) => {
               y: 400,
               width: 300,
               height: 120,
-              quotes: ROTATING_SAMPLE_QUOTES,
+              quotes: ROTATING_SAMPLE_QUOTES.map(text => ({
+                text,
+                fontSize: 16,
+                fontWeight: 'normal',
+                fontFamily: 'Inter',
+                textColor: '#ffffff',
+                textAlign: 'center'
+              })),
               fontSize: 16,
               fontWeight: 'normal',
               textColor: '#ffffff',
               backgroundColor: 'rgba(139, 92, 246, 0.1)',
               rotation: 0,
               autoRotate: true,
-              rotationSpeed: 5000
+              rotationSpeed: 5000,
+              autoResize: false
             }
           ];
           setBlocks(initialBlocks);
@@ -146,9 +154,30 @@ const MainBoard = ({ user }) => {
       width: 300,
       height: 120,
       quotes: [
-        "Add your inspiring quotes...",
-        "Each quote will rotate automatically",
-        "Double-click to pause/play"
+        {
+          text: "Add your inspiring quotes...",
+          fontSize: 16,
+          fontWeight: 'normal',
+          fontFamily: 'Inter',
+          textColor: '#ffffff',
+          textAlign: 'center'
+        },
+        {
+          text: "Each quote will rotate automatically",
+          fontSize: 16,
+          fontWeight: 'normal',
+          fontFamily: 'Inter',
+          textColor: '#ffffff',
+          textAlign: 'center'
+        },
+        {
+          text: "Double-click to pause/play",
+          fontSize: 16,
+          fontWeight: 'normal',
+          fontFamily: 'Inter',
+          textColor: '#ffffff',
+          textAlign: 'center'
+        }
       ],
       fontSize: 16,
       fontWeight: 'normal',
@@ -156,7 +185,8 @@ const MainBoard = ({ user }) => {
       backgroundColor: 'rgba(139, 92, 246, 0.1)',
       rotation: 0,
       autoRotate: true,
-      rotationSpeed: 5000
+      rotationSpeed: 5000,
+      autoResize: false
     };
     setBlocks([...blocks, newBlock]);
     setSelectedId(newBlock.id);
@@ -275,7 +305,7 @@ const MainBoard = ({ user }) => {
       {selectedBlock && (
         <>
           {selectedBlock.type === 'rotating-quote' ? (
-            <RotatingQuoteToolbar
+            <EnhancedRotatingQuoteToolbar
               selectedBlock={selectedBlock}
               onUpdate={(updates) => updateBlock(selectedId, updates)}
               onDelete={deleteSelectedBlock}

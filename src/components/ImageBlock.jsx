@@ -15,6 +15,7 @@ const ImageBlock = ({
   backgroundOpacity = 0.1,
   backgroundColor = 'rgba(0, 0, 0, 0.1)',
   rotation = 0,
+  imageDisplayMode = 'fit', // 'fit', 'fill', 'stretch'
   isSelected,
   onSelect,
   onChange,
@@ -50,6 +51,15 @@ const ImageBlock = ({
   useEffect(() => {
     setCurrentIndex(currentImageIndex);
   }, [currentImageIndex]);
+
+  // Keep current index in bounds when images change
+  useEffect(() => {
+    if (currentIndex >= images.length && images.length > 0) {
+      const newIndex = Math.max(0, images.length - 1);
+      setCurrentIndex(newIndex);
+      onChange({ currentImageIndex: newIndex });
+    }
+  }, [images.length, currentIndex, onChange]);
 
   // Load images
   useEffect(() => {
@@ -154,27 +164,61 @@ const ImageBlock = ({
   const currentImage = images[currentIndex];
   const loadedImage = currentImage ? loadedImages[currentImage] : null;
 
-  // Calculate image dimensions to fit within block while maintaining aspect ratio
+  // Calculate image dimensions based on display mode
   const getImageDimensions = () => {
     if (!loadedImage) return { width: 0, height: 0, x: 0, y: 0 };
 
-    const imgAspectRatio = loadedImage.width / loadedImage.height;
-    const blockAspectRatio = width / height;
-
     let imgWidth, imgHeight, imgX, imgY;
 
-    if (imgAspectRatio > blockAspectRatio) {
-      // Image is wider than block
-      imgWidth = width;
-      imgHeight = width / imgAspectRatio;
-      imgX = 0;
-      imgY = (height - imgHeight) / 2;
-    } else {
-      // Image is taller than block
-      imgHeight = height;
-      imgWidth = height * imgAspectRatio;
-      imgX = (width - imgWidth) / 2;
-      imgY = 0;
+    switch (imageDisplayMode) {
+      case 'stretch':
+        // Stretch to fill entire block (may distort aspect ratio)
+        imgWidth = width;
+        imgHeight = height;
+        imgX = 0;
+        imgY = 0;
+        break;
+        
+      case 'fill':
+        // Fill entire block while maintaining aspect ratio (may crop)
+        const imgAspectRatio = loadedImage.width / loadedImage.height;
+        const blockAspectRatio = width / height;
+        
+        if (imgAspectRatio > blockAspectRatio) {
+          // Image is wider - fit to height, crop width
+          imgHeight = height;
+          imgWidth = height * imgAspectRatio;
+          imgX = (width - imgWidth) / 2;
+          imgY = 0;
+        } else {
+          // Image is taller - fit to width, crop height
+          imgWidth = width;
+          imgHeight = width / imgAspectRatio;
+          imgX = 0;
+          imgY = (height - imgHeight) / 2;
+        }
+        break;
+        
+      case 'fit':
+      default:
+        // Fit entire image within block while maintaining aspect ratio
+        const imgAspectRatioFit = loadedImage.width / loadedImage.height;
+        const blockAspectRatioFit = width / height;
+        
+        if (imgAspectRatioFit > blockAspectRatioFit) {
+          // Image is wider than block
+          imgWidth = width;
+          imgHeight = width / imgAspectRatioFit;
+          imgX = 0;
+          imgY = (height - imgHeight) / 2;
+        } else {
+          // Image is taller than block
+          imgHeight = height;
+          imgWidth = height * imgAspectRatioFit;
+          imgX = (width - imgWidth) / 2;
+          imgY = 0;
+        }
+        break;
     }
 
     return { width: imgWidth, height: imgHeight, x: imgX, y: imgY };
@@ -268,7 +312,7 @@ const ImageBlock = ({
               x={width - 35}
               y={height - 20}
               fontSize={10}
-              fill="rgba(255,255,255,0.8)"
+              fill="rgba(255,255,255,0.9)"
               align="right"
               listening={false}
               shadowColor="rgba(0,0,0,0.8)"
@@ -311,6 +355,21 @@ const ImageBlock = ({
               ))}
             </Group>
           </>
+        )}
+
+        {/* Display mode indicator */}
+        {isSelected && imageDisplayMode && (
+          <Text
+            text={imageDisplayMode.toUpperCase()}
+            x={8}
+            y={8}
+            fontSize={8}
+            fill="rgba(34, 197, 94, 0.8)"
+            listening={false}
+            shadowColor="rgba(0,0,0,0.8)"
+            shadowBlur={2}
+            shadowOffset={{ x: 1, y: 1 }}
+          />
         )}
 
         {/* Settings indicator when selected */}

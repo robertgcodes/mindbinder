@@ -37,8 +37,6 @@ const RotatingQuoteBlock = ({
   const textRef = useRef();
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoRotate);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const intervalRef = useRef();
 
   // Auto-rotation effect
@@ -66,21 +64,13 @@ const RotatingQuoteBlock = ({
     }
   }, [isSelected]);
 
-  const handleMouseDown = (e) => {
-    const pos = e.target.getStage().getPointerPosition();
-    setDragStartPos(pos);
-    setIsDragging(false);
-  };
-
   const handleDragStart = (e) => {
-    setIsDragging(true);
     if (onDragStart) {
       onDragStart();
     }
   };
 
   const handleDragEnd = (e) => {
-    setIsDragging(false);
     onChange({
       x: e.target.x(),
       y: e.target.y()
@@ -108,38 +98,15 @@ const RotatingQuoteBlock = ({
     });
   };
 
-  // Fixed click handler - only responds to actual clicks, not drags
+  // Simple click handler - just like regular text blocks
   const handleClick = (e) => {
-    // Don't handle click if we were dragging
-    if (isDragging) {
-      return;
-    }
-
-    // Check if this was a very small movement (accidental micro-drag)
-    const currentPos = e.target.getStage().getPointerPosition();
-    const distance = Math.sqrt(
-      Math.pow(currentPos.x - dragStartPos.x, 2) + 
-      Math.pow(currentPos.y - dragStartPos.y, 2)
-    );
-
-    // If movement was less than 5 pixels, treat as click
-    if (distance < 5) {
-      e.cancelBubble = true;
-      e.evt.stopPropagation();
-      
-      if (onSelect) {
-        onSelect();
-      }
+    if (onSelect) {
+      onSelect();
     }
   };
 
-  // Separate double-click handler
+  // Separate double-click handler for play/pause
   const handleDoubleClick = (e) => {
-    // Don't handle double-click if we were dragging
-    if (isDragging) {
-      return;
-    }
-
     e.cancelBubble = true;
     e.evt.stopPropagation();
     
@@ -210,20 +177,12 @@ const RotatingQuoteBlock = ({
         width={width}
         height={height}
         rotation={rotation}
-        draggable
-        onMouseDown={handleMouseDown}
+        draggable={!isSelected} // KEY FIX: Disable dragging when selected (same as TextBlock)
         onClick={handleClick}
         onDblClick={handleDoubleClick}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
-        dragBoundFunc={(pos) => {
-          // Only allow dragging if we're actually in drag mode
-          if (!isDragging) {
-            return { x: x, y: y }; // Return current position to prevent movement
-          }
-          return pos; // Allow normal dragging
-        }}
       >
         {/* Background with rotating quote indicator */}
         <Rect

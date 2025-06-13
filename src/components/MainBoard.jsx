@@ -1,4 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+// One sample image block
+            {
+              id: 'initial-image',
+              type: 'image',
+              x: 450,
+              y: 400,
+              width: 200,
+              height: 150,
+              images: [], // Empty initially - user will upload
+              currentImageIndex: 0,
+              autoRotate: false,
+              rotationSpeed: 5000,
+              frameStyle: 'rounded',
+              backgroundOpacity: 0.1,import React, { useState, useEffect, useRef } from 'react';
 import { Stage, Layer } from 'react-konva';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -6,10 +19,12 @@ import { db, auth } from '../firebase';
 import TextBlock from './TextBlock';
 import RotatingQuoteBlock from './RotatingQuoteBlock';
 import ImageBlock from './ImageBlock';
+import EmbedBlock from './EmbedBlock';
 import Toolbar from './Toolbar';
 import EnhancedRotatingQuoteToolbar from './EnhancedRotatingQuoteToolbar';
 import EnhancedImageBlockToolbar from './EnhancedImageBlockToolbar';
-import { LogOut, Plus, RotateCw, Type, Image } from 'lucide-react';
+import EmbedBlockToolbar from './EmbedBlockToolbar';
+import { LogOut, Plus, RotateCw, Type, Image, Globe } from 'lucide-react';
 
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",
@@ -109,6 +124,24 @@ const MainBoard = ({ user }) => {
               backgroundColor: 'rgba(34, 197, 94, 0.5)',
               rotation: 0,
               imageDisplayMode: 'fit'
+            },
+            // One sample embed block
+            {
+              id: 'initial-embed',
+              type: 'embed',
+              x: 700,
+              y: 400,
+              width: 300,
+              height: 200,
+              embedType: 'youtube',
+              embedUrl: '',
+              embedCode: '',
+              title: 'YouTube Video',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              borderRadius: 8,
+              rotation: 0,
+              showHeader: true,
+              autoplay: false
             }
           ];
           setBlocks(initialBlocks);
@@ -117,7 +150,27 @@ const MainBoard = ({ user }) => {
         console.error('Error loading board:', error);
       }
       setLoading(false);
+    const addNewEmbedBlock = () => {
+    const newBlock = {
+      id: Date.now().toString() + '-embed',
+      type: 'embed',
+      x: Math.random() * 400 + 100,
+      y: Math.random() * 300 + 100,
+      width: 300,
+      height: 200,
+      embedType: 'youtube',
+      embedUrl: '',
+      embedCode: '',
+      title: 'Embed Block',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderRadius: 8,
+      rotation: 0,
+      showHeader: true,
+      autoplay: false
     };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
 
     loadBoard();
   }, [user.uid]);
@@ -324,6 +377,12 @@ const MainBoard = ({ user }) => {
             >
               <Type className="h-4 w-4" />
               <span>Text Block</span>
+            <button
+              onClick={addNewEmbedBlock}
+              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <Globe className="h-4 w-4" />
+              <span>Embed Block</span>
             </button>
             <button
               onClick={addNewRotatingQuoteBlock}
@@ -361,6 +420,12 @@ const MainBoard = ({ user }) => {
             />
           ) : selectedBlock.type === 'image' ? (
             <EnhancedImageBlockToolbar
+              selectedBlock={selectedBlock}
+              onUpdate={(updates) => updateBlock(selectedId, updates)}
+              onDelete={deleteSelectedBlock}
+            />
+          ) : selectedBlock.type === 'embed' ? (
+            <EmbedBlockToolbar
               selectedBlock={selectedBlock}
               onUpdate={(updates) => updateBlock(selectedId, updates)}
               onDelete={deleteSelectedBlock}
@@ -417,6 +482,18 @@ const MainBoard = ({ user }) => {
                     onDragEnd={handleBlockDragEnd}
                   />
                 );
+              } else if (block.type === 'embed') {
+                return (
+                  <EmbedBlock
+                    key={block.id}
+                    {...block}
+                    isSelected={block.id === selectedId}
+                    onSelect={() => setSelectedId(block.id)}
+                    onChange={(updates) => updateBlock(block.id, updates)}
+                    onDragStart={handleBlockDragStart}
+                    onDragEnd={handleBlockDragEnd}
+                  />
+                );
               } else {
                 return (
                   <TextBlock
@@ -440,7 +517,7 @@ const MainBoard = ({ user }) => {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-gray-500">
             <p className="text-lg mb-2">Welcome to your MindBinder</p>
-            <p>Add text blocks, rotating quotes, or image blocks to start building your inspiration board</p>
+            <p>Add text blocks, rotating quotes, images, or embeds to start building your inspiration board</p>
           </div>
         </div>
       )}

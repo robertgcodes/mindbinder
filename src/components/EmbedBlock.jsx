@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Group, Rect, Transformer, Text } from 'react-konva';
-import { Html } from 'react-konva-utils';
 
 const EmbedBlock = ({
   id,
@@ -146,7 +145,7 @@ const EmbedBlock = ({
   const embedInfo = getEmbedInfo();
 
   return (
-    <>
+    <div className="relative">
       <Group
         ref={groupRef}
         x={x}
@@ -311,8 +310,8 @@ const EmbedBlock = ({
         />
       )}
 
-      {/* Actual embed content - rendered outside Konva for better performance */}
-      {finalEmbedUrl && !isSelected && (
+      {/* Actual embed content - rendered outside Konva */}
+      {finalEmbedUrl && (
         <div
           style={{
             position: 'absolute',
@@ -322,8 +321,8 @@ const EmbedBlock = ({
             height: height - (showHeader ? 50 : 20),
             borderRadius: '4px',
             overflow: 'hidden',
-            pointerEvents: 'auto',
-            zIndex: 1
+            pointerEvents: isSelected ? 'none' : 'auto',
+            zIndex: isSelected ? 0 : 1
           }}
         >
           <iframe
@@ -341,7 +340,7 @@ const EmbedBlock = ({
           />
         </div>
       )}
-    </>
+    </div>
   );
 };
 

@@ -1,17 +1,4 @@
-// One sample image block
-            {
-              id: 'initial-image',
-              type: 'image',
-              x: 450,
-              y: 400,
-              width: 200,
-              height: 150,
-              images: [], // Empty initially - user will upload
-              currentImageIndex: 0,
-              autoRotate: false,
-              rotationSpeed: 5000,
-              frameStyle: 'rounded',
-              backgroundOpacity: 0.1,import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Stage, Layer } from 'react-konva';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -67,21 +54,36 @@ const MainBoard = ({ user }) => {
           // Create initial sample blocks for new users
           const initialBlocks = [
             // Regular text blocks
-            ...SAMPLE_QUOTES.slice(0, 2).map((quote, index) => ({
-              id: `initial-${index}`,
+            {
+              id: `initial-0`,
               type: 'text',
-              x: 100 + (index * 300),
-              y: 100 + (index * 150),
+              x: 100,
+              y: 100,
               width: 250,
               height: 100,
-              text: quote,
+              text: SAMPLE_QUOTES[0],
               fontSize: 16,
               fontWeight: 'normal',
               textColor: '#ffffff',
               backgroundColor: 'rgba(59, 130, 246, 0.1)',
               rotation: 0,
               autoResize: false
-            })),
+            },
+            {
+              id: `initial-1`,
+              type: 'text',
+              x: 400,
+              y: 250,
+              width: 250,
+              height: 100,
+              text: SAMPLE_QUOTES[1],
+              fontSize: 16,
+              fontWeight: 'normal',
+              textColor: '#ffffff',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              rotation: 0,
+              autoResize: false
+            },
             // One rotating quote block
             {
               id: 'initial-rotating',
@@ -115,7 +117,7 @@ const MainBoard = ({ user }) => {
               y: 400,
               width: 200,
               height: 150,
-              images: [], // Empty initially - user will upload
+              images: [],
               currentImageIndex: 0,
               autoRotate: false,
               rotationSpeed: 5000,
@@ -130,7 +132,7 @@ const MainBoard = ({ user }) => {
               id: 'initial-embed',
               type: 'embed',
               x: 700,
-              y: 400,
+              y: 100,
               width: 300,
               height: 200,
               embedType: 'youtube',
@@ -150,27 +152,7 @@ const MainBoard = ({ user }) => {
         console.error('Error loading board:', error);
       }
       setLoading(false);
-    const addNewEmbedBlock = () => {
-    const newBlock = {
-      id: Date.now().toString() + '-embed',
-      type: 'embed',
-      x: Math.random() * 400 + 100,
-      y: Math.random() * 300 + 100,
-      width: 300,
-      height: 200,
-      embedType: 'youtube',
-      embedUrl: '',
-      embedCode: '',
-      title: 'Embed Block',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderRadius: 8,
-      rotation: 0,
-      showHeader: true,
-      autoplay: false
     };
-    setBlocks([...blocks, newBlock]);
-    setSelectedId(newBlock.id);
-  };
 
     loadBoard();
   }, [user.uid]);
@@ -273,7 +255,7 @@ const MainBoard = ({ user }) => {
       y: Math.random() * 300 + 100,
       width: 200,
       height: 150,
-      images: [], // Empty initially - user will upload
+      images: [],
       currentImageIndex: 0,
       autoRotate: false,
       rotationSpeed: 5000,
@@ -282,6 +264,28 @@ const MainBoard = ({ user }) => {
       backgroundColor: 'rgba(34, 197, 94, 0.5)',
       rotation: 0,
       imageDisplayMode: 'fit'
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewEmbedBlock = () => {
+    const newBlock = {
+      id: Date.now().toString() + '-embed',
+      type: 'embed',
+      x: Math.random() * 400 + 100,
+      y: Math.random() * 300 + 100,
+      width: 300,
+      height: 200,
+      embedType: 'youtube',
+      embedUrl: '',
+      embedCode: '',
+      title: 'Embed Block',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderRadius: 8,
+      rotation: 0,
+      showHeader: true,
+      autoplay: false
     };
     setBlocks([...blocks, newBlock]);
     setSelectedId(newBlock.id);
@@ -301,7 +305,6 @@ const MainBoard = ({ user }) => {
   };
 
   const handleStageClick = (e) => {
-    // Only deselect if clicking on the stage itself (not on any objects)
     if (e.target === e.target.getStage()) {
       setSelectedId(null);
     }
@@ -312,7 +315,6 @@ const MainBoard = ({ user }) => {
   };
 
   const handleStageDragEnd = (e) => {
-    // Only update stage position if we were actually dragging the stage
     if (isDraggingStage && !isDraggingBlock) {
       setStagePos({
         x: e.target.x(),
@@ -377,12 +379,6 @@ const MainBoard = ({ user }) => {
             >
               <Type className="h-4 w-4" />
               <span>Text Block</span>
-            <button
-              onClick={addNewEmbedBlock}
-              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Globe className="h-4 w-4" />
-              <span>Embed Block</span>
             </button>
             <button
               onClick={addNewRotatingQuoteBlock}
@@ -397,6 +393,13 @@ const MainBoard = ({ user }) => {
             >
               <Image className="h-4 w-4" />
               <span>Image Block</span>
+            </button>
+            <button
+              onClick={addNewEmbedBlock}
+              className="flex items-center space-x-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <Globe className="h-4 w-4" />
+              <span>Embed Block</span>
             </button>
             <button
               onClick={() => signOut(auth)}

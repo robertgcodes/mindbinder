@@ -38,13 +38,12 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
         })
       );
 
-      // Add new images to existing ones (up to 10 total)
       const currentImages = selectedBlock.images || [];
       const newImages = [...currentImages, ...imageUrls].slice(0, 10);
       
       onUpdate({ 
         images: newImages,
-        currentImageIndex: currentImages.length // Switch to first new image
+        currentImageIndex: currentImages.length
       });
 
     } catch (error) {
@@ -52,7 +51,6 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
       alert('Error uploading images. Please try again.');
     } finally {
       setIsUploading(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -63,16 +61,12 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
     const newImages = selectedBlock.images.filter((_, i) => i !== index);
     let newCurrentIndex = selectedBlock.currentImageIndex || 0;
     
-    // Adjust current index if we deleted the current image or one before it
     if (index === newCurrentIndex) {
-      // If we deleted the current image, go to the previous one (or 0)
       newCurrentIndex = Math.max(0, newCurrentIndex - 1);
     } else if (index < newCurrentIndex) {
-      // If we deleted an image before the current one, shift current index back
       newCurrentIndex = newCurrentIndex - 1;
     }
     
-    // Make sure current index is within bounds
     newCurrentIndex = Math.min(newCurrentIndex, newImages.length - 1);
     newCurrentIndex = Math.max(0, newCurrentIndex);
     
@@ -223,7 +217,6 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity rounded"></div>
                       
-                      {/* Delete button for each thumbnail */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -235,12 +228,10 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
                         <X className="h-2 w-2" />
                       </button>
                       
-                      {/* Current indicator */}
                       {index === currentIndex && (
                         <div className="absolute bottom-1 left-1 w-2 h-2 bg-green-500 rounded-full"></div>
                       )}
                       
-                      {/* Image number */}
                       <div className="absolute bottom-0 right-0 bg-black bg-opacity-60 text-white text-xs px-1 rounded-tl">
                         {index + 1}
                       </div>
@@ -364,3 +355,87 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
               }`}
             >
               <span className="text-lg mb-1">{style.icon}</span>
+              <span className="text-xs">{style.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Background Opacity */}
+      <div className="mb-4">
+        <label className="block text-xs text-gray-400 mb-2">Background Opacity</label>
+        <div className="flex items-center space-x-2">
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={selectedBlock.backgroundOpacity || 0.1}
+            onChange={(e) => onUpdate({ backgroundOpacity: parseFloat(e.target.value) })}
+            className="flex-1"
+          />
+          <span className="text-xs text-gray-500 w-12 text-right">
+            {Math.round((selectedBlock.backgroundOpacity || 0.1) * 100)}%
+          </span>
+        </div>
+      </div>
+
+      {/* Background Color */}
+      <div className="mb-4">
+        <label className="block text-xs text-gray-400 mb-2">Background Color</label>
+        <div className="grid grid-cols-8 gap-1">
+          {[
+            'rgba(0,0,0,0.5)', 'rgba(255,255,255,0.5)', 'rgba(59, 130, 246, 0.5)',
+            'rgba(34, 197, 94, 0.5)', 'rgba(239, 68, 68, 0.5)', 'rgba(249, 115, 22, 0.5)',
+            'rgba(139, 92, 246, 0.5)', 'rgba(236, 72, 153, 0.5)'
+          ].map((color, index) => (
+            <button
+              key={index}
+              onClick={() => onUpdate({ backgroundColor: color })}
+              className={`w-6 h-6 rounded border-2 ${
+                selectedBlock.backgroundColor === color ? 'border-white' : 'border-dark-600'
+              }`}
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Block Rotation */}
+      <div className="mb-4">
+        <label className="block text-xs text-gray-400 mb-2">Block Rotation</label>
+        <div className="flex items-center space-x-2">
+          <input
+            type="range"
+            min="-180"
+            max="180"
+            value={selectedBlock.rotation || 0}
+            onChange={(e) => onUpdate({ rotation: parseInt(e.target.value) })}
+            className="flex-1"
+          />
+          <button
+            onClick={() => onUpdate({ rotation: 0 })}
+            className="p-1 text-gray-400 hover:text-white transition-colors"
+            title="Reset rotation"
+          >
+            <RotateCw className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="text-xs text-gray-500 mt-1">{selectedBlock.rotation || 0}°</div>
+      </div>
+
+      {/* Instructions */}
+      <div className="text-xs text-gray-500 mt-4 p-3 bg-dark-900 rounded border border-dark-600">
+        <p className="mb-2"><strong>Quick Tips:</strong></p>
+        <p>• Upload up to 10 images per block</p>
+        <p>• <strong>Fit:</strong> Shows entire image (may have borders)</p>
+        <p>• <strong>Fill:</strong> Fills block completely (may crop image)</p>
+        <p>• <strong>Stretch:</strong> Stretches to fit exactly (may distort)</p>
+        <p>• Double-click block to play/pause or advance image</p>
+        <p>• Hover over thumbnails to see delete buttons</p>
+      </div>
+    </div>
+  );
+};
+
+export default EnhancedImageBlockToolbar;

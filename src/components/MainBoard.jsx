@@ -8,7 +8,7 @@ import RotatingQuoteBlock from './RotatingQuoteBlock';
 import ImageBlock from './ImageBlock';
 import Toolbar from './Toolbar';
 import EnhancedRotatingQuoteToolbar from './EnhancedRotatingQuoteToolbar';
-import ImageBlockToolbar from './ImageBlockToolbar';
+import EnhancedImageBlockToolbar from './EnhancedImageBlockToolbar';
 import { LogOut, Plus, RotateCw, Type, Image } from 'lucide-react';
 
 const SAMPLE_QUOTES = [
@@ -107,7 +107,8 @@ const MainBoard = ({ user }) => {
               frameStyle: 'rounded',
               backgroundOpacity: 0.1,
               backgroundColor: 'rgba(34, 197, 94, 0.5)',
-              rotation: 0
+              rotation: 0,
+              imageDisplayMode: 'fit'
             }
           ];
           setBlocks(initialBlocks);
@@ -226,7 +227,8 @@ const MainBoard = ({ user }) => {
       frameStyle: 'rounded',
       backgroundOpacity: 0.1,
       backgroundColor: 'rgba(34, 197, 94, 0.5)',
-      rotation: 0
+      rotation: 0,
+      imageDisplayMode: 'fit'
     };
     setBlocks([...blocks, newBlock]);
     setSelectedId(newBlock.id);
@@ -358,7 +360,7 @@ const MainBoard = ({ user }) => {
               onDelete={deleteSelectedBlock}
             />
           ) : selectedBlock.type === 'image' ? (
-            <ImageBlockToolbar
+            <EnhancedImageBlockToolbar
               selectedBlock={selectedBlock}
               onUpdate={(updates) => updateBlock(selectedId, updates)}
               onDelete={deleteSelectedBlock}

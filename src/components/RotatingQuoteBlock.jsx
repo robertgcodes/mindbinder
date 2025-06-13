@@ -7,7 +7,16 @@ const RotatingQuoteBlock = ({
   y,
   width,
   height,
-  quotes = ["Add your quotes in the toolbar →"],
+  quotes = [
+    { 
+      text: "Add your quotes in the toolbar →", 
+      fontSize: 16, 
+      fontWeight: 'normal', 
+      fontFamily: 'Inter',
+      textColor: '#ffffff',
+      textAlign: 'center'
+    }
+  ],
   fontSize = 16,
   fontWeight = 'normal',
   textColor = '#ffffff',
@@ -15,7 +24,8 @@ const RotatingQuoteBlock = ({
   rotation = 0,
   textAlign = 'center',
   autoRotate = true,
-  rotationSpeed = 5000, // milliseconds
+  rotationSpeed = 5000,
+  autoResize = false,
   isSelected,
   onSelect,
   onChange,
@@ -90,7 +100,7 @@ const RotatingQuoteBlock = ({
 
   const handleClick = (e) => {
     if (e.detail === 1) {
-      // Single click - select
+      // Single click - select (this will show the toolbar)
       onSelect();
     } else if (e.detail === 2) {
       // Double click - toggle play/pause
@@ -100,26 +110,57 @@ const RotatingQuoteBlock = ({
     }
   };
 
+  // Get current quote object (support both old string format and new object format)
+  const getCurrentQuote = () => {
+    const currentQuote = quotes[currentQuoteIndex];
+    
+    // Handle backward compatibility - if it's a string, convert to object
+    if (typeof currentQuote === 'string') {
+      return {
+        text: currentQuote,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        fontFamily: 'Inter',
+        textColor: textColor,
+        textAlign: textAlign
+      };
+    }
+    
+    // If it's already an object, merge with defaults
+    return {
+      text: currentQuote?.text || 'Empty quote',
+      fontSize: currentQuote?.fontSize || fontSize,
+      fontWeight: currentQuote?.fontWeight || fontWeight,
+      fontFamily: currentQuote?.fontFamily || 'Inter',
+      textColor: currentQuote?.textColor || textColor,
+      textAlign: currentQuote?.textAlign || textAlign
+    };
+  };
+
+  const currentQuoteObj = getCurrentQuote();
+
   // Calculate font size to fit
   const calculateFontSize = () => {
-    const currentText = quotes[currentQuoteIndex] || '';
-    const maxWidth = width - 40; // More padding for rotating quotes
-    const maxHeight = height - 40;
-    const textLength = currentText.length;
+    if (!autoResize) {
+      return currentQuoteObj.fontSize; // Use quote-specific or block font size when auto-resize is off
+    }
+
+    const maxWidth = width - 40;
+    const maxHeight = height - 50; // Account for indicators
+    const textLength = currentQuoteObj.text.length;
     
-    if (textLength === 0) return fontSize;
+    if (textLength === 0) return currentQuoteObj.fontSize;
     
-    const lines = currentText.split('\n').length;
+    const lines = currentQuoteObj.text.split('\n').length;
     const avgCharsPerLine = textLength / lines;
     
     const widthBasedSize = Math.floor(maxWidth / (avgCharsPerLine * 0.6));
     const heightBasedSize = Math.floor(maxHeight / (lines * 1.2));
     
-    return Math.min(Math.max(Math.min(widthBasedSize, heightBasedSize), 10), fontSize);
+    return Math.min(Math.max(Math.min(widthBasedSize, heightBasedSize), 8), currentQuoteObj.fontSize);
   };
 
   const displayFontSize = calculateFontSize();
-  const currentQuote = quotes[currentQuoteIndex] || 'No quotes available';
 
   return (
     <>
@@ -183,22 +224,34 @@ const RotatingQuoteBlock = ({
           align="right"
         />
 
+        {/* Settings indicator when selected */}
+        {isSelected && (
+          <Text
+            text="⚙"
+            x={width - 40}
+            y={8}
+            fontSize={10}
+            fill="#8b5cf6"
+            align="center"
+          />
+        )}
+
         {/* Main quote text */}
         <Text
           ref={textRef}
-          text={currentQuote}
+          text={currentQuoteObj.text}
           x={20}
           y={20}
           width={width - 40}
           height={height - 50}
           fontSize={displayFontSize}
-          fontFamily="Inter"
-          fontStyle={fontWeight}
-          fill={textColor}
-          align={textAlign}
+          fontFamily={currentQuoteObj.fontFamily}
+          fontStyle={currentQuoteObj.fontWeight}
+          fill={currentQuoteObj.textColor}
+          align={currentQuoteObj.textAlign}
           verticalAlign="middle"
           wrap="word"
-          ellipsis={true}
+          ellipsis={!autoResize}
         />
       </Group>
       

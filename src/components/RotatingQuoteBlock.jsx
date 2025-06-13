@@ -37,6 +37,8 @@ const RotatingQuoteBlock = ({
   const textRef = useRef();
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoRotate);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const intervalRef = useRef();
 
   // Auto-rotation effect
@@ -64,13 +66,21 @@ const RotatingQuoteBlock = ({
     }
   }, [isSelected]);
 
+  const handleMouseDown = (e) => {
+    const pos = e.target.getStage().getPointerPosition();
+    setDragStartPos(pos);
+    setIsDragging(false);
+  };
+
   const handleDragStart = (e) => {
+    setIsDragging(true);
     if (onDragStart) {
       onDragStart();
     }
   };
 
   const handleDragEnd = (e) => {
+    setIsDragging(false);
     onChange({
       x: e.target.x(),
       y: e.target.y()
@@ -98,20 +108,38 @@ const RotatingQuoteBlock = ({
     });
   };
 
-  // Fixed click handler
+  // Fixed click handler - only responds to actual clicks, not drags
   const handleClick = (e) => {
-    // Stop event propagation to prevent stage deselection
-    e.cancelBubble = true;
-    e.evt.stopPropagation();
-    
-    // Always call onSelect for single clicks
-    if (onSelect) {
-      onSelect();
+    // Don't handle click if we were dragging
+    if (isDragging) {
+      return;
+    }
+
+    // Check if this was a very small movement (accidental micro-drag)
+    const currentPos = e.target.getStage().getPointerPosition();
+    const distance = Math.sqrt(
+      Math.pow(currentPos.x - dragStartPos.x, 2) + 
+      Math.pow(currentPos.y - dragStartPos.y, 2)
+    );
+
+    // If movement was less than 5 pixels, treat as click
+    if (distance < 5) {
+      e.cancelBubble = true;
+      e.evt.stopPropagation();
+      
+      if (onSelect) {
+        onSelect();
+      }
     }
   };
 
   // Separate double-click handler
   const handleDoubleClick = (e) => {
+    // Don't handle double-click if we were dragging
+    if (isDragging) {
+      return;
+    }
+
     e.cancelBubble = true;
     e.evt.stopPropagation();
     
@@ -183,12 +211,19 @@ const RotatingQuoteBlock = ({
         height={height}
         rotation={rotation}
         draggable
+        onMouseDown={handleMouseDown}
         onClick={handleClick}
         onDblClick={handleDoubleClick}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
-        listening={true} // Ensure the group listens to events
+        dragBoundFunc={(pos) => {
+          // Only allow dragging if we're actually in drag mode
+          if (!isDragging) {
+            return { x: x, y: y }; // Return current position to prevent movement
+          }
+          return pos; // Allow normal dragging
+        }}
       >
         {/* Background with rotating quote indicator */}
         <Rect
@@ -198,7 +233,6 @@ const RotatingQuoteBlock = ({
           stroke={isSelected ? '#8b5cf6' : 'transparent'}
           strokeWidth={isSelected ? 2 : 0}
           cornerRadius={8}
-          listening={true} // Ensure the rect listens to clicks
         />
         
         {/* Rotation indicator dots */}
@@ -213,7 +247,7 @@ const RotatingQuoteBlock = ({
                 height={4}
                 fill={index === currentQuoteIndex ? '#8b5cf6' : 'rgba(255,255,255,0.3)'}
                 cornerRadius={2}
-                listening={false} // Don't interfere with main clicks
+                listening={false}
               />
             ))}
           </>
@@ -227,7 +261,7 @@ const RotatingQuoteBlock = ({
           fontSize={10}
           fill={isPlaying ? '#22c55e' : '#ef4444'}
           align="center"
-          listening={false} // Don't interfere with main clicks
+          listening={false}
         />
 
         {/* Quote counter */}
@@ -238,7 +272,7 @@ const RotatingQuoteBlock = ({
           fontSize={8}
           fill="rgba(255,255,255,0.6)"
           align="right"
-          listening={false} // Don't interfere with main clicks
+          listening={false}
         />
 
         {/* Settings indicator when selected */}
@@ -250,7 +284,7 @@ const RotatingQuoteBlock = ({
             fontSize={10}
             fill="#8b5cf6"
             align="center"
-            listening={false} // Don't interfere with main clicks
+            listening={false}
           />
         )}
 
@@ -270,7 +304,7 @@ const RotatingQuoteBlock = ({
           verticalAlign="middle"
           wrap="word"
           ellipsis={!autoResize}
-          listening={false} // Text doesn't need to handle clicks separately
+          listening={false}
         />
       </Group>
       

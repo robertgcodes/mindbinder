@@ -108,19 +108,6 @@ const MainBoard = ({ user }) => {
               backgroundOpacity: 0.1,
               backgroundColor: 'rgba(34, 197, 94, 0.5)',
               rotation: 0
-            }: 'normal',
-                fontFamily: 'Inter',
-                textColor: '#ffffff',
-                textAlign: 'center'
-              })),
-              fontSize: 16,
-              fontWeight: 'normal',
-              textColor: '#ffffff',
-              backgroundColor: 'rgba(139, 92, 246, 0.1)',
-              rotation: 0,
-              autoRotate: true,
-              rotationSpeed: 5000,
-              autoResize: false
             }
           ];
           setBlocks(initialBlocks);
@@ -129,26 +116,7 @@ const MainBoard = ({ user }) => {
         console.error('Error loading board:', error);
       }
       setLoading(false);
-    const addNewImageBlock = () => {
-    const newBlock = {
-      id: Date.now().toString() + '-image',
-      type: 'image',
-      x: Math.random() * 400 + 100,
-      y: Math.random() * 300 + 100,
-      width: 200,
-      height: 150,
-      images: [], // Empty initially - user will upload
-      currentImageIndex: 0,
-      autoRotate: false,
-      rotationSpeed: 5000,
-      frameStyle: 'rounded',
-      backgroundOpacity: 0.1,
-      backgroundColor: 'rgba(34, 197, 94, 0.5)',
-      rotation: 0
     };
-    setBlocks([...blocks, newBlock]);
-    setSelectedId(newBlock.id);
-  };
 
     loadBoard();
   }, [user.uid]);
@@ -238,6 +206,27 @@ const MainBoard = ({ user }) => {
       autoRotate: true,
       rotationSpeed: 5000,
       autoResize: false
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewImageBlock = () => {
+    const newBlock = {
+      id: Date.now().toString() + '-image',
+      type: 'image',
+      x: Math.random() * 400 + 100,
+      y: Math.random() * 300 + 100,
+      width: 200,
+      height: 150,
+      images: [], // Empty initially - user will upload
+      currentImageIndex: 0,
+      autoRotate: false,
+      rotationSpeed: 5000,
+      frameStyle: 'rounded',
+      backgroundOpacity: 0.1,
+      backgroundColor: 'rgba(34, 197, 94, 0.5)',
+      rotation: 0
     };
     setBlocks([...blocks, newBlock]);
     setSelectedId(newBlock.id);
@@ -333,12 +322,6 @@ const MainBoard = ({ user }) => {
             >
               <Type className="h-4 w-4" />
               <span>Text Block</span>
-            <button
-              onClick={addNewImageBlock}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Image className="h-4 w-4" />
-              <span>Image Block</span>
             </button>
             <button
               onClick={addNewRotatingQuoteBlock}
@@ -346,6 +329,13 @@ const MainBoard = ({ user }) => {
             >
               <RotateCw className="h-4 w-4" />
               <span>Quote Rotator</span>
+            </button>
+            <button
+              onClick={addNewImageBlock}
+              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <Image className="h-4 w-4" />
+              <span>Image Block</span>
             </button>
             <button
               onClick={() => signOut(auth)}

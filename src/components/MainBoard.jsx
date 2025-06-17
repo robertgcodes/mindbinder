@@ -499,87 +499,11 @@ const MainBoard = ({ board, onBack }) => {
           scaleY={stageScale}
         >
           <Layer>
-            {blocks.map((block) => {
-              const isSelected = block.id === selectedId;
-              
-              switch (block.type) {
-                case 'text':
-                  return (
-                    <TextBlock
-                      key={block.id}
-                      {...block}
-                      isSelected={isSelected}
-                      onSelect={() => setSelectedId(block.id)}
-                      onChange={(newAttrs) => updateBlock(block.id, newAttrs)}
-                      onDragStart={handleBlockDragStart}
-                      onDragEnd={handleBlockDragEnd}
-                    />
-                  );
-                case 'rotating-quote':
-                  return (
-                    <RotatingQuoteBlock
-                      key={block.id}
-                      {...block}
-                      isSelected={isSelected}
-                      onSelect={() => setSelectedId(block.id)}
-                      onChange={(newAttrs) => updateBlock(block.id, newAttrs)}
-                      onDragStart={handleBlockDragStart}
-                      onDragEnd={handleBlockDragEnd}
-                    />
-                  );
-                case 'image':
-                  return (
-                    <ImageBlock
-                      key={block.id}
-                      {...block}
-                      isSelected={isSelected}
-                      onSelect={() => setSelectedId(block.id)}
-                      onChange={(newAttrs) => updateBlock(block.id, newAttrs)}
-                      onDragStart={handleBlockDragStart}
-                      onDragEnd={handleBlockDragEnd}
-                    />
-                  );
-                case 'embed':
-                  return (
-                    <EmbedBlock
-                      key={block.id}
-                      {...block}
-                      isSelected={isSelected}
-                      onSelect={() => setSelectedId(block.id)}
-                      onChange={(newAttrs) => updateBlock(block.id, newAttrs)}
-                      onDragStart={handleBlockDragStart}
-                      onDragEnd={handleBlockDragEnd}
-                    />
-                  );
-                default:
-                  return null;
-              }
-            })}
+            {blocks.map(renderBlock)}
           </Layer>
         </Stage>
 
-        {selectedId && (
-          <div className="absolute top-4 right-4 z-10">
-            {blocks.find(b => b.id === selectedId)?.type === 'rotating-quote' && (
-              <EnhancedRotatingQuoteToolbar
-                block={blocks.find(b => b.id === selectedId)}
-                onChange={(updates) => updateBlock(selectedId, updates)}
-              />
-            )}
-            {blocks.find(b => b.id === selectedId)?.type === 'image' && (
-              <EnhancedImageBlockToolbar
-                block={blocks.find(b => b.id === selectedId)}
-                onChange={(updates) => updateBlock(selectedId, updates)}
-              />
-            )}
-            {blocks.find(b => b.id === selectedId)?.type === 'embed' && (
-              <EmbedBlockToolbar
-                block={blocks.find(b => b.id === selectedId)}
-                onChange={(updates) => updateBlock(selectedId, updates)}
-              />
-            )}
-          </div>
-        )}
+        {renderToolbar()}
       </div>
     </div>
   );

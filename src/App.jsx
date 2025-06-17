@@ -30,7 +30,7 @@ function App() {
                 selectedBoard ? (
                   <MainBoard board={selectedBoard} onBack={() => setSelectedBoard(null)} />
                 ) : (
-                  <BoardManager onSelectBoard={setSelectedBoard} />
+                  <BoardManager user={currentUser} onSelectBoard={setSelectedBoard} />
                 )
               ) : (
                 <Navigate to="/login" />

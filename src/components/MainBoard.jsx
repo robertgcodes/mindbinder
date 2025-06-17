@@ -457,6 +457,27 @@ const MainBoard = ({ board, onBack }) => {
     }
   };
 
+  // Add block handler for toolbar
+  const handleAddBlock = (type) => {
+    switch (type) {
+      case 'text':
+        addNewTextBlock();
+        break;
+      case 'rotating-quote':
+        addNewRotatingQuoteBlock();
+        break;
+      case 'image':
+        addNewImageBlock();
+        break;
+      case 'embed':
+        addNewEmbedBlock();
+        break;
+      // Add more cases for other block types as needed
+      default:
+        break;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -478,12 +499,9 @@ const MainBoard = ({ board, onBack }) => {
             <span>Back to Boards</span>
           </button>
           <Toolbar
-            onAddText={addNewTextBlock}
-            onAddRotatingQuote={addNewRotatingQuoteBlock}
-            onAddImage={addNewImageBlock}
-            onAddEmbed={addNewEmbedBlock}
-            onDelete={deleteSelectedBlock}
-            selectedId={selectedId}
+            onAddBlock={handleAddBlock}
+            onDeleteSelected={deleteSelectedBlock}
+            selectedBlock={selectedId}
           />
         </div>
         

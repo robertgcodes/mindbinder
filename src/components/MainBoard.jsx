@@ -503,7 +503,11 @@ const MainBoard = ({ board, onBack }) => {
           </Layer>
         </Stage>
 
-        {renderToolbar()}
+        {selectedId && (
+          <div className="absolute top-20 right-4 z-50">
+            {renderToolbar()}
+          </div>
+        )}
       </div>
     </div>
   );

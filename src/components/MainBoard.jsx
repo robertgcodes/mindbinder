@@ -48,7 +48,7 @@ const ROTATING_SAMPLE_QUOTES = [
   "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt"
 ];
 
-const MainBoard = ({ user, board, onBack }) => {
+const MainBoard = ({ board, onBack }) => {
   const { currentUser } = useAuth();
   const [blocks, setBlocks] = useState([]);
   const [selectedId, setSelectedId] = useState(null);

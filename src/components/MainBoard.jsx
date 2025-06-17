@@ -61,6 +61,7 @@ const MainBoard = ({ board, onBack }) => {
   const stageRef = useRef();
   const containerRef = useRef(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [showToolbar, setShowToolbar] = useState(false);
 
   // Load board data
   useEffect(() => {
@@ -424,7 +425,8 @@ const MainBoard = ({ board, onBack }) => {
 
     const commonProps = {
       block: blocks.find(b => b.id === selectedId),
-      onChange: (updates) => updateBlock(selectedId, updates)
+      onChange: (updates) => updateBlock(selectedId, updates),
+      onClose: () => setSelectedId(null)
     };
 
     switch (blocks.find(b => b.id === selectedId)?.type) {
@@ -433,7 +435,7 @@ const MainBoard = ({ board, onBack }) => {
       case 'rotating-quote':
         return <EnhancedRotatingQuoteToolbar {...commonProps} />;
       case 'image':
-        return <ImageToolbar {...commonProps} />;
+        return <EnhancedImageBlockToolbar {...commonProps} />;
       case 'embed':
         return <EmbedBlockToolbar {...commonProps} />;
       case 'link':

@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '../firebase';
-import { useAuth } from '../contexts/AuthContext.js';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import TextBlock from './TextBlock';
 import RotatingQuoteBlock from './RotatingQuoteBlock';
 import ImageBlock from './ImageBlock';

@@ -32,6 +32,7 @@ import TableToolbar from './TableToolbar';
 import CalendarToolbar from './CalendarToolbar';
 import RssFeedBlockToolbar from './RssFeedBlockToolbar';
 import LoadingSpinner from './LoadingSpinner';
+import TextBlockToolbar from './TextBlockToolbar';
 
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",
@@ -428,7 +429,7 @@ const MainBoard = ({ board, onBack }) => {
 
     switch (blocks.find(b => b.id === selectedId)?.type) {
       case 'text':
-        return <BlockToolbar {...commonProps} />;
+        return <TextBlockToolbar {...commonProps} />;
       case 'rotating-quote':
         return <EnhancedRotatingQuoteToolbar {...commonProps} />;
       case 'image':

@@ -1,17 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Stage, Layer } from 'react-konva';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { Stage, Layer, Group, Text, Image, Rect } from 'react-konva';
+import Konva from 'konva';
+import { ArrowLeft } from 'lucide-react';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import TextBlock from './TextBlock';
 import RotatingQuoteBlock from './RotatingQuoteBlock';
 import ImageBlock from './ImageBlock';
 import EmbedBlock from './EmbedBlock';
+import LinkBlock from './LinkBlock';
+import DocumentBlock from './DocumentBlock';
+import CodeBlock from './CodeBlock';
+import ListBlock from './ListBlock';
+import TableBlock from './TableBlock';
+import CalendarBlock from './CalendarBlock';
+import RssFeedBlock from './RssFeedBlock';
 import Toolbar from './Toolbar';
+import Navigation from './Navigation';
 import EnhancedRotatingQuoteToolbar from './EnhancedRotatingQuoteToolbar';
 import EnhancedImageBlockToolbar from './EnhancedImageBlockToolbar';
 import EmbedBlockToolbar from './EmbedBlockToolbar';
-import { LogOut, Plus, RotateCw, Type, Image, Globe } from 'lucide-react';
+import BlockToolbar from './BlockToolbar';
+import ImageToolbar from './ImageToolbar';
+import LinkToolbar from './LinkToolbar';
+import DocumentToolbar from './DocumentToolbar';
+import CodeToolbar from './CodeToolbar';
+import ListToolbar from './ListToolbar';
+import TableToolbar from './TableToolbar';
+import CalendarToolbar from './CalendarToolbar';
+import RssFeedBlockToolbar from './RssFeedBlockToolbar';
+import LoadingSpinner from './LoadingSpinner';
 
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",
@@ -28,7 +48,8 @@ const ROTATING_SAMPLE_QUOTES = [
   "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt"
 ];
 
-const MainBoard = ({ user }) => {
+const MainBoard = ({ user, board, onBack }) => {
+  const { currentUser } = useAuth();
   const [blocks, setBlocks] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
@@ -37,21 +58,19 @@ const MainBoard = ({ user }) => {
   const [isDraggingStage, setIsDraggingStage] = useState(false);
   const [isDraggingBlock, setIsDraggingBlock] = useState(false);
   const stageRef = useRef();
+  const containerRef = useRef(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Load user's board data
+  // Load board data
   useEffect(() => {
     const loadBoard = async () => {
       try {
-        const docRef = doc(db, 'boards', user.uid);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setBlocks(data.blocks || []);
-          setStagePos(data.stagePos || { x: 0, y: 0 });
-          setStageScale(data.stageScale || 1);
+        if (board.blocks && board.blocks.length > 0) {
+          setBlocks(board.blocks);
+          setStagePos(board.stagePos || { x: 0, y: 0 });
+          setStageScale(board.stageScale || 1);
         } else {
-          // Create initial sample blocks for new users
+          // Create initial sample blocks for new boards
           const initialBlocks = [
             // Regular text blocks
             {
@@ -155,17 +174,18 @@ const MainBoard = ({ user }) => {
     };
 
     loadBoard();
-  }, [user.uid]);
+  }, [board]);
 
   // Save board data
   const saveBoard = async () => {
     try {
-      const docRef = doc(db, 'boards', user.uid);
-      await setDoc(docRef, {
+      const docRef = doc(db, 'boards', board.id);
+      await updateDoc(docRef, {
+        ...board,
         blocks,
         stagePos,
         stageScale,
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       });
     } catch (error) {
       console.error('Error saving board:', error);
@@ -178,7 +198,7 @@ const MainBoard = ({ user }) => {
       const timer = setTimeout(saveBoard, 2000);
       return () => clearTimeout(timer);
     }
-  }, [blocks, stagePos, stageScale, loading]);
+  }, [blocks, stagePos, stageScale, loading, board]);
 
   const addNewTextBlock = () => {
     const newBlock = {
@@ -355,175 +375,212 @@ const MainBoard = ({ user }) => {
 
   const selectedBlock = blocks.find(b => b.id === selectedId);
 
+  const renderBlock = (block) => {
+    const commonProps = {
+      key: block.id,
+      x: block.x,
+      y: block.y,
+      width: block.width,
+      height: block.height,
+      rotation: block.rotation,
+      isSelected: selectedId === block.id,
+      onSelect: () => setSelectedId(block.id),
+      onChange: (updates) => updateBlock(block.id, updates),
+      onDragStart: handleBlockDragStart,
+      onDragEnd: handleBlockDragEnd
+    };
+
+    switch (block.type) {
+      case 'text':
+        return <TextBlock {...commonProps} {...block} />;
+      case 'rotating-quote':
+        return <RotatingQuoteBlock {...commonProps} {...block} />;
+      case 'image':
+        return <ImageBlock {...commonProps} {...block} />;
+      case 'embed':
+        return <EmbedBlock {...commonProps} {...block} />;
+      case 'link':
+        return <LinkBlock {...commonProps} {...block} />;
+      case 'document':
+        return <DocumentBlock {...commonProps} {...block} />;
+      case 'code':
+        return <CodeBlock {...commonProps} {...block} />;
+      case 'list':
+        return <ListBlock {...commonProps} {...block} />;
+      case 'table':
+        return <TableBlock {...commonProps} {...block} />;
+      case 'calendar':
+        return <CalendarBlock {...commonProps} {...block} />;
+      case 'rss':
+        return <RssFeedBlock {...commonProps} {...block} />;
+      default:
+        return null;
+    }
+  };
+
+  const renderToolbar = () => {
+    if (!selectedId) return null;
+
+    const commonProps = {
+      block: blocks.find(b => b.id === selectedId),
+      onChange: (updates) => updateBlock(selectedId, updates)
+    };
+
+    switch (blocks.find(b => b.id === selectedId)?.type) {
+      case 'text':
+        return <BlockToolbar {...commonProps} />;
+      case 'rotating-quote':
+        return <EnhancedRotatingQuoteToolbar {...commonProps} />;
+      case 'image':
+        return <ImageToolbar {...commonProps} />;
+      case 'embed':
+        return <EmbedBlockToolbar {...commonProps} />;
+      case 'link':
+        return <LinkToolbar {...commonProps} />;
+      case 'document':
+        return <DocumentToolbar {...commonProps} />;
+      case 'code':
+        return <CodeToolbar {...commonProps} />;
+      case 'list':
+        return <ListToolbar {...commonProps} />;
+      case 'table':
+        return <TableToolbar {...commonProps} />;
+      case 'calendar':
+        return <CalendarToolbar {...commonProps} />;
+      case 'rss':
+        return <RssFeedBlockToolbar {...commonProps} />;
+      default:
+        return null;
+    }
+  };
+
   if (loading) {
     return (
-      <div className="w-full h-full bg-dark-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      <div className="flex items-center justify-center h-screen">
+        <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full bg-dark-900 relative">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-dark-800/90 backdrop-blur-sm border-b border-dark-700">
-        <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold text-white">MindBinder</h1>
-            <span className="text-sm text-gray-400">Welcome, {user.email}</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={addNewTextBlock}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Type className="h-4 w-4" />
-              <span>Text Block</span>
-            </button>
-            <button
-              onClick={addNewRotatingQuoteBlock}
-              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <RotateCw className="h-4 w-4" />
-              <span>Quote Rotator</span>
-            </button>
-            <button
-              onClick={addNewImageBlock}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Image className="h-4 w-4" />
-              <span>Image Block</span>
-            </button>
-            <button
-              onClick={addNewEmbedBlock}
-              className="flex items-center space-x-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Globe className="h-4 w-4" />
-              <span>Embed Block</span>
-            </button>
-            <button
-              onClick={() => signOut(auth)}
-              className="flex items-center space-x-2 bg-dark-700 hover:bg-dark-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
-            </button>
-          </div>
+    <div className="flex flex-col h-screen bg-dark-900">
+      <Navigation />
+      <div className="flex-1 relative">
+        <div className="absolute top-4 left-4 z-10 flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="flex items-center space-x-2 px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Boards</span>
+          </button>
+          <Toolbar
+            onAddText={addNewTextBlock}
+            onAddRotatingQuote={addNewRotatingQuoteBlock}
+            onAddImage={addNewImageBlock}
+            onAddEmbed={addNewEmbedBlock}
+            onDelete={deleteSelectedBlock}
+            selectedId={selectedId}
+          />
         </div>
-      </div>
-
-      {/* Conditional Toolbar based on block type */}
-      {selectedBlock && (
-        <>
-          {selectedBlock.type === 'rotating-quote' ? (
-            <EnhancedRotatingQuoteToolbar
-              selectedBlock={selectedBlock}
-              onUpdate={(updates) => updateBlock(selectedId, updates)}
-              onDelete={deleteSelectedBlock}
-            />
-          ) : selectedBlock.type === 'image' ? (
-            <EnhancedImageBlockToolbar
-              selectedBlock={selectedBlock}
-              onUpdate={(updates) => updateBlock(selectedId, updates)}
-              onDelete={deleteSelectedBlock}
-            />
-          ) : selectedBlock.type === 'embed' ? (
-            <EmbedBlockToolbar
-              selectedBlock={selectedBlock}
-              onUpdate={(updates) => updateBlock(selectedId, updates)}
-              onDelete={deleteSelectedBlock}
-            />
-          ) : (
-            <Toolbar
-              selectedBlock={selectedBlock}
-              onUpdate={(updates) => updateBlock(selectedId, updates)}
-              onDelete={deleteSelectedBlock}
-            />
-          )}
-        </>
-      )}
-
-      {/* Canvas */}
-      <div className="pt-16">
+        
         <Stage
           ref={stageRef}
           width={window.innerWidth}
-          height={window.innerHeight - 64}
-          x={stagePos.x}
-          y={stagePos.y}
-          scaleX={stageScale}
-          scaleY={stageScale}
+          height={window.innerHeight - 64} // Subtract navigation height
           draggable={!isDraggingBlock}
           onDragStart={handleStageDragStart}
           onDragEnd={handleStageDragEnd}
           onWheel={handleWheel}
           onClick={handleStageClick}
+          x={stagePos.x}
+          y={stagePos.y}
+          scaleX={stageScale}
+          scaleY={stageScale}
         >
           <Layer>
             {blocks.map((block) => {
-              if (block.type === 'rotating-quote') {
-                return (
-                  <RotatingQuoteBlock
-                    key={block.id}
-                    {...block}
-                    isSelected={block.id === selectedId}
-                    onSelect={() => setSelectedId(block.id)}
-                    onChange={(updates) => updateBlock(block.id, updates)}
-                    onDragStart={handleBlockDragStart}
-                    onDragEnd={handleBlockDragEnd}
-                  />
-                );
-              } else if (block.type === 'image') {
-                return (
-                  <ImageBlock
-                    key={block.id}
-                    {...block}
-                    isSelected={block.id === selectedId}
-                    onSelect={() => setSelectedId(block.id)}
-                    onChange={(updates) => updateBlock(block.id, updates)}
-                    onDragStart={handleBlockDragStart}
-                    onDragEnd={handleBlockDragEnd}
-                  />
-                );
-              } else if (block.type === 'embed') {
-                return (
-                  <EmbedBlock
-                    key={block.id}
-                    {...block}
-                    isSelected={block.id === selectedId}
-                    onSelect={() => setSelectedId(block.id)}
-                    onChange={(updates) => updateBlock(block.id, updates)}
-                    onDragStart={handleBlockDragStart}
-                    onDragEnd={handleBlockDragEnd}
-                  />
-                );
-              } else {
-                return (
-                  <TextBlock
-                    key={block.id}
-                    {...block}
-                    isSelected={block.id === selectedId}
-                    onSelect={() => setSelectedId(block.id)}
-                    onChange={(updates) => updateBlock(block.id, updates)}
-                    onDragStart={handleBlockDragStart}
-                    onDragEnd={handleBlockDragEnd}
-                  />
-                );
+              const isSelected = block.id === selectedId;
+              
+              switch (block.type) {
+                case 'text':
+                  return (
+                    <TextBlock
+                      key={block.id}
+                      {...block}
+                      isSelected={isSelected}
+                      onSelect={() => setSelectedId(block.id)}
+                      onChange={(newAttrs) => updateBlock(block.id, newAttrs)}
+                      onDragStart={handleBlockDragStart}
+                      onDragEnd={handleBlockDragEnd}
+                    />
+                  );
+                case 'rotating-quote':
+                  return (
+                    <RotatingQuoteBlock
+                      key={block.id}
+                      {...block}
+                      isSelected={isSelected}
+                      onSelect={() => setSelectedId(block.id)}
+                      onChange={(newAttrs) => updateBlock(block.id, newAttrs)}
+                      onDragStart={handleBlockDragStart}
+                      onDragEnd={handleBlockDragEnd}
+                    />
+                  );
+                case 'image':
+                  return (
+                    <ImageBlock
+                      key={block.id}
+                      {...block}
+                      isSelected={isSelected}
+                      onSelect={() => setSelectedId(block.id)}
+                      onChange={(newAttrs) => updateBlock(block.id, newAttrs)}
+                      onDragStart={handleBlockDragStart}
+                      onDragEnd={handleBlockDragEnd}
+                    />
+                  );
+                case 'embed':
+                  return (
+                    <EmbedBlock
+                      key={block.id}
+                      {...block}
+                      isSelected={isSelected}
+                      onSelect={() => setSelectedId(block.id)}
+                      onChange={(newAttrs) => updateBlock(block.id, newAttrs)}
+                      onDragStart={handleBlockDragStart}
+                      onDragEnd={handleBlockDragEnd}
+                    />
+                  );
+                default:
+                  return null;
               }
             })}
           </Layer>
         </Stage>
-      </div>
 
-      {/* Instructions overlay */}
-      {blocks.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-center text-gray-500">
-            <p className="text-lg mb-2">Welcome to your MindBinder</p>
-            <p>Add text blocks, rotating quotes, images, or embeds to start building your inspiration board</p>
+        {selectedId && (
+          <div className="absolute top-4 right-4 z-10">
+            {blocks.find(b => b.id === selectedId)?.type === 'rotating-quote' && (
+              <EnhancedRotatingQuoteToolbar
+                block={blocks.find(b => b.id === selectedId)}
+                onChange={(updates) => updateBlock(selectedId, updates)}
+              />
+            )}
+            {blocks.find(b => b.id === selectedId)?.type === 'image' && (
+              <EnhancedImageBlockToolbar
+                block={blocks.find(b => b.id === selectedId)}
+                onChange={(updates) => updateBlock(selectedId, updates)}
+              />
+            )}
+            {blocks.find(b => b.id === selectedId)?.type === 'embed' && (
+              <EmbedBlockToolbar
+                block={blocks.find(b => b.id === selectedId)}
+                onChange={(updates) => updateBlock(selectedId, updates)}
+              />
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

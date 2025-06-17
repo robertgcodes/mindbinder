@@ -478,6 +478,10 @@ const MainBoard = ({ board, onBack }) => {
     }
   };
 
+  useEffect(() => {
+    console.log('Selected block id:', selectedId);
+  }, [selectedId]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">

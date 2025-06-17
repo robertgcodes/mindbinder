@@ -123,6 +123,7 @@ const ImageBlock = ({
   };
 
   const handleClick = (e) => {
+    console.log('ImageBlock clicked:', id);
     if (onSelect) {
       onSelect();
     }

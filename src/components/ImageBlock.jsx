@@ -20,7 +20,8 @@ const ImageBlock = ({
   onSelect,
   onChange,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  onDoubleClick
 }) => {
   const groupRef = useRef();
   const transformerRef = useRef();
@@ -61,16 +62,18 @@ const ImageBlock = ({
     }
   }, [images.length, currentIndex, onChange]);
 
-  // Load images
+  // Load images - reset loadedImages when images array changes
   useEffect(() => {
+    const newLoadedImages = {};
+    
     images.forEach((imageUrl, index) => {
-      if (imageUrl && !loadedImages[imageUrl]) {
+      if (imageUrl) {
         const img = new window.Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
           setLoadedImages(prev => ({
             ...prev,
-            [imageUrl]: img
+            [index]: img
           }));
         };
         img.onerror = () => {
@@ -79,7 +82,18 @@ const ImageBlock = ({
         img.src = imageUrl;
       }
     });
-  }, [images, loadedImages]);
+    
+    // Clear loadedImages for indices that no longer exist
+    setLoadedImages(prev => {
+      const cleaned = {};
+      for (let i = 0; i < images.length; i++) {
+        if (prev[i]) {
+          cleaned[i] = prev[i];
+        }
+      }
+      return cleaned;
+    });
+  }, [images]);
 
   useEffect(() => {
     if (isSelected && transformerRef.current && groupRef.current) {
@@ -130,24 +144,12 @@ const ImageBlock = ({
   };
 
   const handleDoubleClick = (e) => {
-    e.cancelBubble = true;
-    e.evt.stopPropagation();
-    
-    // Double click - toggle play/pause or go to next image
-    if (images.length > 1) {
-      if (autoRotate) {
-        // If auto-rotating, toggle play/pause
-        const newIsPlaying = !isPlaying;
-        setIsPlaying(newIsPlaying);
-        onChange({ autoRotate: newIsPlaying });
-      } else {
-        // If not auto-rotating, go to next image
-        const nextIndex = (currentIndex + 1) % images.length;
-        setCurrentIndex(nextIndex);
-        onChange({ currentImageIndex: nextIndex });
-      }
+    if (onDoubleClick) {
+      onDoubleClick();
     }
   };
+
+  
 
   // Get corner radius based on frame style
   const getCornerRadius = () => {
@@ -163,7 +165,7 @@ const ImageBlock = ({
   };
 
   const currentImage = images[currentIndex];
-  const loadedImage = currentImage ? loadedImages[currentImage] : null;
+  const loadedImage = loadedImages[currentIndex];
 
   // Calculate image dimensions based on display mode
   const getImageDimensions = () => {
@@ -236,7 +238,7 @@ const ImageBlock = ({
         width={width}
         height={height}
         rotation={rotation}
-        draggable={!isSelected}
+        draggable={true}
         onClick={handleClick}
         onDblClick={handleDoubleClick}
         onDragStart={handleDragStart}

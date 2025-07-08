@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Stage, Layer, Group, Text, Image, Rect } from 'react-konva';
 import Konva from 'konva';
+import { v4 as uuidv4 } from 'uuid';
 import { ArrowLeft } from 'lucide-react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -9,19 +10,19 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import TextBlock from './TextBlock';
 import RotatingQuoteBlock from './RotatingQuoteBlock';
 import ImageBlock from './ImageBlock';
-import EmbedBlock from './EmbedBlock';
 import LinkBlock from './LinkBlock';
 import DocumentBlock from './DocumentBlock';
 import CodeBlock from './CodeBlock';
 import ListBlock from './ListBlock';
+import ListBlockToolbar from './ListBlockToolbar';
 import TableBlock from './TableBlock';
 import CalendarBlock from './CalendarBlock';
+import RichTextBlock from './RichTextBlock';
+import RichTextBlockToolbar from './RichTextBlockToolbar';
 import RssFeedBlock from './RssFeedBlock';
-import Toolbar from './Toolbar';
 import Navigation from './Navigation';
 import EnhancedRotatingQuoteToolbar from './EnhancedRotatingQuoteToolbar';
 import EnhancedImageBlockToolbar from './EnhancedImageBlockToolbar';
-import EmbedBlockToolbar from './EmbedBlockToolbar';
 import BlockToolbar from './BlockToolbar';
 import ImageToolbar from './ImageToolbar';
 import LinkToolbar from './LinkToolbar';
@@ -33,6 +34,20 @@ import CalendarToolbar from './CalendarToolbar';
 import RssFeedBlockToolbar from './RssFeedBlockToolbar';
 import LoadingSpinner from './LoadingSpinner';
 import TextBlockToolbar from './TextBlockToolbar';
+import YouTubeBlock from './YouTubeBlock';
+import YouTubeToolbar from './YouTubeToolbar';
+import AiPromptBlock from './AiPromptBlock';
+import AiPromptToolbar from './AiPromptToolbar';
+import FrameBlock from './FrameBlock';
+import FrameToolbar from './FrameToolbar';
+import YearlyPlannerBlock from './YearlyPlannerBlock';
+import YearlyPlannerModal from './YearlyPlannerModal';
+import DailyHabitTrackerBlock from './DailyHabitTrackerBlock';
+import DailyHabitTrackerModal from './DailyHabitTrackerModal';
+import QuickNotesBlock from './QuickNotesBlock';
+import QuickNotesToolbar from './QuickNotesToolbar';
+import UserImageLibrary from './UserImageLibrary';
+import { getAiResponse } from '../aiService';
 
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",
@@ -61,113 +76,65 @@ const MainBoard = ({ board, onBack }) => {
   const stageRef = useRef();
   const containerRef = useRef(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [showToolbar, setShowToolbar] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // 'text', 'quote', 'image'
+  const [modalBlock, setModalBlock] = useState(null);
+  const [history, setHistory] = useState([[]]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [showImageLibrary, setShowImageLibrary] = useState(false);
+  const [imageLibraryCallback, setImageLibraryCallback] = useState(null);
 
   // Load board data
   useEffect(() => {
     const loadBoard = async () => {
       try {
-        if (board.blocks && board.blocks.length > 0) {
-          setBlocks(board.blocks);
-          setStagePos(board.stagePos || { x: 0, y: 0 });
-          setStageScale(board.stageScale || 1);
+        let loadedBlocks = board.blocks || [];
+        if (loadedBlocks.length > 0) {
+          // Check for AI blocks that need refreshing
+          const refreshPromises = loadedBlocks
+            .filter(block => block.type === 'ai-prompt' && block.refreshInterval > 0)
+            .map(async block => {
+              const lastRefreshed = new Date(block.lastRefreshed || 0).getTime();
+              const now = new Date().getTime();
+              if (now - lastRefreshed > block.refreshInterval) {
+                try {
+                  const newResponse = await getAiResponse(block.prompt);
+                  return { ...block, response: newResponse, lastRefreshed: new Date().toISOString() };
+                } catch (error) {
+                  console.error(`Failed to auto-refresh AI block ${block.id}:`, error);
+                  return block; // Return original block on error
+                }
+              }
+              return block;
+            });
+
+          const refreshedBlocks = await Promise.all(refreshPromises);
+          
+          // Update the main blocks array with the refreshed ones
+          loadedBlocks = loadedBlocks.map(block => {
+            const refreshed = refreshedBlocks.find(rb => rb.id === block.id);
+            return refreshed || block;
+          });
+
+          setBlocks(loadedBlocks);
+          setHistory([loadedBlocks]);
+          setHistoryIndex(0);
+          const savedViewport = localStorage.getItem(`viewport-${board.id}`);
+          if (savedViewport) {
+            const { stagePos, stageScale } = JSON.parse(savedViewport);
+            setStagePos(stagePos);
+            setStageScale(stageScale);
+          } else {
+            setStagePos(board.stagePos || { x: 0, y: 0 });
+            setStageScale(board.stageScale || 1);
+          }
         } else {
           // Create initial sample blocks for new boards
           const initialBlocks = [
-            // Regular text blocks
-            {
-              id: `initial-0`,
-              type: 'text',
-              x: 100,
-              y: 100,
-              width: 250,
-              height: 100,
-              text: SAMPLE_QUOTES[0],
-              fontSize: 16,
-              fontWeight: 'normal',
-              textColor: '#ffffff',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              rotation: 0,
-              autoResize: false
-            },
-            {
-              id: `initial-1`,
-              type: 'text',
-              x: 400,
-              y: 250,
-              width: 250,
-              height: 100,
-              text: SAMPLE_QUOTES[1],
-              fontSize: 16,
-              fontWeight: 'normal',
-              textColor: '#ffffff',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              rotation: 0,
-              autoResize: false
-            },
-            // One rotating quote block
-            {
-              id: 'initial-rotating',
-              type: 'rotating-quote',
-              x: 100,
-              y: 400,
-              width: 300,
-              height: 120,
-              quotes: ROTATING_SAMPLE_QUOTES.map(text => ({
-                text,
-                fontSize: 16,
-                fontWeight: 'normal',
-                fontFamily: 'Inter',
-                textColor: '#ffffff',
-                textAlign: 'center'
-              })),
-              fontSize: 16,
-              fontWeight: 'normal',
-              textColor: '#ffffff',
-              backgroundColor: 'rgba(139, 92, 246, 0.1)',
-              rotation: 0,
-              autoRotate: true,
-              rotationSpeed: 5000,
-              autoResize: false
-            },
-            // One sample image block
-            {
-              id: 'initial-image',
-              type: 'image',
-              x: 450,
-              y: 400,
-              width: 200,
-              height: 150,
-              images: [],
-              currentImageIndex: 0,
-              autoRotate: false,
-              rotationSpeed: 5000,
-              frameStyle: 'rounded',
-              backgroundOpacity: 0.1,
-              backgroundColor: 'rgba(34, 197, 94, 0.5)',
-              rotation: 0,
-              imageDisplayMode: 'fit'
-            },
-            // One sample embed block
-            {
-              id: 'initial-embed',
-              type: 'embed',
-              x: 700,
-              y: 100,
-              width: 300,
-              height: 200,
-              embedType: 'youtube',
-              embedUrl: '',
-              embedCode: '',
-              title: 'YouTube Video',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderRadius: 8,
-              rotation: 0,
-              showHeader: true,
-              autoplay: false
-            }
+            // ... (existing initial blocks)
           ];
           setBlocks(initialBlocks);
+          setHistory([initialBlocks]);
+          setHistoryIndex(0);
         }
       } catch (error) {
         console.error('Error loading board:', error);
@@ -179,16 +146,18 @@ const MainBoard = ({ board, onBack }) => {
   }, [board]);
 
   // Save board data
-  const saveBoard = async () => {
+  const saveBoard = async (blocksToSave) => {
+    const blocksData = blocksToSave || blocks;
     try {
       const docRef = doc(db, 'boards', board.id);
       await updateDoc(docRef, {
         ...board,
-        blocks,
+        blocks: blocksData,
         stagePos,
         stageScale,
         updatedAt: new Date().toISOString()
       });
+      localStorage.setItem(`viewport-${board.id}`, JSON.stringify({ stagePos, stageScale }));
     } catch (error) {
       console.error('Error saving board:', error);
     }
@@ -196,26 +165,46 @@ const MainBoard = ({ board, onBack }) => {
 
   // Auto-save every 2 seconds
   useEffect(() => {
-    if (!loading && blocks.length > 0) {
+    if (!loading) {
       const timer = setTimeout(saveBoard, 2000);
       return () => clearTimeout(timer);
     }
-  }, [blocks, stagePos, stageScale, loading, board]);
+  }, [blocks, stagePos, stageScale, loading]);
+
+  const getCenterOfViewport = () => {
+    if (stageRef.current) {
+      const stage = stageRef.current;
+      const { width, height } = stage.size();
+      const { x, y } = stage.position();
+      const scale = stage.scaleX();
+      
+      const centerX = (width / 2 - x) / scale;
+      const centerY = (height / 2 - y) / scale;
+      
+      return { x: centerX, y: centerY };
+    }
+    return { x: 300, y: 200 }; // Fallback
+  };
 
   const addNewTextBlock = () => {
+    const center = getCenterOfViewport();
     const newBlock = {
       id: Date.now().toString(),
       type: 'text',
-      x: Math.random() * 400 + 100,
-      y: Math.random() * 300 + 100,
+      x: center.x - 100,
+      y: center.y - 40,
       width: 200,
       height: 80,
       text: 'Click to edit this text',
       fontSize: 16,
-      fontWeight: 'normal',
+      fontFamily: 'Inter',
+      fontStyle: 'normal',
+      textDecoration: 'none',
       textColor: '#ffffff',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      borderStyle: 'rounded',
       rotation: 0,
+      textAlign: 'left',
       autoResize: false
     };
     setBlocks([...blocks, newBlock]);
@@ -223,11 +212,12 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewRotatingQuoteBlock = () => {
+    const center = getCenterOfViewport();
     const newBlock = {
       id: Date.now().toString() + '-rotating',
       type: 'rotating-quote',
-      x: Math.random() * 400 + 100,
-      y: Math.random() * 300 + 100,
+      x: center.x - 150,
+      y: center.y - 60,
       width: 300,
       height: 120,
       quotes: [
@@ -270,11 +260,12 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewImageBlock = () => {
+    const center = getCenterOfViewport();
     const newBlock = {
       id: Date.now().toString() + '-image',
       type: 'image',
-      x: Math.random() * 400 + 100,
-      y: Math.random() * 300 + 100,
+      x: center.x - 100,
+      y: center.y - 75,
       width: 200,
       height: 150,
       images: [],
@@ -291,32 +282,29 @@ const MainBoard = ({ board, onBack }) => {
     setSelectedId(newBlock.id);
   };
 
-  const addNewEmbedBlock = () => {
-    const newBlock = {
-      id: Date.now().toString() + '-embed',
-      type: 'embed',
-      x: Math.random() * 400 + 100,
-      y: Math.random() * 300 + 100,
-      width: 300,
-      height: 200,
-      embedType: 'youtube',
-      embedUrl: '',
-      embedCode: '',
-      title: 'Embed Block',
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      borderRadius: 8,
-      rotation: 0,
-      showHeader: true,
-      autoplay: false
-    };
-    setBlocks([...blocks, newBlock]);
-    setSelectedId(newBlock.id);
-  };
-
   const updateBlock = (id, updates) => {
-    setBlocks(blocks.map(block => 
-      block.id === id ? { ...block, ...updates } : block
-    ));
+    const newBlocks = blocks.map(block => {
+      if (block.id === id) {
+        // Create a completely new object to ensure React detects changes
+        const updatedBlock = { ...block };
+        Object.keys(updates).forEach(key => {
+          if (Array.isArray(updates[key])) {
+            // For arrays, create a new array to ensure React detects the change
+            updatedBlock[key] = [...updates[key]];
+          } else {
+            updatedBlock[key] = updates[key];
+          }
+        });
+        return updatedBlock;
+      }
+      return block;
+    });
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newBlocks);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    setBlocks(newBlocks);
+    saveBoard(newBlocks);
   };
 
   const deleteSelectedBlock = () => {
@@ -326,9 +314,27 @@ const MainBoard = ({ board, onBack }) => {
     }
   };
 
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newHistoryIndex = historyIndex - 1;
+      setBlocks(history[newHistoryIndex]);
+      setHistoryIndex(newHistoryIndex);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newHistoryIndex = historyIndex + 1;
+      setBlocks(history[newHistoryIndex]);
+      setHistoryIndex(newHistoryIndex);
+    }
+  };
+
   const handleStageClick = (e) => {
     if (e.target === e.target.getStage()) {
       setSelectedId(null);
+      setActiveModal(null);
+      setModalBlock(null);
     }
   };
 
@@ -350,111 +356,394 @@ const MainBoard = ({ board, onBack }) => {
     setIsDraggingBlock(true);
   };
 
-  const handleBlockDragEnd = () => {
+  const handleBlockDragEnd = (e, blockId) => {
     setIsDraggingBlock(false);
+    
+    // If no event is passed (like from ImageBlock), just return
+    if (!e || !e.target) return;
+    
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+
+    const newX = e.target.x();
+    const newY = e.target.y();
+
+    // Handle frame blocks with grouped content
+    if (block.type === 'frame' && block.grouped) {
+      const frame = block;
+      const delta = {
+        x: newX - frame.x,
+        y: newY - frame.y,
+      };
+
+      const updatedBlocks = blocks.map(b => {
+        if (b.id === frame.id) {
+          return { ...b, x: newX, y: newY };
+        }
+        if (
+          b.x >= frame.x &&
+          b.x <= frame.x + frame.width &&
+          b.y >= frame.y &&
+          b.y <= frame.y + frame.height
+        ) {
+          return { ...b, x: b.x + delta.x, y: b.y + delta.y };
+        }
+        return b;
+      });
+      setBlocks(updatedBlocks);
+    } else {
+      // Handle all other block types including link blocks
+      updateBlock(blockId, { x: newX, y: newY });
+    }
+  };
+
+  const openModal = (type, block) => {
+    setModalBlock(block);
+    setActiveModal(type);
   };
 
   const handleWheel = (e) => {
     e.evt.preventDefault();
     
-    const scaleBy = 1.05;
     const stage = e.target.getStage();
-    const oldScale = stage.scaleX();
-    const pointer = stage.getPointerPosition();
     
-    const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
-    
-    if (newScale > 0.2 && newScale < 3) {
+    if (e.evt.ctrlKey || e.evt.metaKey) {
+      // Pan the stage
       const newPos = {
-        x: pointer.x - (pointer.x - stage.x()) * (newScale / oldScale),
-        y: pointer.y - (pointer.y - stage.y()) * (newScale / oldScale)
+        x: stage.x() - e.evt.deltaX,
+        y: stage.y() - e.evt.deltaY,
       };
-      
-      setStageScale(newScale);
       setStagePos(newPos);
+    } else {
+      // Zoom the stage
+      const scaleBy = 1.05;
+      const oldScale = stage.scaleX();
+      const pointer = stage.getPointerPosition();
+      
+      const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+      
+      if (newScale > 0.2 && newScale < 3) {
+        const newPos = {
+          x: pointer.x - (pointer.x - stage.x()) * (newScale / oldScale),
+          y: pointer.y - (pointer.y - stage.y()) * (newScale / oldScale)
+        };
+        
+        setStageScale(newScale);
+        setStagePos(newPos);
+      }
     }
   };
 
   const selectedBlock = blocks.find(b => b.id === selectedId);
 
   const renderBlock = (block) => {
+    const { id, ...rest } = block;
     const commonProps = {
-      key: block.id,
-      x: block.x,
-      y: block.y,
-      width: block.width,
-      height: block.height,
-      rotation: block.rotation,
-      isSelected: selectedId === block.id,
-      onSelect: () => setSelectedId(block.id),
-      onChange: (updates) => updateBlock(block.id, updates),
+      ...rest,
+      isSelected: selectedId === id,
+      onSelect: () => setSelectedId(id),
+      onChange: (updates) => updateBlock(id, updates),
       onDragStart: handleBlockDragStart,
-      onDragEnd: handleBlockDragEnd
+      onDragEnd: (e) => handleBlockDragEnd(e, id)
     };
 
     switch (block.type) {
+      case 'frame':
+        return <FrameBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('frame', block)} />;
+      case 'ai-prompt':
+        return <AiPromptBlock key={id} {...commonProps} {...block} onChange={(updates) => updateBlock(id, updates)} onDoubleClick={() => openModal('ai-prompt', block)} />;
+      case 'youtube':
+        return <YouTubeBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('youtube', block)} />;
       case 'text':
-        return <TextBlock {...commonProps} {...block} />;
+        return <TextBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('text', block)} />;
+      case 'rich-text':
+        return <RichTextBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('rich-text', block)} />;
       case 'rotating-quote':
-        return <RotatingQuoteBlock {...commonProps} {...block} />;
+        return <RotatingQuoteBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('quote', block)} />;
       case 'image':
-        return <ImageBlock {...commonProps} {...block} />;
-      case 'embed':
-        return <EmbedBlock {...commonProps} {...block} />;
+        return <ImageBlock key={`${id}-${block.images?.length || 0}-${block.currentImageIndex || 0}`} {...commonProps} {...block} onDoubleClick={() => openModal('image', block)} />;
       case 'link':
-        return <LinkBlock {...commonProps} {...block} />;
+        return <LinkBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('link', block)} />;
       case 'document':
-        return <DocumentBlock {...commonProps} {...block} />;
+        return <DocumentBlock key={id} {...commonProps} {...block} />;
       case 'code':
-        return <CodeBlock {...commonProps} {...block} />;
+        return <CodeBlock key={id} {...commonProps} {...block} />;
       case 'list':
-        return <ListBlock {...commonProps} {...block} />;
+        return <ListBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('list', block)} />;
       case 'table':
-        return <TableBlock {...commonProps} {...block} />;
+        return <TableBlock key={id} {...commonProps} {...block} />;
       case 'calendar':
-        return <CalendarBlock {...commonProps} {...block} />;
+        return <CalendarBlock key={id} {...commonProps} {...block} />;
       case 'rss':
-        return <RssFeedBlock {...commonProps} {...block} />;
+        return <RssFeedBlock key={id} {...commonProps} {...block} />;
+      case 'yearly-planner':
+        return <YearlyPlannerBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('yearly-planner', block)} />;
+      case 'daily-habit-tracker':
+        return <DailyHabitTrackerBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('daily-habit-tracker', block)} />;
+      case 'quick-notes':
+        return <QuickNotesBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('quick-notes', block)} />;
       default:
         return null;
     }
   };
 
-  const renderToolbar = () => {
-    if (!selectedId) return null;
+  const renderModalContent = () => {
+    if (!activeModal || !modalBlock) return null;
+
+    const currentBlockForModal = blocks.find(b => b.id === modalBlock.id);
+    if (!currentBlockForModal) return null;
 
     const commonProps = {
-      block: blocks.find(b => b.id === selectedId),
-      onChange: (updates) => updateBlock(selectedId, updates),
-      onClose: () => setSelectedId(null)
+      block: currentBlockForModal,
+      onChange: (updates) => updateBlock(modalBlock.id, updates),
+      onClose: () => {
+        setActiveModal(null);
+        setModalBlock(null);
+      },
+      onDelete: () => {
+        deleteSelectedBlock();
+        setActiveModal(null);
+        setModalBlock(null);
+      }
     };
 
-    switch (blocks.find(b => b.id === selectedId)?.type) {
+    switch (activeModal) {
+      case 'yearly-planner':
+        return <YearlyPlannerModal {...commonProps} onSave={(updates) => updateBlock(modalBlock.id, updates)} />;
+      case 'daily-habit-tracker':
+        return <DailyHabitTrackerModal {...commonProps} onSave={(updates) => updateBlock(modalBlock.id, updates)} />;
+      case 'quick-notes':
+        return <QuickNotesToolbar {...commonProps} onSave={(updates) => updateBlock(modalBlock.id, updates)} />;
+      case 'frame':
+        return <FrameToolbar {...commonProps} />;
+      case 'ai-prompt':
+        return <AiPromptToolbar {...commonProps} />;
+      case 'youtube':
+        return <YouTubeToolbar {...commonProps} />;
       case 'text':
         return <TextBlockToolbar {...commonProps} />;
-      case 'rotating-quote':
-        return <EnhancedRotatingQuoteToolbar {...commonProps} />;
+      case 'rich-text':
+        return <RichTextBlockToolbar {...commonProps} />;
+      case 'quote':
+        return <EnhancedRotatingQuoteToolbar {...commonProps} selectedBlock={currentBlockForModal} onUpdate={(updates) => updateBlock(modalBlock.id, updates)} />;
       case 'image':
-        return <EnhancedImageBlockToolbar {...commonProps} />;
-      case 'embed':
-        return <EmbedBlockToolbar {...commonProps} />;
+        return <EnhancedImageBlockToolbar {...commonProps} selectedBlock={currentBlockForModal} onUpdate={(updates) => updateBlock(modalBlock.id, updates)} />;
       case 'link':
-        return <LinkToolbar {...commonProps} />;
-      case 'document':
-        return <DocumentToolbar {...commonProps} />;
-      case 'code':
-        return <CodeToolbar {...commonProps} />;
+        return (
+          <LinkToolbar 
+            {...commonProps} 
+            onSave={(updates) => updateBlock(modalBlock.id, updates)}
+            onOpenImageLibrary={() => {
+              setShowImageLibrary(true);
+              setImageLibraryCallback(() => (imageUrl) => {
+                updateBlock(modalBlock.id, { imageUrl });
+                setShowImageLibrary(false);
+              });
+            }}
+          />
+        );
       case 'list':
-        return <ListToolbar {...commonProps} />;
-      case 'table':
-        return <TableToolbar {...commonProps} />;
-      case 'calendar':
-        return <CalendarToolbar {...commonProps} />;
-      case 'rss':
-        return <RssFeedBlockToolbar {...commonProps} />;
+        return <ListBlockToolbar {...commonProps} />;
       default:
         return null;
     }
+  };
+
+  const addNewRichTextBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: Date.now().toString(),
+      type: 'rich-text',
+      x: center.x - 150,
+      y: center.y - 100,
+      width: 300,
+      height: 200,
+      html: '<p>This is a rich text block.</p>',
+      backgroundColor: 'rgba(255, 255, 255, 1)',
+      borderStyle: 'rounded',
+      rotation: 0
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewYouTubeBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: Date.now().toString(),
+      type: 'youtube',
+      x: center.x - 150,
+      y: center.y - 100,
+      width: 300,
+      height: 200,
+      youtubeUrls: [],
+      rotation: 0,
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewAiPromptBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: uuidv4(),
+      type: 'ai-prompt',
+      x: center.x - 150,
+      y: center.y - 110,
+      width: 300,
+      height: 220,
+      title: 'AI Assistant',
+      prompt: 'Give me a random interesting fact.',
+      response: 'This is where the AI response will appear. Double-click to set up your prompt and see it in action!',
+      lastRefreshed: null,
+      refreshInterval: 86400000, // 24 hours
+      backgroundColor: '#1a1a1a',
+      rotation: 0,
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewFrameBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: uuidv4(),
+      type: 'frame',
+      x: center.x - 200,
+      y: center.y - 150,
+      width: 400,
+      height: 300,
+      title: 'My Frame',
+      titleOptions: {
+        fontSize: 24,
+        fontFamily: 'Inter',
+        fontStyle: 'normal',
+        textColor: '#ffffff',
+        textAlign: 'left',
+      },
+      borderOptions: {
+        stroke: '#ffffff',
+        strokeWidth: 2,
+        borderStyle: 'single',
+      },
+      rotation: 0,
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewYearlyPlannerBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: `yearly-planner-${Date.now()}`,
+      type: 'yearly-planner',
+      x: center.x - 250,
+      y: center.y - 250,
+      width: 500,
+      height: 500,
+      title: 'My Yearly Plan',
+      description: 'A description of my year.',
+      layout: 'square',
+      titleFontSize: 24,
+      descriptionFontSize: 14,
+      quarterTitleFontSize: 18,
+      goalFontSize: 12,
+      bulletStyle: 'bullet',
+      borderWidth: 2,
+      quarters: {
+        q1: { title: 'Quarter 1', goals: ['Goal 1', 'Goal 2'] },
+        q2: { title: 'Quarter 2', goals: ['Goal 1', 'Goal 2'] },
+        q3: { title: 'Quarter 3', goals: ['Goal 1', 'Goal 2'] },
+        q4: { title: 'Quarter 4', goals: ['Goal 1', 'Goal 2'] },
+      },
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewDailyHabitTrackerBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: `daily-habit-tracker-${Date.now()}`,
+      type: 'daily-habit-tracker',
+      x: center.x - 150,
+      y: center.y - 150,
+      width: 300,
+      height: 300,
+      title: 'Daily Habits',
+      description: 'Track your daily habits.',
+      habits: [
+        { id: uuidv4(), name: 'Call Mom', completed: false },
+        { id: uuidv4(), name: 'Brush Teeth', completed: false },
+        { id: uuidv4(), name: 'Go to Bed on Time', completed: false },
+      ],
+      history: {},
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewQuickNotesBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: `quick-notes-${Date.now()}`,
+      type: 'quick-notes',
+      x: center.x - 150,
+      y: center.y - 100,
+      width: 300,
+      height: 200,
+      text: 'This is a quick note...',
+      fontSize: 16,
+      fontFamily: 'monospace',
+      textColor: '#ffffff',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewLinkBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: `link-${Date.now()}`,
+      type: 'link',
+      x: center.x - 150,
+      y: center.y - 100,
+      width: 300,
+      height: 200,
+      title: 'New Link',
+      description: 'A description of the link.',
+      url: 'https://www.google.com',
+      imageUrl: '',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      textColor: '#ffffff',
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewListBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: Date.now().toString(),
+      type: 'list',
+      x: center.x - 150,
+      y: center.y - 100,
+      width: 300,
+      height: 200,
+      title: 'My To-Do List',
+      description: 'A list of things to do.',
+      items: [
+        { id: uuidv4(), text: 'Task 1', isCompleted: false },
+        { id: uuidv4(), text: 'Task 2', isCompleted: false },
+        { id: uuidv4(), text: 'Task 3', isCompleted: true },
+      ],
+      rotation: 0,
+      inverted: false,
+      backgroundColor: 'white'
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
   };
 
   // Add block handler for toolbar
@@ -463,14 +752,38 @@ const MainBoard = ({ board, onBack }) => {
       case 'text':
         addNewTextBlock();
         break;
+      case 'rich-text':
+        addNewRichTextBlock();
+        break;
       case 'rotating-quote':
         addNewRotatingQuoteBlock();
         break;
       case 'image':
         addNewImageBlock();
         break;
-      case 'embed':
-        addNewEmbedBlock();
+      case 'youtube':
+        addNewYouTubeBlock();
+        break;
+      case 'ai-prompt':
+        addNewAiPromptBlock();
+        break;
+      case 'frame':
+        addNewFrameBlock();
+        break;
+      case 'list':
+        addNewListBlock();
+        break;
+      case 'yearly-planner':
+        addNewYearlyPlannerBlock();
+        break;
+      case 'daily-habit-tracker':
+        addNewDailyHabitTrackerBlock();
+        break;
+      case 'quick-notes':
+        addNewQuickNotesBlock();
+        break;
+      case 'link':
+        addNewLinkBlock();
         break;
       // Add more cases for other block types as needed
       default:
@@ -492,7 +805,7 @@ const MainBoard = ({ board, onBack }) => {
 
   return (
     <div className="flex flex-col h-screen bg-dark-900">
-      <Navigation />
+      <Navigation onAddBlock={handleAddBlock} onUndo={handleUndo} onRedo={handleRedo} />
       <div className="flex-1 relative">
         <div className="absolute top-4 left-4 z-10 flex items-center space-x-4">
           <button
@@ -500,13 +813,7 @@ const MainBoard = ({ board, onBack }) => {
             className="flex items-center space-x-2 px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to Boards</span>
           </button>
-          <Toolbar
-            onAddBlock={handleAddBlock}
-            onDeleteSelected={deleteSelectedBlock}
-            selectedBlock={selectedId}
-          />
         </div>
         
         <Stage
@@ -528,10 +835,24 @@ const MainBoard = ({ board, onBack }) => {
           </Layer>
         </Stage>
 
-        {selectedId && (
+        {activeModal && (
           <div className="absolute top-20 right-4 z-50">
-            {renderToolbar()}
+            {renderModalContent()}
           </div>
+        )}
+
+        {showImageLibrary && (
+          <UserImageLibrary
+            onSelectImage={(imageUrl) => {
+              if (imageLibraryCallback) {
+                imageLibraryCallback(imageUrl);
+              }
+            }}
+            onClose={() => {
+              setShowImageLibrary(false);
+              setImageLibraryCallback(null);
+            }}
+          />
         )}
       </div>
     </div>

@@ -60,6 +60,7 @@ const Toolbar = ({
     { type: 'list', icon: <List size={20} />, label: 'List' },
     { type: 'table', icon: <Table size={20} />, label: 'Table' },
     { type: 'calendar', icon: <Calendar size={20} />, label: 'Calendar' },
+    { type: 'yearly-planner', icon: <LayoutGrid size={20} />, label: 'Yearly Planner' },
     { type: 'rss', icon: <Globe size={20} />, label: 'RSS Feed' }
   ];
 

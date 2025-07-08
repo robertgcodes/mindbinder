@@ -145,7 +145,7 @@ const EmbedBlock = ({
   const embedInfo = getEmbedInfo();
 
   return (
-    <div className="relative">
+    <>
       <Group
         ref={groupRef}
         x={x}
@@ -153,7 +153,7 @@ const EmbedBlock = ({
         width={width}
         height={height}
         rotation={rotation}
-        draggable={!isSelected}
+        draggable={true}
         onClick={handleClick}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -312,13 +312,12 @@ const EmbedBlock = ({
 
       {/* Actual embed content - rendered outside Konva */}
       {finalEmbedUrl && (
-        <div
+        <foreignObject
+          x={x + 10}
+          y={y + (showHeader ? 40 : 10)}
+          width={width - 20}
+          height={height - (showHeader ? 50 : 20)}
           style={{
-            position: 'absolute',
-            left: x + 10,
-            top: y + (showHeader ? 40 : 10),
-            width: width - 20,
-            height: height - (showHeader ? 50 : 20),
             borderRadius: '4px',
             overflow: 'hidden',
             pointerEvents: isSelected ? 'none' : 'auto',
@@ -338,9 +337,9 @@ const EmbedBlock = ({
             }}
             sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
           />
-        </div>
+        </foreignObject>
       )}
-    </div>
+    </>
   );
 };
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Globe, RefreshCw, Settings } from 'lucide-react';
+import { Globe, RefreshCw, Settings, Trash } from 'lucide-react';
 
-const RssFeedBlockToolbar = ({ block, onChange }) => {
+const RssFeedBlockToolbar = ({ block, onChange, onDelete }) => {
   const [feedUrl, setFeedUrl] = useState(block.feedUrl || '');
   const [maxItems, setMaxItems] = useState(block.maxItems || 5);
   const [refreshInterval, setRefreshInterval] = useState(block.refreshInterval || 300000);
@@ -18,6 +18,12 @@ const RssFeedBlockToolbar = ({ block, onChange }) => {
       textColor,
       backgroundColor
     });
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this block?')) {
+      onDelete();
+    }
   };
 
   const colors = [
@@ -132,13 +138,21 @@ const RssFeedBlockToolbar = ({ block, onChange }) => {
         </div>
       </div>
 
-      {/* Save Button */}
-      <button
-        onClick={handleSave}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-      >
-        Save Changes
-      </button>
+      {/* Save and Delete Buttons */}
+      <div className="flex justify-between">
+        <button
+          onClick={handleSave}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Save Changes
+        </button>
+        <button
+          onClick={handleDelete}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          <Trash className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 };

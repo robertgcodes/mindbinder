@@ -1,100 +1,125 @@
-import React, { useState } from 'react';
-import { List } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Group, Rect, Text, Transformer } from 'react-konva';
 
-const ListBlock = ({ block, onUpdate }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(block.config?.title || '');
-  const [items, setItems] = useState(block.config?.items || ['']);
+const ListBlock = ({
+  id,
+  x,
+  y,
+  width,
+  height,
+  title,
+  description,
+  items,
+  rotation,
+  inverted,
+  backgroundColor,
+  isSelected,
+  onSelect,
+  onChange,
+  onDragStart,
+  onDragEnd,
+  onDoubleClick
+}) => {
+  const transformerRef = useRef();
 
-  const handleSave = () => {
-    onUpdate({
-      ...block,
-      config: {
-        ...block.config,
-        title,
-        items: items.filter(item => item.trim() !== '')
-      }
+  const handleDragEnd = (e) => {
+    onChange({
+      x: e.target.x(),
+      y: e.target.y()
     });
-    setIsEditing(false);
+    
+    if (onDragEnd) {
+      onDragEnd();
+    }
   };
-
-  const addItem = () => {
-    setItems([...items, '']);
-  };
-
-  const removeItem = (index) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
-
-  const updateItem = (index, value) => {
-    const newItems = [...items];
-    newItems[index] = value;
-    setItems(newItems);
-  };
-
-  if (isEditing) {
-    return (
-      <div className="p-4 bg-gray-800 rounded-lg shadow-lg">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter list title"
-          className="w-full p-2 mb-2 bg-gray-700 text-white rounded"
-        />
-        <div className="space-y-2">
-          {items.map((item, index) => (
-            <div key={index} className="flex gap-2">
-              <input
-                type="text"
-                value={item}
-                onChange={(e) => updateItem(index, e.target.value)}
-                placeholder={`Item ${index + 1}`}
-                className="flex-1 p-2 bg-gray-700 text-white rounded"
-              />
-              <button
-                onClick={() => removeItem(index)}
-                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={addItem}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-          >
-            Add Item
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div 
-      className="p-4 bg-gray-800 rounded-lg shadow-lg cursor-pointer hover:bg-gray-700"
-      onClick={() => setIsEditing(true)}
+    <Group
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      rotation={rotation}
+      draggable
+      onClick={onSelect}
+      onDblClick={onDoubleClick}
+      onDragStart={onDragStart}
+      onDragEnd={handleDragEnd}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <List size={20} className="text-blue-400" />
-        <h3 className="text-lg font-semibold text-white">{title || 'Untitled List'}</h3>
-      </div>
-      <ul className="list-disc list-inside text-gray-300 space-y-1">
+      <Rect
+        width={width}
+        height={height}
+        fill={backgroundColor}
+        stroke={isSelected ? '#3b82f6' : 'transparent'}
+        strokeWidth={2}
+        cornerRadius={8}
+      />
+      <Text
+        text={title}
+        x={10}
+        y={10}
+        width={width - 20}
+        fontSize={18}
+        fontStyle="bold"
+        fill={inverted ? 'white' : 'black'}
+      />
+      <Text
+        text={description}
+        x={10}
+        y={35}
+        width={width - 20}
+        fontSize={14}
+        fill={inverted ? 'lightgray' : 'gray'}
+      />
+      <Group>
         {items.map((item, index) => (
-          <li key={index}>{item || `Item ${index + 1}`}</li>
+          <Group
+            key={item.id}
+          >
+            <Rect
+              x={10}
+              y={60 + index * 30}
+              width={width - 20}
+              height={30}
+              fill={backgroundColor === 'transparent' ? 'transparent' : (item.isCompleted ? (inverted ? '#333' : '#f0f0f0') : (inverted ? 'black' : 'white'))}
+            />
+            <Text
+              text={item.isCompleted ? '✅' : '⬜️'}
+              x={15}
+              y={65 + index * 30}
+              fontSize={16}
+              onClick={() => {
+                const newItems = [...items];
+                newItems[index].isCompleted = !newItems[index].isCompleted;
+                onChange({ items: newItems });
+              }}
+            />
+            <Text
+              text={item.text}
+              x={40}
+              y={65 + index * 30}
+              fontSize={16}
+              fill={item.isCompleted ? 'gray' : (inverted ? 'white' : 'black')}
+              textDecoration={item.isCompleted ? 'line-through' : 'none'}
+            />
+          </Group>
         ))}
-      </ul>
-    </div>
+      </Group>
+      {isSelected && (
+        <Transformer
+          ref={transformerRef}
+          boundBoxFunc={(oldBox, newBox) => {
+            if (newBox.width < 100 || newBox.height < 50) {
+              return oldBox;
+            }
+            return newBox;
+          }}
+          rotateEnabled={true}
+          resizeEnabled={true}
+        />
+      )}
+    </Group>
   );
 };
 
-export default ListBlock; 
+export default ListBlock;

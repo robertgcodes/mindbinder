@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { User, Link, Globe, Instagram, Twitter, Linkedin } from 'lucide-react';
+import { User, Link, Globe, Instagram, Twitter, Linkedin, ArrowLeft } from 'lucide-react';
 
 const UserProfile = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState({
     displayName: '',
     title: '',
+    description: '',
     website: '',
     socialMedia: {
       instagram: '',
@@ -100,7 +103,16 @@ const UserProfile = () => {
     <div className="min-h-screen bg-dark-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="bg-dark-800 rounded-lg shadow-xl p-8">
-          <h2 className="text-2xl font-bold text-white mb-8">Profile Settings</h2>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center space-x-2 px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Profile Photo */}
@@ -154,6 +166,16 @@ const UserProfile = () => {
                   value={profile.title}
                   onChange={(e) => setProfile({ ...profile, title: e.target.value })}
                   className="mt-1 block w-full bg-dark-700 border border-dark-600 rounded-md text-white px-4 py-2 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300">Description</label>
+                <textarea
+                  value={profile.description}
+                  onChange={(e) => setProfile({ ...profile, description: e.target.value })}
+                  className="mt-1 block w-full bg-dark-700 border border-dark-600 rounded-md text-white px-4 py-2 focus:outline-none focus:border-blue-400"
+                  rows="3"
                 />
               </div>
 

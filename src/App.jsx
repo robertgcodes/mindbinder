@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
+import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import MainBoard from './components/MainBoard';
 import UserProfile from './components/UserProfile';
@@ -18,13 +19,15 @@ function App() {
 
   return (
     <Router>
-      <div className="w-full h-full">
+      <div className="w-full">
         <Routes>
-          <Route path="/login" element={!currentUser ? <LoginPage /> : <Navigate to="/" />} />
+          <Route path="/" element={!currentUser ? <LandingPage /> : <Navigate to="/boards" />} />
+          <Route path="/login" element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />} />
+          <Route path="/signup" element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />} />
           <Route path="/profile" element={currentUser ? <UserProfile /> : <Navigate to="/login" />} />
           <Route path="/user/:userId" element={<PublicProfile />} />
           <Route
-            path="/"
+            path="/boards"
             element={
               currentUser ? (
                 selectedBoard ? (

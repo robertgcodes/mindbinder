@@ -9,9 +9,12 @@ const TextBlock = ({
   height,
   text,
   fontSize,
-  fontWeight,
+  fontFamily,
+  fontStyle,
   textColor,
+  textDecoration,
   backgroundColor,
+  borderStyle,
   rotation,
   textAlign = 'center',
   autoResize = false,
@@ -19,7 +22,8 @@ const TextBlock = ({
   onSelect,
   onChange,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  onDoubleClick
 }) => {
   const groupRef = useRef();
   const transformerRef = useRef();
@@ -104,6 +108,7 @@ const TextBlock = ({
         rotation={rotation}
         draggable
         onClick={onSelect}
+        onDblClick={onDoubleClick}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
@@ -114,7 +119,7 @@ const TextBlock = ({
           fill={backgroundColor}
           stroke={isSelected ? '#3b82f6' : 'transparent'}
           strokeWidth={isSelected ? 2 : 0}
-          cornerRadius={8}
+          cornerRadius={borderStyle === 'rounded' ? 8 : 0}
         />
         <Text
           ref={textRef}
@@ -124,8 +129,9 @@ const TextBlock = ({
           width={width - 20}
           height={height - 20}
           fontSize={displayFontSize}
-          fontFamily="Inter"
-          fontStyle={fontWeight}
+          fontFamily={fontFamily}
+          fontStyle={fontStyle}
+          textDecoration={textDecoration}
           fill={textColor}
           align={textAlign}
           verticalAlign="middle"

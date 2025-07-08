@@ -8,6 +8,7 @@ import {
   Table, 
   Calendar,
   Rss,
+  Bot,
   X
 } from 'lucide-react';
 
@@ -19,7 +20,8 @@ const blockTypes = [
   { type: 'code', label: 'Code', icon: Code },
   { type: 'table', label: 'Table', icon: Table },
   { type: 'calendar', label: 'Calendar', icon: Calendar },
-  { type: 'rss', label: 'RSS Feed', icon: Rss }
+  { type: 'rss', label: 'RSS Feed', icon: Rss },
+  { type: 'ai-prompt', label: 'AI Prompt', icon: Bot }
 ];
 
 const BlockToolbar = ({ onAddBlock, onClose }) => {

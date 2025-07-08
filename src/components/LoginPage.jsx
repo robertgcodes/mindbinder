@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
-import { Brain, Quote } from 'lucide-react';
+import { Brain, Quote, ArrowLeft } from 'lucide-react';
+import ScrollableLayout from './ScrollableLayout';
 
 const LoginPage = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const location = useLocation();
+  const [isSignUp, setIsSignUp] = useState(location.pathname === '/signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setIsSignUp(location.pathname === '/signup');
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,15 +35,16 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-dark-900 flex">
+    <ScrollableLayout>
+      <div className="min-h-screen bg-dark-900 flex">
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-dark-800 to-dark-900 flex-col justify-center px-12">
         <div className="max-w-md">
           <div className="flex items-center mb-8">
             <Brain className="h-10 w-10 text-blue-400 mr-3" />
-            <h1 className="text-3xl font-bold text-white">MindBinder</h1>
+            <h1 className="text-3xl font-bold text-white">LifeBlocks.ai</h1>
           </div>
-          <p className="text-xl text-gray-300 mb-8">Inspiration that sticks.</p>
+          <p className="text-xl text-gray-300 mb-8">Organize your life with dynamic blocks.</p>
           
           <div className="space-y-6">
             <div className="flex items-start space-x-3">
@@ -56,14 +64,21 @@ const LoginPage = () => {
       </div>
 
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 relative">
+        <Link 
+          to="/" 
+          className="absolute top-8 left-8 text-gray-400 hover:text-white flex items-center space-x-2 transition-colors"
+        >
+          <ArrowLeft size={20} />
+          <span>Back to Home</span>
+        </Link>
         <div className="max-w-md w-full">
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <Brain className="h-8 w-8 text-blue-400 mr-2" />
-              <h1 className="text-2xl font-bold text-white">MindBinder</h1>
+              <h1 className="text-2xl font-bold text-white">LifeBlocks.ai</h1>
             </div>
-            <p className="text-gray-400">Inspiration that sticks.</p>
+            <p className="text-gray-400">Organize your life with dynamic blocks.</p>
           </div>
 
           <div className="bg-dark-800 rounded-lg p-8 shadow-lg">
@@ -118,6 +133,7 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+    </ScrollableLayout>
   );
 };
 

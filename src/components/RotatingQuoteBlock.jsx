@@ -30,7 +30,8 @@ const RotatingQuoteBlock = ({
   onSelect,
   onChange,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  onDoubleClick
 }) => {
   const groupRef = useRef();
   const transformerRef = useRef();
@@ -98,23 +99,7 @@ const RotatingQuoteBlock = ({
     });
   };
 
-  // Simple click handler - just like regular text blocks
-  const handleClick = (e) => {
-    if (onSelect) {
-      onSelect();
-    }
-  };
-
-  // Separate double-click handler for play/pause
-  const handleDoubleClick = (e) => {
-    e.cancelBubble = true;
-    e.evt.stopPropagation();
-    
-    // Double click - toggle play/pause
-    const newIsPlaying = !isPlaying;
-    setIsPlaying(newIsPlaying);
-    onChange({ autoRotate: newIsPlaying });
-  };
+  
 
   // Get current quote object (support both old string format and new object format)
   const getCurrentQuote = () => {
@@ -177,9 +162,9 @@ const RotatingQuoteBlock = ({
         width={width}
         height={height}
         rotation={rotation}
-        draggable={!isSelected} // KEY FIX: Disable dragging when selected (same as TextBlock)
-        onClick={handleClick}
-        onDblClick={handleDoubleClick}
+        draggable={true}
+        onClick={onSelect}
+        onDblClick={onDoubleClick}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}

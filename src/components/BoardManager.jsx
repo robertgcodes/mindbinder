@@ -13,8 +13,10 @@ const BoardManager = ({ user, onSelectBoard }) => {
   const [isPublic, setIsPublic] = useState(false);
 
   useEffect(() => {
-    loadBoards();
-  }, [user.uid]);
+    if (user) {
+      loadBoards();
+    }
+  }, [user]);
 
   const loadBoards = async () => {
     try {

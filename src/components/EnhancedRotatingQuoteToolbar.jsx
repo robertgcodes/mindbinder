@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Trash2, RotateCw, Play, Pause, Plus, Minus, ChevronUp, ChevronDown, Settings, Maximize2, Minimize2 } from 'lucide-react';
 
-const EnhancedRotatingQuoteToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
+import { X } from 'lucide-react';
+
+const EnhancedRotatingQuoteToolbar = ({ selectedBlock, onUpdate, onDelete, onClose }) => {
   const [editingQuoteIndex, setEditingQuoteIndex] = useState(-1);
   const [editText, setEditText] = useState('');
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
@@ -125,7 +127,7 @@ const EnhancedRotatingQuoteToolbar = ({ selectedBlock, onUpdate, onDelete }) => 
   };
 
   return (
-    <div className="absolute top-20 left-6 z-20 bg-dark-800/95 backdrop-blur-sm border border-dark-700 rounded-lg p-4 shadow-lg min-w-96 max-w-2xl max-h-[80vh] overflow-y-auto">
+    <div className="bg-dark-800/95 backdrop-blur-sm border border-dark-700 rounded-lg p-4 shadow-lg min-w-96 max-w-2xl max-h-[80vh] overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-white flex items-center">
           <RotateCw className="h-4 w-4 mr-2" />
@@ -149,6 +151,13 @@ const EnhancedRotatingQuoteToolbar = ({ selectedBlock, onUpdate, onDelete }) => 
             title="Delete block"
           >
             <Trash2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
+            title="Close toolbar"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
       </div>

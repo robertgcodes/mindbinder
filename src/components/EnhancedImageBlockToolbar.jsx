@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Trash2, Upload, Play, Pause, ChevronLeft, ChevronRight, Plus, X, RotateCw, Maximize2, Minimize2, Square } from 'lucide-react';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 
-const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
+const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const fileInputRef = useRef();
@@ -25,13 +27,19 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
     if (files.length === 0) return;
 
     setIsUploading(true);
+    const storage = getStorage();
 
     try {
       const imageUrls = await Promise.all(
         files.map(file => {
           return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
+            reader.onload = async (e) => {
+              const imageRef = ref(storage, `images/${uuidv4()}`);
+              await uploadString(imageRef, e.target.result, 'data_url');
+              const downloadURL = await getDownloadURL(imageRef);
+              resolve(downloadURL);
+            };
             reader.onerror = reject;
             reader.readAsDataURL(file);
           });
@@ -41,6 +49,8 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
       const currentImages = selectedBlock.images || [];
       const newImages = [...currentImages, ...imageUrls].slice(0, 10);
       
+      console.log('New images to be saved:', newImages);
+
       onUpdate({ 
         images: newImages,
         currentImageIndex: currentImages.length
@@ -71,7 +81,7 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
     newCurrentIndex = Math.max(0, newCurrentIndex);
     
     onUpdate({ 
-      images: newImages,
+      images: [...newImages],
       currentImageIndex: newCurrentIndex
     });
     
@@ -108,7 +118,7 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
   const currentIndex = selectedBlock.currentImageIndex || 0;
 
   return (
-    <div className="absolute top-20 left-6 z-20 bg-dark-800/95 backdrop-blur-sm border border-dark-700 rounded-lg p-4 shadow-lg min-w-96 max-w-lg max-h-[85vh] overflow-y-auto">
+    <div className="bg-dark-800/95 backdrop-blur-sm border border-dark-700 rounded-lg p-4 shadow-lg min-w-96 max-w-lg max-h-[85vh] overflow-y-auto">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-white flex items-center">
           <Upload className="h-4 w-4 mr-2" />
@@ -120,6 +130,13 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete }) => {
           title="Delete block"
         >
           <Trash2 className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onClose}
+          className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
+          title="Close toolbar"
+        >
+          <X className="h-4 w-4" />
         </button>
       </div>
 

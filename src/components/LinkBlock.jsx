@@ -123,14 +123,14 @@ const LinkBlock = ({
           />
           <Text 
             text="⚙" 
-            x={16} 
-            y={16} 
-            fontSize={16} 
+            x={0} 
+            y={0} 
+            width={32}
+            height={32}
+            fontSize={18} 
             fill="white" 
             align="center"
             verticalAlign="middle"
-            offsetX={8}
-            offsetY={8}
           />
         </Group>
       )}

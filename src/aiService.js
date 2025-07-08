@@ -32,7 +32,7 @@ export const getAiResponse = async (prompt) => {
     
     if (wantsRandom) {
       // Add explicit instruction to avoid repetition
-      enhancedPrompt = `${prompt}\n\nIMPORTANT: Please ensure variety and avoid commonly quoted verses like John 3:16, John 14:6, or Philippians 4:13. Select from the full breadth of the Bible.\n\n(Random seed: ${randomSeed}, Time: ${timestamp})`;
+      enhancedPrompt = `${prompt}\n\nIMPORTANT: Please ensure variety in your responses. Avoid commonly given examples or frequently cited items. Draw from the full breadth of available knowledge to provide diverse and interesting responses each time.\n\n(Random seed: ${randomSeed}, Time: ${timestamp})`;
     } else {
       enhancedPrompt = `${prompt}\n\n(Request time: ${timestamp})`;
     }

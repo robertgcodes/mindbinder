@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Undo, Redo } from 'lucide-react';
+import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Undo, Redo } from 'lucide-react';
 import UserMenu from './UserMenu';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -22,6 +22,7 @@ const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
     { type: 'daily-habit-tracker', icon: CheckSquare, label: 'Habit Tracker' },
     { type: 'quick-notes', icon: FileText, label: 'Quick Notes' },
     { type: 'link', icon: Link2, label: 'Link' },
+    { type: 'gratitude', icon: Heart, label: 'Gratitude' },
   ];
 
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);

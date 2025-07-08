@@ -47,9 +47,12 @@ import DailyHabitTrackerBlock from './DailyHabitTrackerBlock';
 import DailyHabitTrackerModal from './DailyHabitTrackerModal';
 import QuickNotesBlock from './QuickNotesBlock';
 import QuickNotesToolbar from './QuickNotesToolbar';
+import GratitudeBlock from './GratitudeBlock';
+import GratitudeBlockModal from './GratitudeBlockModal';
 import UserImageLibrary from './UserImageLibrary';
 import { getAiResponse } from '../aiService';
 import { getBlockDefaultColors } from '../utils/themeUtils';
+import { useTheme } from '../contexts/ThemeContext';
 
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",
@@ -486,6 +489,8 @@ const MainBoard = ({ board, onBack }) => {
         return <DailyHabitTrackerBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('daily-habit-tracker', block)} />;
       case 'quick-notes':
         return <QuickNotesBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('quick-notes', block)} />;
+      case 'gratitude':
+        return <GratitudeBlock key={id} {...commonProps} {...block} onDoubleClick={() => openModal('gratitude', block)} />;
       default:
         return null;
     }
@@ -548,6 +553,8 @@ const MainBoard = ({ board, onBack }) => {
         );
       case 'list':
         return <ListBlockToolbar {...commonProps} />;
+      case 'gratitude':
+        return <GratitudeBlockModal {...commonProps} />;
       default:
         return null;
     }
@@ -726,6 +733,41 @@ const MainBoard = ({ board, onBack }) => {
     setSelectedId(newBlock.id);
   };
 
+  const addNewGratitudeBlock = () => {
+    const center = getCenterOfViewport();
+    const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
+    const newBlock = {
+      id: `gratitude-${Date.now()}`,
+      type: 'gratitude',
+      x: center.x - 175,
+      y: center.y - 150,
+      width: 350,
+      height: 300,
+      title: 'Gratitude Journal',
+      description: 'What are you grateful for today?',
+      items: [
+        { id: uuidv4(), text: 'My family and friends', icon: 'heart' },
+        { id: uuidv4(), text: 'Good health', icon: 'sun' },
+        { id: uuidv4(), text: 'A new day', icon: 'sparkles' },
+      ],
+      history: {},
+      titleFontSize: 20,
+      titleFontFamily: 'Inter',
+      titleFontWeight: 'bold',
+      descriptionFontSize: 14,
+      descriptionFontFamily: 'Inter',
+      itemFontSize: 16,
+      itemFontFamily: 'Inter',
+      backgroundColor: 'rgba(251, 207, 232, 0.1)',
+      textColor: textColor,
+      accentColor: '#ec4899',
+      borderRadius: 12,
+      rotation: 0,
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
   const addNewListBlock = () => {
     const center = getCenterOfViewport();
     const newBlock = {
@@ -788,6 +830,9 @@ const MainBoard = ({ board, onBack }) => {
         break;
       case 'link':
         addNewLinkBlock();
+        break;
+      case 'gratitude':
+        addNewGratitudeBlock();
         break;
       // Add more cases for other block types as needed
       default:

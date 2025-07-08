@@ -4,7 +4,7 @@ import { getAiResponse } from '../aiService';
 
 const AiPromptToolbar = ({ block, onChange, onClose, onDelete }) => {
   const [title, setTitle] = useState(block.title || 'AI Prompt');
-  const [prompt, setPrompt] = useState(block.prompt || 'Give me one new bible verse and a brief explanation.');
+  const [prompt, setPrompt] = useState(block.prompt || 'Give me a random bible verse and a brief explanation.');
   const [testResponse, setTestResponse] = useState('');
   const [isTesting, setIsTesting] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -21,7 +21,7 @@ const AiPromptToolbar = ({ block, onChange, onClose, onDelete }) => {
   // Sync local state when block prop changes
   useEffect(() => {
     setTitle(block.title || 'AI Prompt');
-    setPrompt(block.prompt || 'Give me one new bible verse and a brief explanation.');
+    setPrompt(block.prompt || 'Give me a random bible verse and a brief explanation.');
     setIsTransparent(block.backgroundColor === 'transparent');
     setRefreshInterval(block.refreshInterval || 86400000);
     setResponseStyle(block.responseStyle || {

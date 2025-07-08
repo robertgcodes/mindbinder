@@ -19,13 +19,29 @@ export const getAiResponse = async (prompt) => {
   }
 
   try {
+    // Add randomization elements to encourage variety
     const timestamp = new Date().toISOString();
-    const fullPrompt = `${prompt}\n\n(Request time: ${timestamp})`;
+    const randomSeed = Math.floor(Math.random() * 1000000);
+    
+    // Check if the prompt is asking for random/varied content
+    const wantsRandom = prompt.toLowerCase().includes('random') || 
+                       prompt.toLowerCase().includes('different') ||
+                       prompt.toLowerCase().includes('variety');
+    
+    let enhancedPrompt = prompt;
+    
+    if (wantsRandom) {
+      // Add explicit instruction to avoid repetition
+      enhancedPrompt = `${prompt}\n\nIMPORTANT: Please ensure variety and avoid commonly quoted verses like John 3:16, John 14:6, or Philippians 4:13. Select from the full breadth of the Bible.\n\n(Random seed: ${randomSeed}, Time: ${timestamp})`;
+    } else {
+      enhancedPrompt = `${prompt}\n\n(Request time: ${timestamp})`;
+    }
     
     const msg = await anthropic.messages.create({
       model: "claude-opus-4-20250514",
       max_tokens: 1024,
-      messages: [{ role: "user", content: fullPrompt }],
+      messages: [{ role: "user", content: enhancedPrompt }],
+      temperature: 0.9, // Higher temperature for more variety
     });
     return msg.content[0].text;
   } catch (error) {

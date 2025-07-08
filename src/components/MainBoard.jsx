@@ -52,7 +52,6 @@ import GratitudeBlockModal from './GratitudeBlockModal';
 import UserImageLibrary from './UserImageLibrary';
 import { getAiResponse } from '../aiService';
 import { getBlockDefaultColors } from '../utils/themeUtils';
-import { useTheme } from '../contexts/ThemeContext';
 
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",

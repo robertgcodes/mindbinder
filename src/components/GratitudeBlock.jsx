@@ -178,7 +178,7 @@ const GratitudeBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: 'auto',
+              pointerEvents: 'none',
               display: 'flex',
               flexDirection: 'column',
               padding: '16px',
@@ -218,7 +218,8 @@ const GratitudeBlock = ({
             marginBottom: '12px',
             padding: '8px 12px',
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px'
+            borderRadius: '8px',
+            pointerEvents: 'auto'
           }}>
             <button
               onClick={() => changeDate(-1)}
@@ -266,7 +267,8 @@ const GratitudeBlock = ({
           <div style={{ 
             flex: 1, 
             overflowY: 'auto',
-            paddingRight: '8px'
+            paddingRight: '8px',
+            pointerEvents: 'auto'
           }}>
             {items.length === 0 ? (
               <div style={{

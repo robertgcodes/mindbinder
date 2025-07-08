@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { Plus, Trash2, Share2, Copy, Settings } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const BoardManager = ({ user, onSelectBoard }) => {
+  const { theme } = useTheme();
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

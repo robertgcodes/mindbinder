@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Droplet, Trash } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const TextBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
+  const { theme } = useTheme();
   const [text, setText] = useState(block.text || '');
   const [fontSize, setFontSize] = useState(block.fontSize || 16);
   const [textColor, setTextColor] = useState(block.textColor || '#ffffff');
@@ -41,39 +43,65 @@ const TextBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
   };
 
   return (
-    <div className="bg-dark-800 border border-dark-700 rounded-lg p-4 shadow-lg min-w-80 max-w-md">
+    <div 
+      className="rounded-lg p-4 shadow-lg min-w-80 max-w-md"
+      style={{ 
+        backgroundColor: theme.colors.toolbarBackground,
+        border: `1px solid ${theme.colors.blockBorder}`,
+        boxShadow: `0 4px 6px ${theme.colors.blockShadow}`
+      }}
+    >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-white">Edit Text Block</h3>
+        <h3 className="text-sm font-medium" style={{ color: theme.colors.textPrimary }}>Edit Text Block</h3>
         <button
           onClick={onClose}
-          className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
+          className="p-2 rounded-lg transition-colors"
+          style={{ color: theme.colors.textSecondary }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+            e.currentTarget.style.color = theme.colors.textPrimary;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = theme.colors.textSecondary;
+          }}
           title="Close toolbar"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
       <div className="mb-2">
-        <label className="block text-xs text-gray-400 mb-1">Text</label>
+        <label className="block text-xs mb-1" style={{ color: theme.colors.textSecondary }}>Text</label>
         <textarea
-          className="w-full p-2 rounded bg-dark-700 text-white resize-none"
+          className="w-full p-2 rounded resize-none"
+          style={{ 
+            backgroundColor: theme.colors.inputBackground,
+            color: theme.colors.inputText,
+            border: `1px solid ${theme.colors.inputBorder}`
+          }}
           rows={3}
           value={text}
           onChange={e => setText(e.target.value)}
         />
       </div>
       <div className="mb-2 flex items-center gap-4">
-        <label className="text-xs text-gray-400">Font Size</label>
+        <label className="text-xs" style={{ color: theme.colors.textSecondary }}>Font Size</label>
         <input
           type="number"
           min={10}
           max={48}
           value={fontSize}
           onChange={e => setFontSize(Number(e.target.value))}
-          className="w-16 p-1 rounded bg-dark-700 text-white"
+          className="w-16 p-1 rounded"
+          style={{ 
+            backgroundColor: theme.colors.inputBackground,
+            color: theme.colors.inputText,
+            border: `1px solid ${theme.colors.inputBorder}`
+          }}
         />
       </div>
       <div className="mb-4 flex items-center gap-4">
-        <label className="text-xs text-gray-400">Text Color</label>
+        <label className="text-xs" style={{ color: theme.colors.textSecondary }}>Text Color</label>
         <input
           type="color"
           value={textColor}

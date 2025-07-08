@@ -7,6 +7,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { useTheme } from '../contexts/ThemeContext.jsx';
 import TextBlock from './TextBlock';
 import RotatingQuoteBlock from './RotatingQuoteBlock';
 import ImageBlock from './ImageBlock';
@@ -48,6 +49,7 @@ import QuickNotesBlock from './QuickNotesBlock';
 import QuickNotesToolbar from './QuickNotesToolbar';
 import UserImageLibrary from './UserImageLibrary';
 import { getAiResponse } from '../aiService';
+import { getBlockDefaultColors } from '../utils/themeUtils';
 
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",
@@ -66,6 +68,7 @@ const ROTATING_SAMPLE_QUOTES = [
 
 const MainBoard = ({ board, onBack }) => {
   const { currentUser } = useAuth();
+  const { theme } = useTheme();
   const [blocks, setBlocks] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
@@ -213,6 +216,7 @@ const MainBoard = ({ board, onBack }) => {
 
   const addNewRotatingQuoteBlock = () => {
     const center = getCenterOfViewport();
+    const defaultColors = getBlockDefaultColors(theme);
     const newBlock = {
       id: Date.now().toString() + '-rotating',
       type: 'rotating-quote',
@@ -226,7 +230,7 @@ const MainBoard = ({ board, onBack }) => {
           fontSize: 16,
           fontWeight: 'normal',
           fontFamily: 'Inter',
-          textColor: '#ffffff',
+          textColor: defaultColors.textColor,
           textAlign: 'center'
         },
         {
@@ -234,7 +238,7 @@ const MainBoard = ({ board, onBack }) => {
           fontSize: 16,
           fontWeight: 'normal',
           fontFamily: 'Inter',
-          textColor: '#ffffff',
+          textColor: defaultColors.textColor,
           textAlign: 'center'
         },
         {
@@ -242,14 +246,14 @@ const MainBoard = ({ board, onBack }) => {
           fontSize: 16,
           fontWeight: 'normal',
           fontFamily: 'Inter',
-          textColor: '#ffffff',
+          textColor: defaultColors.textColor,
           textAlign: 'center'
         }
       ],
       fontSize: 16,
       fontWeight: 'normal',
-      textColor: '#ffffff',
-      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      textColor: defaultColors.textColor,
+      backgroundColor: defaultColors.backgroundColor,
       rotation: 0,
       autoRotate: true,
       rotationSpeed: 5000,
@@ -804,13 +808,18 @@ const MainBoard = ({ board, onBack }) => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-dark-900">
+    <div className="flex flex-col h-screen" style={{ backgroundColor: theme.colors.canvasBackground }}>
       <Navigation onAddBlock={handleAddBlock} onUndo={handleUndo} onRedo={handleRedo} />
       <div className="flex-1 relative">
         <div className="absolute top-4 left-4 z-10 flex items-center space-x-4">
           <button
             onClick={onBack}
-            className="flex items-center space-x-2 px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
+            style={{ 
+              backgroundColor: theme.colors.blockBackground,
+              color: theme.colors.textPrimary,
+              border: `1px solid ${theme.colors.blockBorder}`
+            }}
           >
             <ArrowLeft className="h-4 w-4" />
           </button>

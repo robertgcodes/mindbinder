@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Undo, Redo } from 'lucide-react';
 import UserMenu from './UserMenu';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
+  const { theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -40,26 +42,44 @@ const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
   }, []);
 
   return (
-    <nav className="bg-dark-800 border-b border-dark-700">
+    <nav className="border-b" style={{ backgroundColor: theme.colors.navigationBackground, borderColor: theme.colors.blockBorder }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link to="/boards" className="flex items-center space-x-2">
-              <Brain className="h-6 w-6 text-blue-400" />
-              <span className="text-white font-semibold">LifeBlocks</span>
+              <Brain className="h-6 w-6" style={{ color: theme.colors.accentPrimary }} />
+              <span className="font-semibold" style={{ color: theme.colors.textPrimary }}>LifeBlocks</span>
             </Link>
           </div>
           <div className="flex items-center space-x-4">
             <button
               onClick={onUndo}
-              className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: theme.colors.textSecondary }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+                e.target.style.color = theme.colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = theme.colors.textSecondary;
+              }}
               title="Undo"
             >
               <Undo className="h-5 w-5" />
             </button>
             <button
               onClick={onRedo}
-              className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: theme.colors.textSecondary }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+                e.target.style.color = theme.colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = theme.colors.textSecondary;
+              }}
               title="Redo"
             >
               <Redo className="h-5 w-5" />
@@ -67,19 +87,44 @@ const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={toggleDropdown}
-                className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: theme.colors.textSecondary }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                  e.target.style.color = theme.colors.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = theme.colors.textSecondary;
+                }}
                 title="Add Block"
               >
                 <Plus className="h-5 w-5" />
               </button>
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-dark-700 border border-dark-600 rounded-md shadow-lg z-20">
+                <div 
+                  className="absolute right-0 mt-2 w-48 rounded-md shadow-lg z-20"
+                  style={{ 
+                    backgroundColor: theme.colors.modalBackground,
+                    border: `1px solid ${theme.colors.blockBorder}`,
+                    boxShadow: `0 4px 6px ${theme.colors.blockShadow}`
+                  }}
+                >
                   <div className="py-1">
                     {blockTypes.map(({ type, icon: Icon, label }) => (
                       <button
                         key={type}
                         onClick={() => handleAddBlock(type)}
-                        className="w-full flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-dark-600 hover:text-white"
+                        className="w-full flex items-center px-4 py-2 text-sm transition-colors"
+                        style={{ color: theme.colors.textSecondary }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = theme.colors.hoverBackground;
+                          e.target.style.color = theme.colors.textPrimary;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent';
+                          e.target.style.color = theme.colors.textSecondary;
+                        }}
                       >
                         <Icon className="h-4 w-4 mr-3" />
                         <span>{label}</span>

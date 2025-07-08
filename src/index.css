@@ -2,26 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS Variables */
+:root {
+  /* These will be dynamically set by ThemeContext */
+  --theme-canvasBackground: #0a0a0a;
+  --theme-blockBackground: #1a1a1a;
+  --theme-blockBorder: #2a2a2a;
+  --theme-blockShadow: rgba(0, 0, 0, 0.5);
+  --theme-textPrimary: #ffffff;
+  --theme-textSecondary: #a0a0a0;
+  --theme-textTertiary: #666666;
+  --theme-modalBackground: #1a1a1a;
+  --theme-modalOverlay: rgba(0, 0, 0, 0.7);
+  --theme-toolbarBackground: #1a1a1a;
+  --theme-navigationBackground: #1a1a1a;
+  --theme-accentPrimary: #3b82f6;
+  --theme-accentSecondary: #10b981;
+  --theme-accentDanger: #ef4444;
+  --theme-accentWarning: #f59e0b;
+  --theme-hoverBackground: #262626;
+  --theme-activeBackground: #333333;
+  --theme-focusBorder: #3b82f6;
+  --theme-inputBackground: #262626;
+  --theme-inputBorder: #404040;
+  --theme-inputText: #ffffff;
+}
+
 .dark .ql-editor {
-  background-color: #1a202c;
-  color: #cbd5e0;
+  background-color: var(--theme-blockBackground);
+  color: var(--theme-textPrimary);
 }
 
 .dark .ql-toolbar {
-  background-color: #2d3748;
-  border-color: #4a5568;
+  background-color: var(--theme-toolbarBackground);
+  border-color: var(--theme-blockBorder);
 }
 
 .dark .ql-toolbar .ql-stroke {
-  stroke: #cbd5e0;
+  stroke: var(--theme-textSecondary);
 }
 
 .dark .ql-toolbar .ql-fill {
-  fill: #cbd5e0;
+  fill: var(--theme-textSecondary);
 }
 
 .dark .ql-toolbar .ql-picker-label {
-  color: #cbd5e0;
+  color: var(--theme-textSecondary);
 }
 
 * {
@@ -31,8 +57,8 @@
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #0a0a0a;
-  color: white;
+  background-color: var(--theme-canvasBackground);
+  color: var(--theme-textPrimary);
   overflow: hidden;
 }
 

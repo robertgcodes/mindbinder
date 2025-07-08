@@ -91,35 +91,22 @@ const MainBoard = ({ board, onBack }) => {
   // Load board data
   useEffect(() => {
     const loadBoard = async () => {
+      if (!board || !board.id) {
+        console.error('Invalid board object:', board);
+        setLoading(false);
+        return;
+      }
+      
+      const loadTimeout = setTimeout(() => {
+        console.error('Board loading timeout');
+        setLoading(false);
+      }, 10000); // 10 second timeout
+      
       try {
         let loadedBlocks = board.blocks || [];
         if (loadedBlocks.length > 0) {
-          // Check for AI blocks that need refreshing
-          const refreshPromises = loadedBlocks
-            .filter(block => block.type === 'ai-prompt' && block.refreshInterval > 0)
-            .map(async block => {
-              const lastRefreshed = new Date(block.lastRefreshed || 0).getTime();
-              const now = new Date().getTime();
-              if (now - lastRefreshed > block.refreshInterval) {
-                try {
-                  const newResponse = await getAiResponse(block.prompt);
-                  return { ...block, response: newResponse, lastRefreshed: new Date().toISOString() };
-                } catch (error) {
-                  console.error(`Failed to auto-refresh AI block ${block.id}:`, error);
-                  return block; // Return original block on error
-                }
-              }
-              return block;
-            });
-
-          const refreshedBlocks = await Promise.all(refreshPromises);
-          
-          // Update the main blocks array with the refreshed ones
-          loadedBlocks = loadedBlocks.map(block => {
-            const refreshed = refreshedBlocks.find(rb => rb.id === block.id);
-            return refreshed || block;
-          });
-
+          // Skip AI auto-refresh on initial load to prevent 529 errors
+          // AI blocks will still refresh when manually triggered
           setBlocks(loadedBlocks);
           setHistory([loadedBlocks]);
           setHistoryIndex(0);
@@ -143,8 +130,10 @@ const MainBoard = ({ board, onBack }) => {
         }
       } catch (error) {
         console.error('Error loading board:', error);
+      } finally {
+        clearTimeout(loadTimeout);
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadBoard();

@@ -88,7 +88,7 @@ const GratitudeBlockModal = ({ block, onChange, onClose, onDelete }) => {
 
   return (
     <div 
-      className="rounded-lg shadow-xl w-[500px] max-h-[90vh] overflow-y-auto"
+      className="rounded-lg shadow-xl w-[500px] max-h-[80vh] overflow-hidden flex flex-col"
       style={{ 
         backgroundColor: theme.colors.modalBackground,
         border: `1px solid ${theme.colors.blockBorder}`,
@@ -96,7 +96,7 @@ const GratitudeBlockModal = ({ block, onChange, onClose, onDelete }) => {
     >
       {/* Header */}
       <div 
-        className="p-4 border-b flex justify-between items-center sticky top-0 z-10"
+        className="p-4 border-b flex justify-between items-center flex-shrink-0"
         style={{ 
           borderColor: theme.colors.blockBorder,
           backgroundColor: theme.colors.modalBackground 
@@ -123,7 +123,7 @@ const GratitudeBlockModal = ({ block, onChange, onClose, onDelete }) => {
         </button>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-3 overflow-y-auto flex-grow">
         {/* Title & Description */}
         <div>
           <label className="block text-sm mb-1" style={{ color: theme.colors.textSecondary }}>
@@ -213,7 +213,7 @@ const GratitudeBlockModal = ({ block, onChange, onClose, onDelete }) => {
           </div>
 
           {/* Items List */}
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2 max-h-36 overflow-y-auto">
             {items.map(item => {
               const iconOption = iconOptions.find(opt => opt.type === item.icon);
               return (
@@ -459,7 +459,7 @@ const GratitudeBlockModal = ({ block, onChange, onClose, onDelete }) => {
 
       {/* Footer */}
       <div 
-        className="p-4 border-t flex justify-between items-center sticky bottom-0"
+        className="p-4 border-t flex justify-between items-center flex-shrink-0"
         style={{ 
           borderColor: theme.colors.blockBorder,
           backgroundColor: theme.colors.modalBackground 

@@ -18,6 +18,21 @@ const AiPromptToolbar = ({ block, onChange, onClose, onDelete }) => {
     textAlign: 'left',
   });
 
+  // Sync local state when block prop changes
+  useEffect(() => {
+    setTitle(block.title || 'AI Prompt');
+    setPrompt(block.prompt || 'Give me one new bible verse and a brief explanation.');
+    setIsTransparent(block.backgroundColor === 'transparent');
+    setRefreshInterval(block.refreshInterval || 86400000);
+    setResponseStyle(block.responseStyle || {
+      fontSize: 14,
+      fontFamily: 'Inter',
+      fontStyle: 'normal',
+      textColor: '#ffffff',
+      textAlign: 'left',
+    });
+  }, [block]);
+
   const handleTestPrompt = async () => {
     if (!prompt.trim()) {
       setTestResponse('Please enter a prompt to test.');

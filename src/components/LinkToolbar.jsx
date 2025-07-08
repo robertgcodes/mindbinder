@@ -3,6 +3,7 @@ import { Upload, Link, Image as ImageIcon, X, Save, Library, Trash2 } from 'luci
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { compressImage, validateImageFile } from '../utils/imageCompression';
 
 const LinkToolbar = ({ block, onSave, onClose, onDelete, onOpenImageLibrary }) => {
   const { currentUser } = useAuth();
@@ -50,16 +51,10 @@ const LinkToolbar = ({ block, onSave, onClose, onDelete, onOpenImageLibrary }) =
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      setUploadError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError('Image size must be less than 5MB');
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setUploadError(validation.error);
       return;
     }
 
@@ -67,13 +62,19 @@ const LinkToolbar = ({ block, onSave, onClose, onDelete, onOpenImageLibrary }) =
     setUploadError('');
 
     try {
+      // Compress image if needed
+      const compressedFile = await compressImage(file, {
+        maxSizeMB: 5,
+        maxWidthOrHeight: 1920,
+      });
+
       // Create a unique filename
       const timestamp = Date.now();
-      const filename = `link-images/${currentUser.uid}/${timestamp}-${file.name}`;
+      const filename = `link-images/${currentUser.uid}/${timestamp}-${compressedFile.name}`;
       const storageRef = ref(storage, filename);
 
-      // Upload file
-      const snapshot = await uploadBytes(storageRef, file);
+      // Upload compressed file
+      const snapshot = await uploadBytes(storageRef, compressedFile);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       // Update form data with new image URL
@@ -164,7 +165,10 @@ const LinkToolbar = ({ block, onSave, onClose, onDelete, onOpenImageLibrary }) =
                 >
                   <Upload size={24} className="text-gray-400" />
                   <span className="text-sm text-gray-400">
-                    {isUploading ? 'Uploading...' : 'Click to upload image'}
+                    {isUploading ? 'Compressing and uploading...' : 'Click to upload image'}
+                  </span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    Images are automatically compressed
                   </span>
                 </label>
               </div>

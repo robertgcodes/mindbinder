@@ -4,6 +4,7 @@ import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { compressImage, validateImageFile } from '../utils/imageCompression';
 
 const UserImageLibrary = ({ onSelectImage, onClose }) => {
   const { currentUser } = useAuth();
@@ -50,39 +51,39 @@ const UserImageLibrary = ({ onSelectImage, onClose }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      alert(validation.error);
       return;
     }
 
     setUploading(true);
 
     try {
+      // Compress image if needed
+      const compressedFile = await compressImage(file, {
+        maxSizeMB: 5,
+        maxWidthOrHeight: 2048,
+      });
+
       // Create a unique filename
       const timestamp = Date.now();
-      const filename = `user-library/${currentUser.uid}/${timestamp}-${file.name}`;
+      const filename = `user-library/${currentUser.uid}/${timestamp}-${compressedFile.name}`;
       const storageRef = ref(storage, filename);
 
-      // Upload file
-      const snapshot = await uploadBytes(storageRef, file);
+      // Upload compressed file
+      const snapshot = await uploadBytes(storageRef, compressedFile);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       // Save image info to Firestore
       const imageData = {
         userId: currentUser.uid,
         url: downloadURL,
-        filename: file.name,
+        filename: compressedFile.name,
         storagePath: filename,
-        size: file.size,
-        type: file.type,
+        size: compressedFile.size,
+        type: compressedFile.type,
         uploadedAt: new Date().toISOString()
       };
 
@@ -169,10 +170,10 @@ const UserImageLibrary = ({ onSelectImage, onClose }) => {
             <div className="text-center">
               <Upload size={32} className="mx-auto mb-2 text-gray-400" />
               <p className="text-gray-400">
-                {uploading ? 'Uploading...' : 'Click or drag to upload an image'}
+                {uploading ? 'Compressing and uploading...' : 'Click or drag to upload an image'}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                JPEG, PNG, GIF, or WebP • Max 5MB
+                JPEG, PNG, GIF, or WebP • Automatically compressed
               </p>
             </div>
           </label>

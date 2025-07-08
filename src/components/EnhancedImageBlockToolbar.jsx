@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Trash2, Upload, Play, Pause, ChevronLeft, ChevronRight, Plus, X, RotateCw, Maximize2, Minimize2, Square } from 'lucide-react';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
+import { compressImage, validateImageFile } from '../utils/imageCompression';
 
 const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -26,23 +27,31 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose 
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
 
+    // Validate all files first
+    const invalidFile = files.find(file => !validateImageFile(file).valid);
+    if (invalidFile) {
+      const validation = validateImageFile(invalidFile);
+      alert(validation.error);
+      return;
+    }
+
     setIsUploading(true);
     const storage = getStorage();
 
     try {
       const imageUrls = await Promise.all(
-        files.map(file => {
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-              const imageRef = ref(storage, `images/${uuidv4()}`);
-              await uploadString(imageRef, e.target.result, 'data_url');
-              const downloadURL = await getDownloadURL(imageRef);
-              resolve(downloadURL);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
+        files.map(async (file) => {
+          // Compress image if needed
+          const compressedFile = await compressImage(file, {
+            maxSizeMB: 5,
+            maxWidthOrHeight: 2048,
           });
+
+          // Upload compressed file
+          const imageRef = ref(storage, `images/${uuidv4()}-${compressedFile.name}`);
+          const snapshot = await uploadBytes(imageRef, compressedFile);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          return downloadURL;
         })
       );
 
@@ -150,7 +159,7 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose 
             className="flex items-center space-x-2 px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-xs rounded transition-colors"
           >
             <Upload className="h-3 w-3" />
-            <span>{isUploading ? 'Uploading...' : 'Add Images'}</span>
+            <span>{isUploading ? 'Compressing...' : 'Add Images'}</span>
           </button>
         </div>
 
@@ -167,7 +176,7 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose 
           <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-600 rounded-lg">
             <Upload className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Click "Add Images" to upload photos</p>
-            <p className="text-xs mt-1">Supports: JPG, PNG, GIF (Max 10 images)</p>
+            <p className="text-xs mt-1">JPG, PNG, GIF, WebP • Auto-compressed • Max 10 images</p>
           </div>
         )}
 

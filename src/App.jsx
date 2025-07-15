@@ -12,6 +12,8 @@ import SharedBlock from './components/SharedBlock';
 import AcceptInvitation from './components/AcceptInvitation';
 import BoardAccessWrapper from './components/BoardAccessWrapper';
 import LoadingSpinner from './components/LoadingSpinner';
+import Friends from './components/Friends';
+import Analytics from './components/Analytics';
 
 function App() {
   const { currentUser, loading } = useAuth();
@@ -29,7 +31,10 @@ function App() {
           <Route path="/login" element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />} />
           <Route path="/signup" element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />} />
           <Route path="/profile" element={currentUser ? <UserProfile /> : <Navigate to="/login" />} />
+          <Route path="/profile/:username" element={<PublicProfile />} />
           <Route path="/saved-blocks" element={currentUser ? <SavedBlocks /> : <Navigate to="/login" />} />
+          <Route path="/friends" element={currentUser ? <Friends /> : <Navigate to="/login" />} />
+          <Route path="/analytics" element={currentUser ? <Analytics /> : <Navigate to="/login" />} />
           <Route path="/user/:userId" element={<PublicProfile />} />
           <Route path="/u/:username" element={<PublicProfile />} />
           <Route path="/u/:username/block/:blockId" element={<SharedBlock />} />

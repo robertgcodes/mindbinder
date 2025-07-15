@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet } from 'lucide-react';
+import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
 import { useTheme } from '../contexts/ThemeContext';
@@ -26,6 +26,10 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
     { type: 'google-embed', icon: FileSpreadsheet, label: 'Google Embed' },
     { type: 'gratitude', icon: Heart, label: 'Gratitude' },
     { type: 'affirmations', icon: Sparkles, label: 'Affirmations' },
+    { type: 'timeline', icon: Clock, label: 'Timeline' },
+    { type: 'analytics', icon: BarChart3, label: 'Analytics' },
+    { type: 'pdf', icon: FileDown, label: 'PDF' },
+    { type: 'book', icon: Book, label: 'Book' },
   ];
 
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);

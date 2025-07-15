@@ -63,8 +63,6 @@ import GoogleEmbedBlock from './GoogleEmbedBlock';
 import GoogleEmbedToolbar from './GoogleEmbedToolbar';
 import PDFBlock from './PDFBlock';
 import PDFBlockModal from './PDFBlockModal';
-import BookBlock from './BookBlock';
-import BookBlockModal from './BookBlockModal';
 import UserImageLibrary from './UserImageLibrary';
 import ShareBoardModal from './ShareBoardModal';
 import { getAiResponse } from '../aiService';
@@ -969,10 +967,6 @@ const MainBoard = ({ board, onBack }) => {
           blocks={blocks}
           onDoubleClick={isReadOnly ? undefined : () => openModal('analytics', block)} 
         />;
-      case 'pdf':
-        return <PDFBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('pdf', block)} />;
-      case 'book':
-        return <BookBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('book', block)} />;
       case 'google-embed':
         return <GoogleEmbedBlock key={id} {...commonProps} theme={theme} block={block} onUpdate={(updates) => updateBlock(id, updates)} />;
       default:
@@ -1045,10 +1039,6 @@ const MainBoard = ({ board, onBack }) => {
         return <TimelineBlockModal {...commonProps} />;
       case 'analytics':
         return <AnalyticsBlockModal {...commonProps} />;
-      case 'pdf':
-        return <PDFBlockModal {...commonProps} />;
-      case 'book':
-        return <BookBlockModal {...commonProps} />;
       case 'google-embed':
         return <GoogleEmbedToolbar {...commonProps} />;
       default:
@@ -1430,73 +1420,6 @@ const MainBoard = ({ board, onBack }) => {
     setSelectedId(newBlock.id);
   };
 
-  const addNewPDFBlock = () => {
-    const center = getCenterOfViewport();
-    const { blockBackground, textColor } = getBlockDefaultColors(theme);
-    const newBlock = {
-      id: `pdf-${Date.now()}`,
-      type: 'pdf',
-      x: center.x - 100,
-      y: center.y - 125,
-      width: 200,
-      height: 250,
-      title: 'PDF Document',
-      description: 'Click to view',
-      pdfUrl: '',
-      thumbnailUrl: '',
-      titleFontSize: 18,
-      titleFontFamily: 'Inter',
-      titleFontWeight: 'bold',
-      descriptionFontSize: 14,
-      descriptionFontFamily: 'Inter',
-      backgroundColor: 'rgba(239, 68, 68, 0.1)',
-      textColor: textColor,
-      accentColor: '#ef4444',
-      borderRadius: 12,
-      rotation: 0
-    };
-    setBlocks([...blocks, newBlock]);
-    setSelectedId(newBlock.id);
-  };
-
-  const addNewBookBlock = () => {
-    const center = getCenterOfViewport();
-    const { blockBackground, textColor } = getBlockDefaultColors(theme);
-    const newBlock = {
-      id: `book-${Date.now()}`,
-      type: 'book',
-      x: center.x - 175,
-      y: center.y - 100,
-      width: 350,
-      height: 200,
-      title: 'Book Title',
-      author: 'Author Name',
-      notes: '',
-      coverUrl: '',
-      pdfUrl: '',
-      linkUrl: '',
-      progress: 0,
-      status: 'not-started',
-      showProgress: true,
-      showStatus: true,
-      titleFontSize: 18,
-      titleFontFamily: 'Inter',
-      titleFontWeight: 'bold',
-      authorFontSize: 14,
-      authorFontFamily: 'Inter',
-      notesFontSize: 14,
-      notesFontFamily: 'Inter',
-      backgroundColor: 'rgba(147, 51, 234, 0.1)',
-      textColor: textColor,
-      accentColor: '#9333ea',
-      progressColor: '#22c55e',
-      borderRadius: 12,
-      rotation: 0
-    };
-    setBlocks([...blocks, newBlock]);
-    setSelectedId(newBlock.id);
-  };
-
   const addNewGoogleEmbedBlock = () => {
     const center = getCenterOfViewport();
     const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
@@ -1574,12 +1497,6 @@ const MainBoard = ({ board, onBack }) => {
         break;
       case 'analytics':
         addNewAnalyticsBlock();
-        break;
-      case 'pdf':
-        addNewPDFBlock();
-        break;
-      case 'book':
-        addNewBookBlock();
         break;
       case 'google-embed':
         addNewGoogleEmbedBlock();
@@ -1743,111 +1660,40 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   // Handle pasted text
-  // Helper function to check if text is a valid URL
-  const isValidUrl = (string) => {
-    // Common URL patterns
-    const urlPatterns = [
-      /^https?:\/\//i, // Starts with http:// or https://
-      /^www\./i, // Starts with www.
-      /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,}/i // Domain pattern
-    ];
-    
-    // Check if string matches any URL pattern
-    if (urlPatterns.some(pattern => pattern.test(string))) {
-      try {
-        // Try to create a URL object
-        new URL(string.startsWith('http') ? string : `https://${string}`);
-        return true;
-      } catch (_) {
-        // Still might be a valid domain without protocol
-        return /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}(\/.*)?$/i.test(string);
-      }
-    }
-    
-    return false;
-  };
-
-  // Helper function to ensure URL has protocol
-  const ensureProtocol = (url) => {
-    if (!/^https?:\/\//i.test(url)) {
-      return `https://${url}`;
-    }
-    return url;
-  };
-
-  // Helper function to extract title from URL
-  const getTitleFromUrl = (url) => {
-    try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.replace(/^www\./, '');
-      return hostname.charAt(0).toUpperCase() + hostname.slice(1);
-    } catch (_) {
-      return 'New Link';
-    }
-  };
-
   const handlePasteText = (text) => {
     const center = getCenterOfViewport();
-    const trimmedText = text.trim();
     
-    // Check if the pasted text is a URL
-    if (isValidUrl(trimmedText)) {
-      // Create a link block
-      const url = ensureProtocol(trimmedText);
-      const title = getTitleFromUrl(url);
-      
-      const newBlock = {
-        id: `link-${Date.now()}`,
-        type: 'link',
-        x: center.x - 150,
-        y: center.y - 100,
-        width: 300,
-        height: 200,
-        title: title,
-        description: 'Click to visit',
-        url: url,
-        imageUrl: '',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        textColor: '#ffffff',
-      };
-      
-      setBlocks([...blocks, newBlock]);
-      setSelectedId(newBlock.id);
-      
-      console.log('Pasted URL as link block:', url);
-    } else {
-      // Create a text block for non-URL text
-      // Estimate dimensions based on text length
-      const estimatedWidth = Math.min(Math.max(200, text.length * 8), 400);
-      const estimatedHeight = Math.min(Math.max(80, Math.ceil(text.length / 40) * 25), 300);
-      
-      const newBlock = {
-        id: Date.now().toString(),
-        type: 'text',
-        x: center.x - estimatedWidth / 2,
-        y: center.y - estimatedHeight / 2,
-        width: estimatedWidth,
-        height: estimatedHeight,
-        text: text,
-        fontSize: 16,
-        fontFamily: 'Inter',
-        fontStyle: 'normal',
-        textDecoration: 'none',
-        textColor: '#ffffff',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderStyle: 'rounded',
-        rotation: 0,
-        textAlign: 'left',
-        autoResize: true
-      };
-      
-      setBlocks([...blocks, newBlock]);
-      setSelectedId(newBlock.id);
-    }
+    // Estimate dimensions based on text length
+    const estimatedWidth = Math.min(Math.max(200, text.length * 8), 400);
+    const estimatedHeight = Math.min(Math.max(80, Math.ceil(text.length / 40) * 25), 300);
+    
+    const newBlock = {
+      id: Date.now().toString(),
+      type: 'text',
+      x: center.x - estimatedWidth / 2,
+      y: center.y - estimatedHeight / 2,
+      width: estimatedWidth,
+      height: estimatedHeight,
+      text: text,
+      fontSize: 16,
+      fontFamily: 'Inter',
+      fontStyle: 'normal',
+      textDecoration: 'none',
+      textColor: '#ffffff',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      borderStyle: 'rounded',
+      rotation: 0,
+      textAlign: 'left',
+      autoResize: true
+    };
+    
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
     
     // Add to history
+    const newBlocks = [...blocks, newBlock];
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(blocks);
+    newHistory.push(newBlocks);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
     

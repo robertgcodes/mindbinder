@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, LogOut, Bookmark } from 'lucide-react';
+import { User, LogOut, Bookmark, Users, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -61,6 +61,44 @@ const UserMenu = () => {
             >
               <User size={16} />
               <span>Profile</span>
+            </button>
+            <button
+              onClick={() => {
+                navigate('/friends');
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
+              style={{ color: theme.colors.textSecondary }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+                e.target.style.color = theme.colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = theme.colors.textSecondary;
+              }}
+            >
+              <Users size={16} />
+              <span>Friends</span>
+            </button>
+            <button
+              onClick={() => {
+                navigate('/analytics');
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
+              style={{ color: theme.colors.textSecondary }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+                e.target.style.color = theme.colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = theme.colors.textSecondary;
+              }}
+            >
+              <BarChart3 size={16} />
+              <span>Analytics</span>
             </button>
             <button
               onClick={() => {

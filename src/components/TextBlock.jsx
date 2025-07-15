@@ -23,6 +23,7 @@ const TextBlock = ({
   onChange,
   onDragStart,
   onDragEnd,
+  onDragMove,
   onDoubleClick
 }) => {
   const groupRef = useRef();
@@ -39,7 +40,7 @@ const TextBlock = ({
   const handleDragStart = (e) => {
     // Notify parent that a block is being dragged
     if (onDragStart) {
-      onDragStart();
+      onDragStart(e);
     }
   };
 
@@ -52,7 +53,7 @@ const TextBlock = ({
     
     // Notify parent that block drag ended
     if (onDragEnd) {
-      onDragEnd();
+      onDragEnd(e);
     }
   };
 
@@ -110,6 +111,7 @@ const TextBlock = ({
         onClick={onSelect}
         onDblClick={onDoubleClick}
         onDragStart={handleDragStart}
+        onDragMove={onDragMove}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       >

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { Brain, Quote, ArrowLeft } from 'lucide-react';
@@ -7,6 +7,9 @@ import ScrollableLayout from './ScrollableLayout';
 
 const LoginPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
   const [isSignUp, setIsSignUp] = useState(location.pathname === '/signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,10 +31,17 @@ const LoginPage = () => {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
+      
+      // Redirect to the intended page or boards
+      if (redirect) {
+        navigate(redirect);
+      } else {
+        navigate('/boards');
+      }
     } catch (error) {
       setError(error.message);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

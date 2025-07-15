@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -61,6 +61,25 @@ const UserMenu = () => {
             >
               <User size={16} />
               <span>Profile</span>
+            </button>
+            <button
+              onClick={() => {
+                navigate('/saved-blocks');
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
+              style={{ color: theme.colors.textSecondary }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+                e.target.style.color = theme.colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = theme.colors.textSecondary;
+              }}
+            >
+              <Bookmark size={16} />
+              <span>Saved Blocks</span>
             </button>
             <button
               onClick={handleSignOut}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 const QUARTER_KEYS = ['q1', 'q2', 'q3', 'q4'];
 
-const YearlyPlannerModal = ({ block, onSave, onClose }) => {
+const YearlyPlannerModal = ({ block, onSave, onClose, onDelete }) => {
   const [title, setTitle] = useState(block.title);
   const [description, setDescription] = useState(block.description);
   const [layout, setLayout] = useState(block.layout);
@@ -182,9 +182,22 @@ const YearlyPlannerModal = ({ block, onSave, onClose }) => {
           </div>
         </div>
 
-        <div className="flex justify-end mt-6 flex-shrink-0">
-          <button onClick={onClose} className="px-4 py-2 mr-2 text-gray-300 rounded hover:bg-dark-600">Cancel</button>
-          <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+        <div className="flex justify-between mt-6 flex-shrink-0">
+          <button 
+            onClick={() => {
+              if (window.confirm('Are you sure you want to delete this yearly planner?')) {
+                onDelete(block.id);
+                onClose();
+              }
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Delete
+          </button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-4 py-2 text-gray-300 rounded hover:bg-dark-600">Cancel</button>
+            <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+          </div>
         </div>
       </div>
     </div>

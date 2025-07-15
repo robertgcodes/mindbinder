@@ -1,25 +1,26 @@
 import React, { useState } from 'react';
-import { X, Plus, Trash2, Save, Target, Type } from 'lucide-react';
+import { X, Plus, Trash2, Save, Type, Hash } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTheme } from '../contexts/ThemeContext';
 
-const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
+const AffirmationsBlockModal = ({ block, onChange, onClose, onDelete }) => {
   const { theme } = useTheme();
-  const [title, setTitle] = useState(block.title || 'Daily Habits');
-  const [description, setDescription] = useState(block.description || 'Track your daily progress');
-  const [habits, setHabits] = useState(block.habits || []);
-  const [newHabitName, setNewHabitName] = useState('');
+  const [title, setTitle] = useState(block.title || 'Daily Affirmations');
+  const [description, setDescription] = useState(block.description || 'Speak your truth into existence');
+  const [affirmations, setAffirmations] = useState(block.affirmations || []);
+  const [newAffirmationText, setNewAffirmationText] = useState('');
+  const [newAffirmationCount, setNewAffirmationCount] = useState(10);
   const [titleFontSize, setTitleFontSize] = useState(block.titleFontSize || 20);
   const [titleFontFamily, setTitleFontFamily] = useState(block.titleFontFamily || 'Inter');
   const [titleFontWeight, setTitleFontWeight] = useState(block.titleFontWeight || 'bold');
   const [descriptionFontSize, setDescriptionFontSize] = useState(block.descriptionFontSize || 14);
   const [descriptionFontFamily, setDescriptionFontFamily] = useState(block.descriptionFontFamily || 'Inter');
-  const [habitFontSize, setHabitFontSize] = useState(block.habitFontSize || 16);
-  const [habitFontFamily, setHabitFontFamily] = useState(block.habitFontFamily || 'Inter');
-  const [backgroundColor, setBackgroundColor] = useState(block.backgroundColor || 'rgba(59, 130, 246, 0.1)');
+  const [affirmationFontSize, setAffirmationFontSize] = useState(block.affirmationFontSize || 16);
+  const [affirmationFontFamily, setAffirmationFontFamily] = useState(block.affirmationFontFamily || 'Inter');
+  const [backgroundColor, setBackgroundColor] = useState(block.backgroundColor || 'rgba(34, 197, 94, 0.1)');
   const [textColor, setTextColor] = useState(block.textColor || '#ffffff');
-  const [accentColor, setAccentColor] = useState(block.accentColor || '#3b82f6');
-  const [checkColor, setCheckColor] = useState(block.checkColor || '#22c55e');
+  const [accentColor, setAccentColor] = useState(block.accentColor || '#22c55e');
+  const [checkColor, setCheckColor] = useState(block.checkColor || '#10b981');
 
   const fontFamilies = [
     'Inter', 'Arial', 'Helvetica', 'Times New Roman', 'Georgia',
@@ -28,26 +29,26 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
 
   const fontWeights = ['normal', 'bold', 'lighter', 'bolder'];
 
-  const handleAddHabit = () => {
-    console.log('Add habit clicked, current value:', newHabitName);
-    if (newHabitName.trim()) {
-      const newHabit = {
+  const handleAddAffirmation = () => {
+    if (newAffirmationText.trim() && newAffirmationCount > 0) {
+      const newAffirmation = {
         id: uuidv4(),
-        name: newHabitName.trim(),
-        completed: false
+        text: newAffirmationText.trim(),
+        count: Math.min(100, Math.max(1, newAffirmationCount)) // Limit between 1-100
       };
-      setHabits([...habits, newHabit]);
-      setNewHabitName('');
+      setAffirmations([...affirmations, newAffirmation]);
+      setNewAffirmationText('');
+      setNewAffirmationCount(10);
     }
   };
 
-  const handleRemoveHabit = (habitId) => {
-    setHabits(habits.filter(habit => habit.id !== habitId));
+  const handleRemoveAffirmation = (affirmationId) => {
+    setAffirmations(affirmations.filter(aff => aff.id !== affirmationId));
   };
 
-  const handleUpdateHabit = (habitId, newName) => {
-    setHabits(habits.map(habit => 
-      habit.id === habitId ? { ...habit, name: newName } : habit
+  const handleUpdateAffirmation = (affirmationId, updates) => {
+    setAffirmations(affirmations.map(aff => 
+      aff.id === affirmationId ? { ...aff, ...updates } : aff
     ));
   };
 
@@ -55,14 +56,14 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
     onChange({
       title,
       description,
-      habits,
+      affirmations,
       titleFontSize,
       titleFontFamily,
       titleFontWeight,
       descriptionFontSize,
       descriptionFontFamily,
-      habitFontSize,
-      habitFontFamily,
+      affirmationFontSize,
+      affirmationFontFamily,
       backgroundColor,
       textColor,
       accentColor,
@@ -72,9 +73,13 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this Daily Habits Block?')) {
+    if (window.confirm('Are you sure you want to delete this Affirmations Block?')) {
       onDelete();
     }
+  };
+
+  const getTotalRepetitions = () => {
+    return affirmations.reduce((total, aff) => total + aff.count, 0);
   };
 
   return (
@@ -94,8 +99,8 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
         }}
       >
         <h3 className="text-lg font-semibold flex items-center" style={{ color: theme.colors.textPrimary }}>
-          <Target className="h-5 w-5 mr-2" style={{ color: accentColor }} />
-          Edit Daily Habits Block
+          <div className="w-5 h-5 mr-2 rounded-full" style={{ backgroundColor: accentColor }} />
+          Edit Affirmations Block
         </h3>
         <button
           onClick={onClose}
@@ -150,21 +155,25 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
           />
         </div>
 
-        {/* Habits Section */}
+        {/* Affirmations Section */}
         <div>
-          <label className="block text-sm mb-2" style={{ color: theme.colors.textSecondary }}>
-            Daily Habits
-          </label>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-sm" style={{ color: theme.colors.textSecondary }}>
+              Affirmations
+            </label>
+            <span className="text-xs" style={{ color: theme.colors.textSecondary }}>
+              Total repetitions: {getTotalRepetitions()}
+            </span>
+          </div>
           
-          {/* Add New Habit */}
-          <div className="flex gap-2 mb-3">
+          {/* Add New Affirmation */}
+          <div className="space-y-2 mb-3">
             <input
               type="text"
-              value={newHabitName}
-              onChange={(e) => setNewHabitName(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddHabit()}
-              placeholder="Enter a new habit..."
-              className="flex-1 p-2 rounded"
+              value={newAffirmationText}
+              onChange={(e) => setNewAffirmationText(e.target.value)}
+              placeholder="Enter your affirmation..."
+              className="w-full p-2 rounded"
               style={{ 
                 backgroundColor: theme.colors.inputBackground,
                 color: theme.colors.textPrimary,
@@ -172,48 +181,92 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
               }}
             />
             
-            <button
-              type="button"
-              onClick={handleAddHabit}
-              className="px-4 py-2 rounded transition-colors flex items-center justify-center hover:opacity-90"
-              style={{ 
-                backgroundColor: theme.colors.accentPrimary,
-                color: 'white',
-                cursor: 'pointer',
-                minWidth: '44px',
-                border: 'none'
-              }}
-            >
-              <Plus className="h-5 w-5 pointer-events-none" />
-            </button>
+            <div className="flex gap-2">
+              <div className="flex items-center gap-2 flex-1">
+                <Hash className="h-4 w-4" style={{ color: theme.colors.textSecondary }} />
+                <input
+                  type="number"
+                  value={newAffirmationCount}
+                  onChange={(e) => setNewAffirmationCount(parseInt(e.target.value) || 1)}
+                  min="1"
+                  max="100"
+                  className="w-20 p-2 rounded"
+                  style={{ 
+                    backgroundColor: theme.colors.inputBackground,
+                    color: theme.colors.textPrimary,
+                    border: `1px solid ${theme.colors.inputBorder}`
+                  }}
+                />
+                <span className="text-sm" style={{ color: theme.colors.textSecondary }}>
+                  times daily
+                </span>
+              </div>
+              
+              <button
+                type="button"
+                onClick={handleAddAffirmation}
+                className="px-4 py-2 rounded transition-colors flex items-center justify-center hover:opacity-90"
+                style={{ 
+                  backgroundColor: theme.colors.accentPrimary,
+                  color: 'white',
+                  cursor: 'pointer',
+                  minWidth: '44px',
+                  border: 'none'
+                }}
+              >
+                <Plus className="h-5 w-5 pointer-events-none" />
+              </button>
+            </div>
           </div>
 
-          {/* Habits List */}
+          {/* Affirmations List */}
           <div className="space-y-2 max-h-36 overflow-y-auto">
-            {habits.map(habit => (
+            {affirmations.map(affirmation => (
               <div
-                key={habit.id}
-                className="flex items-center gap-2 p-2 rounded"
+                key={affirmation.id}
+                className="flex items-start gap-2 p-2 rounded"
                 style={{ 
                   backgroundColor: theme.colors.inputBackground,
                   border: `1px solid ${theme.colors.inputBorder}`
                 }}
               >
-                <input
-                  type="text"
-                  value={habit.name}
-                  onChange={(e) => handleUpdateHabit(habit.id, e.target.value)}
-                  className="flex-1 p-1 rounded text-sm"
-                  style={{ 
-                    backgroundColor: theme.colors.modalBackground,
-                    color: theme.colors.textPrimary,
-                    border: `1px solid ${theme.colors.inputBorder}`
-                  }}
-                />
+                <div className="flex-1 space-y-1">
+                  <input
+                    type="text"
+                    value={affirmation.text}
+                    onChange={(e) => handleUpdateAffirmation(affirmation.id, { text: e.target.value })}
+                    className="w-full p-1 rounded text-sm"
+                    style={{ 
+                      backgroundColor: theme.colors.modalBackground,
+                      color: theme.colors.textPrimary,
+                      border: `1px solid ${theme.colors.inputBorder}`
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-3 w-3" style={{ color: theme.colors.textSecondary }} />
+                    <input
+                      type="number"
+                      value={affirmation.count}
+                      onChange={(e) => handleUpdateAffirmation(affirmation.id, { 
+                        count: Math.min(100, Math.max(1, parseInt(e.target.value) || 1))
+                      })}
+                      min="1"
+                      max="100"
+                      className="w-16 p-1 rounded text-sm"
+                      style={{ 
+                        backgroundColor: theme.colors.modalBackground,
+                        color: theme.colors.textPrimary,
+                        border: `1px solid ${theme.colors.inputBorder}`
+                      }}
+                    />
+                    <span className="text-xs" style={{ color: theme.colors.textSecondary }}>
+                      times
+                    </span>
+                  </div>
+                </div>
                 
                 <button
-                  type="button"
-                  onClick={() => handleRemoveHabit(habit.id)}
+                  onClick={() => handleRemoveAffirmation(affirmation.id)}
                   className="p-1 rounded transition-colors"
                   style={{ color: theme.colors.textSecondary }}
                   onMouseEnter={(e) => e.target.style.color = '#ef4444'}
@@ -283,16 +336,16 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
             </div>
           </div>
 
-          {/* Habit Typography */}
+          {/* Affirmation Typography */}
           <div>
             <label className="block text-xs mb-1" style={{ color: theme.colors.textSecondary }}>
-              Habit Font
+              Affirmation Font
             </label>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
-                value={habitFontSize}
-                onChange={(e) => setHabitFontSize(parseInt(e.target.value))}
+                value={affirmationFontSize}
+                onChange={(e) => setAffirmationFontSize(parseInt(e.target.value))}
                 min="12"
                 max="24"
                 className="p-1 rounded text-sm"
@@ -304,8 +357,8 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
                 placeholder="Size"
               />
               <select
-                value={habitFontFamily}
-                onChange={(e) => setHabitFontFamily(e.target.value)}
+                value={affirmationFontFamily}
+                onChange={(e) => setAffirmationFontFamily(e.target.value)}
                 className="p-1 rounded text-sm"
                 style={{ 
                   backgroundColor: theme.colors.modalBackground,
@@ -428,4 +481,4 @@ const DailyHabitTrackerModal = ({ block, onChange, onClose, onDelete }) => {
   );
 };
 
-export default DailyHabitTrackerModal;
+export default AffirmationsBlockModal;

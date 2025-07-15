@@ -67,7 +67,13 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose 
 
     } catch (error) {
       console.error('Error uploading images:', error);
-      alert('Error uploading images. Please try again.');
+      if (error.code === 'storage/unauthorized') {
+        alert('You don\'t have permission to upload images. Please make sure you\'re logged in and try again.');
+      } else if (error.code === 'storage/unauthenticated') {
+        alert('Please log in to upload images.');
+      } else {
+        alert('Error uploading images. Please try again.');
+      }
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

@@ -1,0 +1,27 @@
+Firebase Composite Index Required for savedBlocks
+================================================
+
+The app requires a composite index for the savedBlocks collection to efficiently query public blocks.
+
+To create the index:
+
+1. Click this link from your console error (or copy/paste it into your browser):
+   https://console.firebase.google.com/v1/r/project/mindbinderweb/firestore/indexes?create_composite=ClFwcm9qZWN0cy9taW5kYmluZGVyd2ViL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9zYXZlZEJsb2Nrcy9pbmRleGVzL18QARoMCghpc1B1YmxpYxABGgoKBnVzZXJJZBABGgsKB3NhdmVkQXQQAhoMCghfX25hbWVfXxAC
+
+2. Or manually create it in Firebase Console:
+   - Go to Firebase Console > Firestore Database > Indexes
+   - Click "Create Index"
+   - Collection ID: savedBlocks
+   - Fields to index:
+     * Field: isPublic, Order: Ascending
+     * Field: userId, Order: Ascending  
+     * Field: savedAt, Order: Descending
+   - Query scope: Collection
+   - Click "Create"
+
+The index will take a few minutes to build. Once ready, the queries will be more efficient and the fallback code won't be needed.
+
+Current behavior:
+- The app detects the missing index and falls back to a simpler query
+- It then manually sorts the results in JavaScript
+- This works fine for small numbers of blocks but the index will improve performance as your user base grows

@@ -7,6 +7,10 @@ import MainBoard from './components/MainBoard';
 import UserProfile from './components/UserProfile';
 import PublicProfile from './components/PublicProfile';
 import BoardManager from './components/BoardManager';
+import SavedBlocks from './components/SavedBlocks';
+import SharedBlock from './components/SharedBlock';
+import AcceptInvitation from './components/AcceptInvitation';
+import BoardAccessWrapper from './components/BoardAccessWrapper';
 import LoadingSpinner from './components/LoadingSpinner';
 
 function App() {
@@ -25,7 +29,15 @@ function App() {
           <Route path="/login" element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />} />
           <Route path="/signup" element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />} />
           <Route path="/profile" element={currentUser ? <UserProfile /> : <Navigate to="/login" />} />
+          <Route path="/saved-blocks" element={currentUser ? <SavedBlocks /> : <Navigate to="/login" />} />
           <Route path="/user/:userId" element={<PublicProfile />} />
+          <Route path="/u/:username" element={<PublicProfile />} />
+          <Route path="/u/:username/block/:blockId" element={<SharedBlock />} />
+          <Route path="/accept-invitation/:invitationId" element={<AcceptInvitation />} />
+          <Route 
+            path="/board/:boardId" 
+            element={<BoardAccessWrapper />} 
+          />
           <Route
             path="/boards"
             element={

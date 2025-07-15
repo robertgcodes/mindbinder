@@ -199,16 +199,18 @@ const GratitudeBlockModal = ({ block, onChange, onClose, onDelete }) => {
             />
             
             <button
+              type="button"
               onClick={handleAddItem}
-              className="px-4 py-2 rounded transition-colors"
+              className="px-4 py-2 rounded transition-colors flex items-center justify-center hover:opacity-90"
               style={{ 
                 backgroundColor: theme.colors.accentPrimary,
-                color: 'white'
+                color: 'white',
+                cursor: 'pointer',
+                minWidth: '44px',
+                border: 'none'
               }}
-              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-              onMouseLeave={(e) => e.target.style.opacity = '1'}
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-5 w-5 pointer-events-none" />
             </button>
           </div>
 

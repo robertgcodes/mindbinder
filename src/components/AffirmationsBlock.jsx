@@ -1,29 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Group, Rect, Text, Transformer } from 'react-konva';
 import { Html } from 'react-konva-utils';
-import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Target } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const DailyHabitTrackerBlock = ({
+const AffirmationsBlock = ({
   id,
   x,
   y,
   width,
   height,
-  title = 'Daily Habits',
-  description = 'Track your daily progress',
-  habits = [],
+  title = 'Daily Affirmations',
+  description = 'Speak your truth into existence',
+  affirmations = [],
   history = {},
   titleFontSize = 20,
   titleFontFamily = 'Inter',
   titleFontWeight = 'bold',
   descriptionFontSize = 14,
   descriptionFontFamily = 'Inter',
-  habitFontSize = 16,
-  habitFontFamily = 'Inter',
-  backgroundColor = 'rgba(59, 130, 246, 0.1)',
+  affirmationFontSize = 16,
+  affirmationFontFamily = 'Inter',
+  backgroundColor = 'rgba(34, 197, 94, 0.1)',
   textColor = '#ffffff',
-  accentColor = '#3b82f6',
-  checkColor = '#22c55e',
+  accentColor = '#22c55e',
+  checkColor = '#10b981',
   borderRadius = 12,
   rotation = 0,
   isSelected,
@@ -31,7 +31,6 @@ const DailyHabitTrackerBlock = ({
   onChange,
   onDragStart,
   onDragEnd,
-  onDragMove,
   onDoubleClick
 }) => {
   const groupRef = useRef();
@@ -66,20 +65,28 @@ const DailyHabitTrackerBlock = ({
     });
   };
 
-  const toggleHabit = (habitId) => {
+  const toggleAffirmation = (affirmationId, index) => {
     const dateHistory = history[currentDate] || {};
-    const newDateHistory = { ...dateHistory };
-    newDateHistory[habitId] = !newDateHistory[habitId];
+    const affirmationHistory = dateHistory[affirmationId] || [];
+    const newAffirmationHistory = [...affirmationHistory];
     
-    if (newDateHistory[habitId]) {
-      setActiveCheckbox(habitId);
+    if (newAffirmationHistory[index]) {
+      // Uncheck
+      newAffirmationHistory[index] = false;
+    } else {
+      // Check
+      newAffirmationHistory[index] = true;
+      setActiveCheckbox(`${affirmationId}-${index}`);
       setTimeout(() => setActiveCheckbox(null), 500);
     }
     
     onChange({
       history: {
         ...history,
-        [currentDate]: newDateHistory
+        [currentDate]: {
+          ...dateHistory,
+          [affirmationId]: newAffirmationHistory
+        }
       }
     });
   };
@@ -120,8 +127,16 @@ const DailyHabitTrackerBlock = ({
 
   const calculateProgress = () => {
     const dateHistory = history[currentDate] || {};
-    const completedCount = habits.filter(habit => dateHistory[habit.id]).length;
-    return habits.length > 0 ? (completedCount / habits.length) * 100 : 0;
+    let totalCount = 0;
+    let completedCount = 0;
+
+    affirmations.forEach(affirmation => {
+      totalCount += affirmation.count;
+      const affirmationHistory = dateHistory[affirmation.id] || [];
+      completedCount += affirmationHistory.filter(checked => checked).length;
+    });
+
+    return totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   };
 
   const progress = calculateProgress();
@@ -140,7 +155,6 @@ const DailyHabitTrackerBlock = ({
         onClick={onSelect}
         onDblClick={onDoubleClick}
         onDragStart={onDragStart}
-        onDragMove={onDragMove}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       >
@@ -178,12 +192,8 @@ const DailyHabitTrackerBlock = ({
               fontSize: `${titleFontSize}px`, 
               fontWeight: titleFontWeight,
               fontFamily: titleFontFamily,
-              color: textColor,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
+              color: textColor
             }}>
-              <Target size={20} style={{ color: accentColor }} />
               {title}
             </h3>
             <p style={{ 
@@ -269,77 +279,86 @@ const DailyHabitTrackerBlock = ({
             </button>
           </div>
 
-          {/* Habits List */}
+          {/* Affirmations List */}
           <div style={{ 
             flex: 1, 
             overflowY: 'auto',
             paddingRight: '8px',
             pointerEvents: 'auto'
           }}>
-            {habits.length === 0 ? (
+            {affirmations.length === 0 ? (
               <div style={{
                 textAlign: 'center',
                 opacity: 0.5,
                 padding: '20px',
                 fontSize: '14px'
               }}>
-                Double-click to add habits
+                Double-click to add affirmations
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {habits.map(habit => {
-                  const isChecked = history[currentDate]?.[habit.id] || false;
-                  const isActive = activeCheckbox === habit.id;
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {affirmations.map(affirmation => {
+                  const dateHistory = history[currentDate] || {};
+                  const affirmationHistory = dateHistory[affirmation.id] || [];
                   
                   return (
-                    <div
-                      key={habit.id}
-                      onClick={() => toggleHabit(habit.id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '10px 12px',
-                        backgroundColor: isChecked ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        border: `1px solid ${isChecked ? checkColor : 'transparent'}`,
-                        boxShadow: isActive ? `0 0 10px ${checkColor}` : 'none',
-                        transform: isActive ? 'scale(1.02)' : 'scale(1)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = isChecked 
-                          ? 'rgba(34, 197, 94, 0.2)' 
-                          : 'rgba(255, 255, 255, 0.08)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = isChecked 
-                          ? 'rgba(34, 197, 94, 0.15)' 
-                          : 'rgba(255, 255, 255, 0.05)';
-                      }}
-                    >
-                      <span style={{ 
-                        fontSize: '20px',
-                        color: isChecked ? checkColor : 'rgba(255, 255, 255, 0.3)',
-                        transition: 'all 0.2s ease'
-                      }}>
-                        {isChecked ? (
-                          <CheckCircle2 size={20} style={{ fill: checkColor, color: 'white' }} />
-                        ) : (
-                          <Circle size={20} />
-                        )}
-                      </span>
-                      <span style={{ 
-                        flex: 1,
-                        fontSize: `${habitFontSize}px`,
-                        fontFamily: habitFontFamily,
-                        opacity: isChecked ? 1 : 0.8,
-                        textDecoration: isChecked ? 'line-through' : 'none',
-                        color: textColor
-                      }}>
-                        {habit.name}
-                      </span>
+                    <div key={affirmation.id} style={{ marginBottom: '12px' }}>
+                      {Array.from({ length: affirmation.count }, (_, index) => {
+                        const isChecked = affirmationHistory[index] || false;
+                        const isActive = activeCheckbox === `${affirmation.id}-${index}`;
+                        
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => toggleAffirmation(affirmation.id, index)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              padding: '8px 10px',
+                              marginBottom: '4px',
+                              backgroundColor: isChecked ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              border: `1px solid ${isChecked ? checkColor : 'transparent'}`,
+                              boxShadow: isActive ? `0 0 10px ${checkColor}` : 'none',
+                              transform: isActive ? 'scale(1.02)' : 'scale(1)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = isChecked 
+                                ? 'rgba(34, 197, 94, 0.2)' 
+                                : 'rgba(255, 255, 255, 0.08)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = isChecked 
+                                ? 'rgba(34, 197, 94, 0.15)' 
+                                : 'rgba(255, 255, 255, 0.05)';
+                            }}
+                          >
+                            <span style={{ 
+                              flex: 1,
+                              fontSize: `${affirmationFontSize}px`,
+                              fontFamily: affirmationFontFamily,
+                              opacity: isChecked ? 1 : 0.8,
+                              color: textColor
+                            }}>
+                              {affirmation.text}
+                            </span>
+                            <span style={{ 
+                              fontSize: '20px',
+                              color: isChecked ? checkColor : 'rgba(255, 255, 255, 0.3)',
+                              transition: 'all 0.2s ease'
+                            }}>
+                              {isChecked ? (
+                                <CheckCircle2 size={20} style={{ fill: checkColor, color: 'white' }} />
+                              ) : (
+                                <Circle size={20} />
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
@@ -359,9 +378,9 @@ const DailyHabitTrackerBlock = ({
             }
             return newBox;
           }}
-          anchorFill={accentColor}
-          anchorStroke={accentColor}
-          borderStroke={accentColor}
+          anchorFill="#22c55e"
+          anchorStroke="#22c55e"
+          borderStroke="#22c55e"
           anchorSize={8}
           borderDash={[3, 3]}
           rotateEnabled={true}
@@ -372,4 +391,4 @@ const DailyHabitTrackerBlock = ({
   );
 };
 
-export default DailyHabitTrackerBlock;
+export default AffirmationsBlock;

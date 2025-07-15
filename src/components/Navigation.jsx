@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Undo, Redo } from 'lucide-react';
+import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet } from 'lucide-react';
 import UserMenu from './UserMenu';
+import SaveBlockButton from './SaveBlockButton';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
+const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection }) => {
   const { theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -22,7 +23,9 @@ const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
     { type: 'daily-habit-tracker', icon: CheckSquare, label: 'Habit Tracker' },
     { type: 'quick-notes', icon: FileText, label: 'Quick Notes' },
     { type: 'link', icon: Link2, label: 'Link' },
+    { type: 'google-embed', icon: FileSpreadsheet, label: 'Google Embed' },
     { type: 'gratitude', icon: Heart, label: 'Gratitude' },
+    { type: 'affirmations', icon: Sparkles, label: 'Affirmations' },
   ];
 
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
@@ -53,17 +56,36 @@ const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
+            {isReadOnly && (
+              <>
+                <div className="px-3 py-1 rounded-full text-sm font-medium" style={{ 
+                  backgroundColor: theme.colors.blockBorder,
+                  color: theme.colors.textSecondary
+                }}>
+                  View Only
+                </div>
+                <div className="h-6 w-px" style={{ backgroundColor: theme.colors.blockBorder }} />
+              </>
+            )}
             <button
               onClick={onUndo}
+              disabled={isReadOnly}
               className="p-2 rounded-lg transition-colors"
-              style={{ color: theme.colors.textSecondary }}
+              style={{ 
+                color: isReadOnly ? theme.colors.blockBorder : theme.colors.textSecondary,
+                cursor: isReadOnly ? 'not-allowed' : 'pointer'
+              }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = theme.colors.hoverBackground;
-                e.target.style.color = theme.colors.textPrimary;
+                if (!isReadOnly) {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                  e.target.style.color = theme.colors.textPrimary;
+                }
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.color = theme.colors.textSecondary;
+                if (!isReadOnly) {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = theme.colors.textSecondary;
+                }
               }}
               title="Undo"
             >
@@ -71,37 +93,139 @@ const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
             </button>
             <button
               onClick={onRedo}
+              disabled={isReadOnly}
               className="p-2 rounded-lg transition-colors"
-              style={{ color: theme.colors.textSecondary }}
+              style={{ 
+                color: isReadOnly ? theme.colors.blockBorder : theme.colors.textSecondary,
+                cursor: isReadOnly ? 'not-allowed' : 'pointer'
+              }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = theme.colors.hoverBackground;
-                e.target.style.color = theme.colors.textPrimary;
+                if (!isReadOnly) {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                  e.target.style.color = theme.colors.textPrimary;
+                }
               }}
               onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.color = theme.colors.textSecondary;
+                if (!isReadOnly) {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = theme.colors.textSecondary;
+                }
               }}
               title="Redo"
             >
               <Redo className="h-5 w-5" />
             </button>
-            <div className="relative" ref={dropdownRef}>
+            <div className="h-6 w-px" style={{ backgroundColor: theme.colors.blockBorder }} />
+            {onShare && (
+              <>
+                <button
+                  onClick={onShare}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: theme.colors.textSecondary }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = theme.colors.hoverBackground;
+                    e.target.style.color = theme.colors.textPrimary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = theme.colors.textSecondary;
+                  }}
+                  title="Share Board"
+                >
+                  <Share2 className="h-5 w-5" />
+                </button>
+                <div className="h-6 w-px" style={{ backgroundColor: theme.colors.blockBorder }} />
+              </>
+            )}
+            {!isReadOnly && (
               <button
-                onClick={toggleDropdown}
+                onClick={onToggleSelectionMode}
                 className="p-2 rounded-lg transition-colors"
-                style={{ color: theme.colors.textSecondary }}
+                style={{ 
+                  color: isSelectionMode ? theme.colors.accentPrimary : theme.colors.textSecondary,
+                  backgroundColor: isSelectionMode ? theme.colors.hoverBackground : 'transparent'
+                }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = theme.colors.hoverBackground;
-                  e.target.style.color = theme.colors.textPrimary;
+                  if (!isSelectionMode) {
+                    e.target.style.backgroundColor = theme.colors.hoverBackground;
+                    e.target.style.color = theme.colors.textPrimary;
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = theme.colors.textSecondary;
+                  if (!isSelectionMode) {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = theme.colors.textSecondary;
+                  }
                 }}
-                title="Add Block"
+                title={isSelectionMode ? "Exit Selection Mode" : "Selection Tool"}
               >
-                <Plus className="h-5 w-5" />
+                <MousePointer2 className="h-5 w-5" />
               </button>
+            )}
+            {(selectedBlock || hasMultiSelection) && !isReadOnly && (
+              <>
+                <div className="h-6 w-px" style={{ backgroundColor: theme.colors.blockBorder }} />
+                <button
+                  onClick={onDuplicateBlock}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ 
+                    color: theme.colors.textSecondary,
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = theme.colors.hoverBackground;
+                    e.target.style.color = theme.colors.textPrimary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = theme.colors.textSecondary;
+                  }}
+                  title={hasMultiSelection ? "Duplicate Selected Blocks" : "Duplicate Block"}
+                >
+                  <Copy className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={onDeleteBlock}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ 
+                    color: theme.colors.textSecondary,
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                    e.target.style.color = '#ef4444';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = theme.colors.textSecondary;
+                  }}
+                  title={hasMultiSelection ? "Delete Selected Blocks" : "Delete Block"}
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              </>
+            )}
+            {selectedBlock && !isReadOnly && (
+              <SaveBlockButton block={selectedBlock} boardId={boardId} />
+            )}
+            {!isReadOnly && (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={toggleDropdown}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: theme.colors.textSecondary }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = theme.colors.hoverBackground;
+                    e.target.style.color = theme.colors.textPrimary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = theme.colors.textSecondary;
+                  }}
+                  title="Add Block"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
               {isDropdownOpen && (
                 <div 
                   className="absolute right-0 mt-2 w-48 rounded-md shadow-lg z-20"
@@ -134,7 +258,8 @@ const Navigation = ({ onAddBlock, onUndo, onRedo }) => {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
+            )}
             <UserMenu />
           </div>
         </div>

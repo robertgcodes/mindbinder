@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Stage, Layer, Group, Text, Image, Rect } from 'react-konva';
 import Konva from 'konva';
 import { v4 as uuidv4 } from 'uuid';
-import { ArrowLeft, Smartphone, Monitor, Users, Loader, Clipboard } from 'lucide-react';
+import { ArrowLeft, Smartphone, Monitor, Users, Loader, Clipboard, LayoutGrid } from 'lucide-react';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -12,6 +12,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
 import useMobileDetect from '../hooks/useMobileDetect';
 import MobileBoard from './MobileBoard';
+import GridView from './GridView';
 import TextBlock from './TextBlock';
 import RotatingQuoteBlock from './RotatingQuoteBlock';
 import ImageBlock from './ImageBlock';
@@ -90,6 +91,7 @@ const MainBoard = ({ board, onBack }) => {
   const { theme } = useTheme();
   const { isMobile: isNaturallyMobile, isTablet } = useMobileDetect();
   const [forceMobileView, setForceMobileView] = useState(false);
+  const [forceGridView, setForceGridView] = useState(false);
   const isMobile = isNaturallyMobile || forceMobileView;
   const [blocks, setBlocks] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -831,6 +833,103 @@ const MainBoard = ({ board, onBack }) => {
       // Handle all other block types including link blocks (single block drag)
       updateBlock(blockId, { x: newX, y: newY });
     }
+  };
+
+  // Function to bring all blocks into the visible canvas area
+  const bringBlocksIntoView = () => {
+    console.log('Bringing all blocks into visible area...');
+    
+    const padding = 100; // Padding from edges
+    const viewportWidth = window.innerWidth - (padding * 2);
+    const viewportHeight = window.innerHeight - 64 - (padding * 2); // Subtract nav height
+    
+    let updatedBlocks = blocks.map(block => {
+      let needsUpdate = false;
+      let newX = block.x;
+      let newY = block.y;
+      
+      // Check if block is off-screen to the left
+      if (block.x < -stagePos.x / stageScale + padding) {
+        newX = -stagePos.x / stageScale + padding;
+        needsUpdate = true;
+      }
+      
+      // Check if block is off-screen to the right
+      if (block.x + block.width > (-stagePos.x + viewportWidth) / stageScale) {
+        newX = (-stagePos.x + viewportWidth) / stageScale - block.width - padding;
+        needsUpdate = true;
+      }
+      
+      // Check if block is off-screen to the top
+      if (block.y < -stagePos.y / stageScale + padding) {
+        newY = -stagePos.y / stageScale + padding;
+        needsUpdate = true;
+      }
+      
+      // Check if block is off-screen to the bottom
+      if (block.y + block.height > (-stagePos.y + viewportHeight) / stageScale) {
+        newY = (-stagePos.y + viewportHeight) / stageScale - block.height - padding;
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
+        console.log(`Moving block ${block.id} from (${block.x}, ${block.y}) to (${newX}, ${newY})`);
+        return { ...block, x: newX, y: newY };
+      }
+      
+      return block;
+    });
+    
+    // Check if any blocks were updated
+    const blocksUpdated = updatedBlocks.some((block, index) => 
+      block.x !== blocks[index].x || block.y !== blocks[index].y
+    );
+    
+    if (blocksUpdated) {
+      setBlocks(updatedBlocks);
+      saveBoard(updatedBlocks);
+      console.log('Blocks repositioned to be within visible area');
+    } else {
+      console.log('All blocks are already within visible area');
+    }
+  };
+
+  // Function to center view on all blocks
+  const centerViewOnBlocks = () => {
+    if (blocks.length === 0) return;
+    
+    // Calculate bounding box of all blocks
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+    
+    blocks.forEach(block => {
+      minX = Math.min(minX, block.x);
+      minY = Math.min(minY, block.y);
+      maxX = Math.max(maxX, block.x + block.width);
+      maxY = Math.max(maxY, block.y + block.height);
+    });
+    
+    const blocksWidth = maxX - minX;
+    const blocksHeight = maxY - minY;
+    const centerX = minX + blocksWidth / 2;
+    const centerY = minY + blocksHeight / 2;
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight - 64; // Subtract nav height
+    
+    // Calculate scale to fit all blocks
+    const scaleX = viewportWidth / (blocksWidth + 200); // Add padding
+    const scaleY = viewportHeight / (blocksHeight + 200);
+    const newScale = Math.min(Math.max(0.1, Math.min(scaleX, scaleY)), 1.5);
+    
+    // Calculate stage position to center the blocks
+    const newStageX = viewportWidth / 2 - centerX * newScale;
+    const newStageY = viewportHeight / 2 - centerY * newScale;
+    
+    setStagePos({ x: newStageX, y: newStageY });
+    setStageScale(newScale);
+    
+    console.log('Centered view on all blocks');
   };
 
   const openModal = (type, block) => {
@@ -1868,6 +1967,20 @@ const MainBoard = ({ board, onBack }) => {
     );
   }
 
+  // Render grid view if force grid view is enabled
+  if (forceGridView) {
+    return (
+      <GridView
+        board={{ ...board, blocks }}
+        onBack={onBack}
+        onUpdateBlock={updateBlock}
+        onDeleteBlock={deleteSelectedBlock}
+        onOpenModal={openModal}
+        onExitGridView={() => setForceGridView(false)}
+      />
+    );
+  }
+  
   // Render mobile view if on mobile device
   if (isMobile) {
     return (
@@ -1877,6 +1990,7 @@ const MainBoard = ({ board, onBack }) => {
         onUpdateBlock={updateBlock}
         onDeleteBlock={deleteSelectedBlock}
         onOpenModal={openModal}
+        onExitMobileView={forceMobileView ? () => setForceMobileView(false) : null}
       />
     );
   }
@@ -1894,6 +2008,8 @@ const MainBoard = ({ board, onBack }) => {
         onShare={handleShare}
         isReadOnly={isReadOnly}
         onDeleteBlock={handleDeleteBlockNav}
+        onCenterView={centerViewOnBlocks}
+        onBringIntoView={bringBlocksIntoView}
         onDuplicateBlock={handleDuplicateBlock}
         hasMultiSelection={selectedBlockIds.size > 0}
       />
@@ -1924,6 +2040,23 @@ const MainBoard = ({ board, onBack }) => {
             >
               {forceMobileView ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
               <span className="text-sm">{forceMobileView ? "Desktop" : "Mobile"}</span>
+            </button>
+          )}
+          
+          {/* Grid View Toggle */}
+          {!isNaturallyMobile && (
+            <button
+              onClick={() => setForceGridView(!forceGridView)}
+              className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
+              style={{ 
+                backgroundColor: theme.colors.blockBackground,
+                color: forceGridView ? theme.colors.accentPrimary : theme.colors.textPrimary,
+                border: `1px solid ${forceGridView ? theme.colors.accentPrimary : theme.colors.blockBorder}`
+              }}
+              title={forceGridView ? "Switch to Desktop View" : "Switch to Grid View"}
+            >
+              {forceGridView ? <Monitor className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+              <span className="text-sm">{forceGridView ? "Desktop" : "Grid"}</span>
             </button>
           )}
         </div>

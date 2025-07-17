@@ -23,7 +23,7 @@ const defaultLightTheme = {
     modalBackground: '#ffffff',
     modalOverlay: 'rgba(0, 0, 0, 0.5)',
     toolbarBackground: '#ffffff',
-    navigationBackground: '#ffffff',
+    navigationBackground: 'rgba(255, 255, 255, 0.98)',
     
     // Accent colors
     accentPrimary: '#3b82f6', // Blue
@@ -63,7 +63,7 @@ const defaultDarkTheme = {
     modalBackground: '#1a1a1a',
     modalOverlay: 'rgba(0, 0, 0, 0.7)',
     toolbarBackground: '#1a1a1a',
-    navigationBackground: '#1a1a1a',
+    navigationBackground: 'rgba(26, 26, 26, 0.98)',
     
     // Accent colors
     accentPrimary: '#3b82f6', // Blue
@@ -254,10 +254,18 @@ export const ThemeProvider = ({ children }) => {
     saveTheme(presetTheme);
   };
 
+  const setThemeMode = (mode) => {
+    const newTheme = mode === 'light' ? defaultLightTheme : defaultDarkTheme;
+    setTheme(newTheme);
+    setCustomTheme(null);
+    saveTheme(newTheme);
+  };
+
   const value = {
     theme,
     loading,
     toggleTheme,
+    setTheme: setThemeMode,
     updateThemeColors,
     resetToDefault,
     applyPresetTheme,

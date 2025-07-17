@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { Plus, Trash2, Share2, Copy, Settings } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import OnboardingFlow from './OnboardingFlow';
 
 const BoardManager = ({ user, onSelectBoard }) => {
   const { theme } = useTheme();
@@ -13,12 +14,32 @@ const BoardManager = ({ user, onSelectBoard }) => {
   const [newBoardName, setNewBoardName] = useState('');
   const [newBoardDescription, setNewBoardDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
 
   useEffect(() => {
     if (user) {
+      checkOnboardingStatus();
       loadBoards();
     }
   }, [user]);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.data();
+      const completed = userData?.hasCompletedOnboarding || false;
+      setHasCompletedOnboarding(completed);
+      
+      // Show onboarding if user hasn't completed it
+      if (!completed) {
+        setShowOnboarding(true);
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      setHasCompletedOnboarding(true); // Default to completed if error
+    }
+  };
 
   const loadBoards = async () => {
     try {
@@ -77,6 +98,51 @@ const BoardManager = ({ user, onSelectBoard }) => {
     }
   };
 
+  const handleOnboardingComplete = async (selectedBlocks) => {
+    setShowOnboarding(false);
+    setHasCompletedOnboarding(true);
+    
+    // If user selected blocks, create their first board with those blocks
+    if (selectedBlocks && selectedBlocks.length > 0) {
+      try {
+        const boardId = Date.now().toString();
+        const blocks = selectedBlocks.map((blockType, index) => ({
+          id: `block-${Date.now()}-${index}`,
+          type: blockType,
+          x: 100 + (index * 350), // Place blocks side by side
+          y: 100,
+          width: 300,
+          height: 250,
+          rotation: 0,
+          // Add default content based on block type
+          ...(blockType === 'text' && { text: 'Welcome to your first block! Click to edit.' }),
+          ...(blockType === 'quick-notes' && { notes: 'Start typing your notes here...' }),
+          ...(blockType === 'daily-habit-tracker' && { habits: [], title: 'Daily Habits' }),
+          ...(blockType === 'gratitude' && { items: [], title: 'Gratitude Journal' }),
+          ...(blockType === 'affirmations' && { affirmations: [], title: 'Daily Affirmations' }),
+          ...(blockType === 'yearly-planner' && { goals: {}, title: 'Yearly Planner' })
+        }));
+
+        const boardData = {
+          id: boardId,
+          userId: user.uid,
+          name: 'My First Board',
+          description: 'Your personal mindboard to organize thoughts and goals',
+          isPublic: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          blocks
+        };
+
+        await setDoc(doc(db, 'boards', boardId), boardData);
+        // Navigate directly to the new board
+        onSelectBoard(boardData);
+      } catch (error) {
+        console.error('Error creating starter board:', error);
+      }
+    }
+  };
+
   const copyBoard = async (board) => {
     try {
       const newBoardId = Date.now().toString();
@@ -105,8 +171,15 @@ const BoardManager = ({ user, onSelectBoard }) => {
   }
 
   return (
-    <div className="min-h-screen bg-dark-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <>
+      {showOnboarding && (
+        <OnboardingFlow
+          onComplete={handleOnboardingComplete}
+          isReturningUser={false}
+        />
+      )}
+      <div className="min-h-screen bg-dark-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-white">My Boards</h1>
           <button
@@ -255,6 +328,7 @@ const BoardManager = ({ user, onSelectBoard }) => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

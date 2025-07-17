@@ -10,12 +10,18 @@ import {
   Image, 
   Layout,
   RefreshCw,
-  Check
+  Check,
+  HelpCircle,
+  Settings as SettingsIcon
 } from 'lucide-react';
+import OnboardingFlow from './OnboardingFlow';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
 
 const ThemeSettings = () => {
   const { theme, toggleTheme, updateThemeColors, resetToDefault, applyPresetTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('colors');
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const colorOptions = [
     { key: 'canvasBackground', label: 'Canvas Background', icon: Layout },
@@ -71,6 +77,7 @@ const ThemeSettings = () => {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium" style={{ color: theme.colors.textPrimary }}>
@@ -92,6 +99,16 @@ const ThemeSettings = () => {
 
       {/* Tab Navigation */}
       <div className="flex space-x-4 border-b" style={{ borderColor: theme.colors.blockBorder }}>
+        <button
+          onClick={() => setActiveTab('general')}
+          className={`pb-2 px-1 transition-colors ${activeTab === 'general' ? 'border-b-2' : ''}`}
+          style={{ 
+            color: activeTab === 'general' ? theme.colors.accentPrimary : theme.colors.textSecondary,
+            borderColor: theme.colors.accentPrimary
+          }}
+        >
+          General
+        </button>
         <button
           onClick={() => setActiveTab('colors')}
           className={`pb-2 px-1 transition-colors ${activeTab === 'colors' ? 'border-b-2' : ''}`}
@@ -125,6 +142,38 @@ const ThemeSettings = () => {
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'general' && (
+        <div className="space-y-4">
+          {/* Tutorial Section */}
+          <div className="p-4 rounded-lg" style={{ backgroundColor: theme.colors.hoverBackground }}>
+            <div className="flex items-start space-x-3">
+              <HelpCircle className="w-5 h-5 mt-1" style={{ color: theme.colors.accentPrimary }} />
+              <div className="flex-1">
+                <h3 className="font-semibold mb-2" style={{ color: theme.colors.textPrimary }}>
+                  Getting Started Tutorial
+                </h3>
+                <p className="text-sm mb-4" style={{ color: theme.colors.textSecondary }}>
+                  Need a refresher on how to use Mindboard? Restart the interactive tutorial to learn about all the features.
+                </p>
+                <button
+                  onClick={() => setShowOnboarding(true)}
+                  className="px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+                  style={{ 
+                    backgroundColor: theme.colors.accentPrimary,
+                    color: '#ffffff'
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Restart Tutorial</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* More general settings can be added here */}
+        </div>
+      )}
+      
       {activeTab === 'colors' && (
         <div className="space-y-3">
           {colorOptions.map(option => renderColorPicker(option))}
@@ -237,6 +286,27 @@ const ThemeSettings = () => {
         </div>
       )}
     </div>
+
+    {/* Onboarding Flow Modal */}
+    {showOnboarding && (
+      <OnboardingFlow
+        onComplete={async () => {
+          setShowOnboarding(false);
+          // Update user's status to show they've viewed the tutorial again
+          if (auth.currentUser) {
+            try {
+              await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                lastTutorialViewedAt: new Date()
+              });
+            } catch (error) {
+              console.error('Error updating tutorial status:', error);
+            }
+          }
+        }}
+        isReturningUser={true}
+      />
+    )}
+  </>
   );
 };
 

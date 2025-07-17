@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book } from 'lucide-react';
+import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection }) => {
+const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView }) => {
   const { theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -50,7 +50,17 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
   }, []);
 
   return (
-    <nav className="border-b" style={{ backgroundColor: theme.colors.navigationBackground, borderColor: theme.colors.blockBorder }}>
+    <nav 
+      className="border-b" 
+      style={{ 
+        backgroundColor: theme.colors.navigationBackground, 
+        borderColor: theme.colors.blockBorder,
+        position: 'relative',
+        zIndex: 1000,
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -140,6 +150,42 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                 </button>
                 <div className="h-6 w-px" style={{ backgroundColor: theme.colors.blockBorder }} />
               </>
+            )}
+            {onCenterView && (
+              <button
+                onClick={onCenterView}
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: theme.colors.textSecondary }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                  e.target.style.color = theme.colors.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = theme.colors.textSecondary;
+                }}
+                title="Center View on All Blocks"
+              >
+                <Maximize2 className="h-5 w-5" />
+              </button>
+            )}
+            {onBringIntoView && (
+              <button
+                onClick={onBringIntoView}
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: theme.colors.textSecondary }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                  e.target.style.color = theme.colors.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = theme.colors.textSecondary;
+                }}
+                title="Bring All Blocks Into View"
+              >
+                <Move className="h-5 w-5" />
+              </button>
             )}
             {!isReadOnly && (
               <button
@@ -236,7 +282,8 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                   style={{ 
                     backgroundColor: theme.colors.modalBackground,
                     border: `1px solid ${theme.colors.blockBorder}`,
-                    boxShadow: `0 4px 6px ${theme.colors.blockShadow}`
+                    boxShadow: `0 4px 6px ${theme.colors.blockShadow}`,
+                    zIndex: 1001
                   }}
                 >
                   <div className="py-1">

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Heart, Sun, Star, Flower, Smile, Coffee, Moon, Sparkles, Save, Type, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Plus, Trash2, Heart, Sun, Star, Flower, Smile, Coffee, Moon, Sparkles, Save, Type, AlignLeft, AlignCenter, AlignRight, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTheme } from '../contexts/ThemeContext';
+import StandardModal, { FormGroup, Label, Input, Select } from './StandardModal';
 
 const GratitudeBlockModal = ({ block, onChange, onClose, onDelete }) => {
   const { theme } = useTheme();
@@ -87,414 +88,331 @@ const GratitudeBlockModal = ({ block, onChange, onClose, onDelete }) => {
   };
 
   return (
-    <div 
-      className="rounded-lg shadow-xl w-[500px] max-h-[80vh] overflow-hidden flex flex-col"
-      style={{ 
-        backgroundColor: theme.colors.modalBackground,
-        border: `1px solid ${theme.colors.blockBorder}`,
-      }}
+    <StandardModal
+      isOpen={true}
+      onClose={onClose}
+      title="Edit Gratitude Block"
+      icon={Heart}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      saveText="Save Changes"
+      showDelete={true}
     >
-      {/* Header */}
-      <div 
-        className="p-4 border-b flex justify-between items-center flex-shrink-0"
-        style={{ 
-          borderColor: theme.colors.blockBorder,
-          backgroundColor: theme.colors.modalBackground 
-        }}
-      >
-        <h3 className="text-lg font-semibold flex items-center" style={{ color: theme.colors.textPrimary }}>
-          <Heart className="h-5 w-5 mr-2" style={{ color: accentColor }} />
-          Edit Gratitude Block
-        </h3>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-lg transition-colors"
-          style={{ color: theme.colors.textSecondary }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = theme.colors.hoverBackground;
-            e.target.style.color = theme.colors.textPrimary;
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = 'transparent';
-            e.target.style.color = theme.colors.textSecondary;
-          }}
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
+      {/* Basic Information */}
+      <FormGroup>
+        <Label>Title</Label>
+        <Input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Gratitude Journal"
+        />
+      </FormGroup>
 
-      <div className="p-4 space-y-3 overflow-y-auto flex-grow">
-        {/* Title & Description */}
-        <div>
-          <label className="block text-sm mb-1" style={{ color: theme.colors.textSecondary }}>
-            Title
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded"
-            style={{ 
-              backgroundColor: theme.colors.inputBackground,
-              color: theme.colors.textPrimary,
-              border: `1px solid ${theme.colors.inputBorder}`
-            }}
-          />
-        </div>
+      <FormGroup>
+        <Label>Description</Label>
+        <Input
+          as="textarea"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          placeholder="What are you grateful for today?"
+        />
+      </FormGroup>
 
-        <div>
-          <label className="block text-sm mb-1" style={{ color: theme.colors.textSecondary }}>
-            Description
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows="2"
-            className="w-full p-2 rounded resize-none"
-            style={{ 
-              backgroundColor: theme.colors.inputBackground,
-              color: theme.colors.textPrimary,
-              border: `1px solid ${theme.colors.inputBorder}`
-            }}
-          />
-        </div>
-
-        {/* Gratitude Items */}
-        <div>
-          <label className="block text-sm mb-2" style={{ color: theme.colors.textSecondary }}>
-            Gratitude Items
-          </label>
+      {/* Add New Gratitude Item */}
+      <FormGroup>
+        <Label>Add New Gratitude Item</Label>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Select
+            value={selectedIcon}
+            onChange={(e) => setSelectedIcon(e.target.value)}
+            style={{ width: '128px' }}
+          >
+            {iconOptions.map(opt => (
+              <option key={opt.type} value={opt.type}>
+                {opt.emoji} {opt.label}
+              </option>
+            ))}
+          </Select>
           
-          {/* Add New Item */}
-          <div className="flex gap-2 mb-3">
-            <select
-              value={selectedIcon}
-              onChange={(e) => setSelectedIcon(e.target.value)}
-              className="px-2 py-2 rounded"
-              style={{ 
-                backgroundColor: theme.colors.inputBackground,
-                color: theme.colors.textPrimary,
-                border: `1px solid ${theme.colors.inputBorder}`
-              }}
-            >
-              {iconOptions.map(opt => (
-                <option key={opt.type} value={opt.type}>
-                  {opt.emoji} {opt.label}
-                </option>
-              ))}
-            </select>
-            
-            <input
-              type="text"
-              value={newItemText}
-              onChange={(e) => setNewItemText(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-              placeholder="What are you grateful for?"
-              className="flex-1 p-2 rounded"
-              style={{ 
-                backgroundColor: theme.colors.inputBackground,
-                color: theme.colors.textPrimary,
-                border: `1px solid ${theme.colors.inputBorder}`
-              }}
-            />
-            
-            <button
-              type="button"
-              onClick={handleAddItem}
-              className="px-4 py-2 rounded transition-colors flex items-center justify-center hover:opacity-90"
-              style={{ 
-                backgroundColor: theme.colors.accentPrimary,
-                color: 'white',
-                cursor: 'pointer',
-                minWidth: '44px',
-                border: 'none'
-              }}
-            >
-              <Plus className="h-5 w-5 pointer-events-none" />
-            </button>
-          </div>
+          <Input
+            type="text"
+            value={newItemText}
+            onChange={(e) => setNewItemText(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
+            placeholder="What are you grateful for?"
+            style={{ flex: 1 }}
+          />
+          
+          <button
+            type="button"
+            onClick={handleAddItem}
+            style={{
+              padding: '10px',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: '44px',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
+            }}
+          >
+            <Plus size={20} />
+          </button>
+        </div>
+      </FormGroup>
 
-          {/* Items List */}
-          <div className="space-y-2 max-h-36 overflow-y-auto">
-            {items.map(item => {
-              const iconOption = iconOptions.find(opt => opt.type === item.icon);
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-2 p-2 rounded"
-                  style={{ 
-                    backgroundColor: theme.colors.inputBackground,
-                    border: `1px solid ${theme.colors.inputBorder}`
+      {/* Existing Gratitude Items */}
+      {items.length > 0 && (
+        <FormGroup>
+          <Label>Gratitude Items ({items.length})</Label>
+          <div style={{ 
+            maxHeight: '160px', 
+            overflowY: 'auto',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            borderRadius: '8px',
+            padding: '12px',
+            border: `1px solid ${theme.colors.blockBorder}`
+          }}>
+            {items.map(item => (
+              <div
+                key={item.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '6px',
+                  border: `1px solid ${theme.colors.blockBorder}`,
+                  marginBottom: '8px'
+                }}
+              >
+                <Select
+                  value={item.icon}
+                  onChange={(e) => handleUpdateItem(item.id, { icon: e.target.value })}
+                  style={{ width: '64px', fontSize: '13px' }}
+                >
+                  {iconOptions.map(opt => (
+                    <option key={opt.type} value={opt.type}>
+                      {opt.emoji}
+                    </option>
+                  ))}
+                </Select>
+                
+                <Input
+                  type="text"
+                  value={item.text}
+                  onChange={(e) => handleUpdateItem(item.id, { text: e.target.value })}
+                  style={{ flex: 1, fontSize: '13px' }}
+                />
+                
+                <button
+                  onClick={() => handleRemoveItem(item.id)}
+                  style={{
+                    padding: '4px',
+                    color: theme.colors.textSecondary,
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.color = '#ef4444';
+                    e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.color = theme.colors.textSecondary;
+                    e.target.style.backgroundColor = 'transparent';
                   }}
                 >
-                  <select
-                    value={item.icon}
-                    onChange={(e) => handleUpdateItem(item.id, { icon: e.target.value })}
-                    className="px-1 py-1 rounded text-sm"
-                    style={{ 
-                      backgroundColor: theme.colors.modalBackground,
-                      color: theme.colors.textPrimary,
-                      border: `1px solid ${theme.colors.inputBorder}`
-                    }}
-                  >
-                    {iconOptions.map(opt => (
-                      <option key={opt.type} value={opt.type}>
-                        {opt.emoji}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <input
-                    type="text"
-                    value={item.text}
-                    onChange={(e) => handleUpdateItem(item.id, { text: e.target.value })}
-                    className="flex-1 p-1 rounded text-sm"
-                    style={{ 
-                      backgroundColor: theme.colors.modalBackground,
-                      color: theme.colors.textPrimary,
-                      border: `1px solid ${theme.colors.inputBorder}`
-                    }}
-                  />
-                  
-                  <button
-                    onClick={() => handleRemoveItem(item.id)}
-                    className="p-1 rounded transition-colors"
-                    style={{ color: theme.colors.textSecondary }}
-                    onMouseEnter={(e) => e.target.style.color = '#ef4444'}
-                    onMouseLeave={(e) => e.target.style.color = theme.colors.textSecondary}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              );
-            })}
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
           </div>
-        </div>
+        </FormGroup>
+      )}
 
-        {/* Typography Settings */}
-        <div className="space-y-3 p-3 rounded" style={{ backgroundColor: theme.colors.inputBackground }}>
-          <h4 className="text-sm font-medium" style={{ color: theme.colors.textPrimary }}>
-            Typography Settings
-          </h4>
-          
+      {/* Typography Settings */}
+      <FormGroup>
+        <Label>Typography Settings</Label>
+        <div style={{ 
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          borderRadius: '8px',
+          padding: '16px',
+          border: `1px solid ${theme.colors.blockBorder}`
+        }}>
           {/* Title Typography */}
-          <div>
-            <label className="block text-xs mb-1" style={{ color: theme.colors.textSecondary }}>
-              Title Font
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <input
+          <div style={{ marginBottom: '16px' }}>
+            <Label style={{ fontSize: '12px', marginBottom: '8px' }}>Title Font</Label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+              <Input
                 type="number"
                 value={titleFontSize}
                 onChange={(e) => setTitleFontSize(parseInt(e.target.value))}
                 min="12"
                 max="48"
-                className="p-1 rounded text-sm"
-                style={{ 
-                  backgroundColor: theme.colors.modalBackground,
-                  color: theme.colors.textPrimary,
-                  border: `1px solid ${theme.colors.inputBorder}`
-                }}
                 placeholder="Size"
+                style={{ fontSize: '13px' }}
               />
-              <select
+              <Select
                 value={titleFontFamily}
                 onChange={(e) => setTitleFontFamily(e.target.value)}
-                className="p-1 rounded text-sm"
-                style={{ 
-                  backgroundColor: theme.colors.modalBackground,
-                  color: theme.colors.textPrimary,
-                  border: `1px solid ${theme.colors.inputBorder}`
-                }}
+                style={{ fontSize: '13px' }}
               >
                 {fontFamilies.map(font => (
                   <option key={font} value={font}>{font}</option>
                 ))}
-              </select>
-              <select
+              </Select>
+              <Select
                 value={titleFontWeight}
                 onChange={(e) => setTitleFontWeight(e.target.value)}
-                className="p-1 rounded text-sm"
-                style={{ 
-                  backgroundColor: theme.colors.modalBackground,
-                  color: theme.colors.textPrimary,
-                  border: `1px solid ${theme.colors.inputBorder}`
-                }}
+                style={{ fontSize: '13px' }}
               >
                 {fontWeights.map(weight => (
                   <option key={weight} value={weight}>{weight}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 
           {/* Description Typography */}
-          <div>
-            <label className="block text-xs mb-1" style={{ color: theme.colors.textSecondary }}>
-              Description Font
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
+          <div style={{ marginBottom: '16px' }}>
+            <Label style={{ fontSize: '12px', marginBottom: '8px' }}>Description Font</Label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <Input
                 type="number"
                 value={descriptionFontSize}
                 onChange={(e) => setDescriptionFontSize(parseInt(e.target.value))}
                 min="10"
                 max="24"
-                className="p-1 rounded text-sm"
-                style={{ 
-                  backgroundColor: theme.colors.modalBackground,
-                  color: theme.colors.textPrimary,
-                  border: `1px solid ${theme.colors.inputBorder}`
-                }}
                 placeholder="Size"
+                style={{ fontSize: '13px' }}
               />
-              <select
+              <Select
                 value={descriptionFontFamily}
                 onChange={(e) => setDescriptionFontFamily(e.target.value)}
-                className="p-1 rounded text-sm"
-                style={{ 
-                  backgroundColor: theme.colors.modalBackground,
-                  color: theme.colors.textPrimary,
-                  border: `1px solid ${theme.colors.inputBorder}`
-                }}
+                style={{ fontSize: '13px' }}
               >
                 {fontFamilies.map(font => (
                   <option key={font} value={font}>{font}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 
           {/* Item Typography */}
           <div>
-            <label className="block text-xs mb-1" style={{ color: theme.colors.textSecondary }}>
-              Item Font
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
+            <Label style={{ fontSize: '12px', marginBottom: '8px' }}>Item Font</Label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <Input
                 type="number"
                 value={itemFontSize}
                 onChange={(e) => setItemFontSize(parseInt(e.target.value))}
                 min="12"
                 max="24"
-                className="p-1 rounded text-sm"
-                style={{ 
-                  backgroundColor: theme.colors.modalBackground,
-                  color: theme.colors.textPrimary,
-                  border: `1px solid ${theme.colors.inputBorder}`
-                }}
                 placeholder="Size"
+                style={{ fontSize: '13px' }}
               />
-              <select
+              <Select
                 value={itemFontFamily}
                 onChange={(e) => setItemFontFamily(e.target.value)}
-                className="p-1 rounded text-sm"
-                style={{ 
-                  backgroundColor: theme.colors.modalBackground,
-                  color: theme.colors.textPrimary,
-                  border: `1px solid ${theme.colors.inputBorder}`
-                }}
+                style={{ fontSize: '13px' }}
               >
                 {fontFamilies.map(font => (
                   <option key={font} value={font}>{font}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
         </div>
+      </FormGroup>
 
-        {/* Color Settings */}
-        <div className="space-y-3 p-3 rounded" style={{ backgroundColor: theme.colors.inputBackground }}>
-          <h4 className="text-sm font-medium" style={{ color: theme.colors.textPrimary }}>
-            Color Settings
-          </h4>
+      {/* Color Settings */}
+      <FormGroup>
+        <Label>Color Settings</Label>
+        <div style={{ 
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr',
+          gap: '16px',
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          borderRadius: '8px',
+          padding: '16px',
+          border: `1px solid ${theme.colors.blockBorder}`
+        }}>
+          <div>
+            <Label style={{ fontSize: '12px', marginBottom: '8px' }}>Background</Label>
+            <input
+              type="color"
+              value={backgroundColor.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+).*\)/, (match, r, g, b) => 
+                `#${parseInt(r).toString(16).padStart(2, '0')}${parseInt(g).toString(16).padStart(2, '0')}${parseInt(b).toString(16).padStart(2, '0')}`
+              )}
+              onChange={(e) => {
+                const hex = e.target.value;
+                const r = parseInt(hex.substr(1, 2), 16);
+                const g = parseInt(hex.substr(3, 2), 16);
+                const b = parseInt(hex.substr(5, 2), 16);
+                setBackgroundColor(`rgba(${r}, ${g}, ${b}, 0.1)`);
+              }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                border: `1px solid ${theme.colors.blockBorder}`,
+                cursor: 'pointer'
+              }}
+            />
+          </div>
           
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs mb-1" style={{ color: theme.colors.textSecondary }}>
-                Background
-              </label>
-              <div className="flex items-center gap-1">
-                <input
-                  type="color"
-                  value={backgroundColor.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+).*\)/, (match, r, g, b) => 
-                    `#${parseInt(r).toString(16).padStart(2, '0')}${parseInt(g).toString(16).padStart(2, '0')}${parseInt(b).toString(16).padStart(2, '0')}`
-                  )}
-                  onChange={(e) => {
-                    const hex = e.target.value;
-                    const r = parseInt(hex.substr(1, 2), 16);
-                    const g = parseInt(hex.substr(3, 2), 16);
-                    const b = parseInt(hex.substr(5, 2), 16);
-                    setBackgroundColor(`rgba(${r}, ${g}, ${b}, 0.1)`);
-                  }}
-                  className="w-8 h-8 rounded cursor-pointer"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-xs mb-1" style={{ color: theme.colors.textSecondary }}>
-                Text
-              </label>
-              <input
-                type="color"
-                value={textColor}
-                onChange={(e) => setTextColor(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs mb-1" style={{ color: theme.colors.textSecondary }}>
-                Accent
-              </label>
-              <input
-                type="color"
-                value={accentColor}
-                onChange={(e) => setAccentColor(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer"
-              />
-            </div>
+          <div>
+            <Label style={{ fontSize: '12px', marginBottom: '8px' }}>Text</Label>
+            <input
+              type="color"
+              value={textColor}
+              onChange={(e) => setTextColor(e.target.value)}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                border: `1px solid ${theme.colors.blockBorder}`,
+                cursor: 'pointer'
+              }}
+            />
+          </div>
+          
+          <div>
+            <Label style={{ fontSize: '12px', marginBottom: '8px' }}>Accent</Label>
+            <input
+              type="color"
+              value={accentColor}
+              onChange={(e) => setAccentColor(e.target.value)}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                border: `1px solid ${theme.colors.blockBorder}`,
+                cursor: 'pointer'
+              }}
+            />
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div 
-        className="p-4 border-t flex justify-between items-center flex-shrink-0"
-        style={{ 
-          borderColor: theme.colors.blockBorder,
-          backgroundColor: theme.colors.modalBackground 
-        }}
-      >
-        <button
-          onClick={handleDelete}
-          className="px-4 py-2 rounded transition-colors"
-          style={{ 
-            backgroundColor: '#ef4444',
-            color: 'white'
-          }}
-          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-          onMouseLeave={(e) => e.target.style.opacity = '1'}
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-        
-        <button
-          onClick={handleSave}
-          className="px-4 py-2 rounded transition-colors flex items-center gap-2"
-          style={{ 
-            backgroundColor: theme.colors.accentPrimary,
-            color: 'white'
-          }}
-          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-          onMouseLeave={(e) => e.target.style.opacity = '1'}
-        >
-          <Save className="h-4 w-4" />
-          Save Changes
-        </button>
-      </div>
-    </div>
+      </FormGroup>
+    </StandardModal>
   );
 };
 

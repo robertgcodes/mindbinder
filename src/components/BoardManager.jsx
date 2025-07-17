@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { Plus, Trash2, Share2, Copy, Settings } from 'lucide-react';
+import { Plus, Trash2, Share2, Copy, Settings, Brain } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import OnboardingFlow from './OnboardingFlow';
+import UserMenu from './UserMenu';
+import { Link } from 'react-router-dom';
 
 const BoardManager = ({ user, onSelectBoard }) => {
   const { theme } = useTheme();
@@ -164,8 +166,11 @@ const BoardManager = ({ user, onSelectBoard }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
-        <div className="text-white">Loading boards...</div>
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: theme.colors.canvasBackground }}
+      >
+        <div style={{ color: theme.colors.textPrimary }}>Loading boards...</div>
       </div>
     );
   }
@@ -178,13 +183,61 @@ const BoardManager = ({ user, onSelectBoard }) => {
           isReturningUser={false}
         />
       )}
-      <div className="min-h-screen bg-dark-900 py-12 px-4 sm:px-6 lg:px-8">
+      
+      {/* Navigation Header */}
+      <nav 
+        className="sticky top-0 z-40 px-4 py-2 border-b"
+        style={{ 
+          backgroundColor: theme.colors.navigationBackground, 
+          borderColor: theme.colors.blockBorder,
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* App Logo and Name */}
+          <Link 
+            to="/boards" 
+            className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+          >
+            <Brain 
+              className="h-8 w-8" 
+              style={{ color: theme.colors.accentPrimary }} 
+            />
+            <span 
+              className="text-xl font-bold"
+              style={{ color: theme.colors.textPrimary }}
+            >
+              Mindboard
+            </span>
+          </Link>
+
+          {/* User Menu */}
+          <UserMenu user={user} />
+        </div>
+      </nav>
+
+      <div 
+        className="min-h-screen py-12 px-4 sm:px-6 lg:px-8"
+        style={{ backgroundColor: theme.colors.canvasBackground }}
+      >
         <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-white">My Boards</h1>
+          <h1 
+            className="text-2xl font-bold"
+            style={{ color: theme.colors.textPrimary }}
+          >
+            My Boards
+          </h1>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: theme.colors.accentPrimary,
+              color: 'white'
+            }}
+            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.target.style.opacity = '1'}
           >
             <Plus className="h-5 w-5" />
             <span>Create New Board</span>
@@ -192,7 +245,14 @@ const BoardManager = ({ user, onSelectBoard }) => {
         </div>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-400">
+          <div 
+            className="mb-4 p-4 rounded-lg"
+            style={{ 
+              backgroundColor: theme.colors.accentDanger + '20',
+              border: `1px solid ${theme.colors.accentDanger}`,
+              color: theme.colors.accentDanger
+            }}
+          >
             {error}
           </div>
         )}
@@ -201,22 +261,53 @@ const BoardManager = ({ user, onSelectBoard }) => {
           {boards.map((board) => (
             <div
               key={board.id}
-              className="bg-dark-800 rounded-lg shadow-lg overflow-hidden"
+              className="rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-105"
+              style={{ 
+                backgroundColor: theme.colors.blockBackground,
+                border: `1px solid ${theme.colors.blockBorder}`
+              }}
             >
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-xl font-semibold text-white">{board.name}</h2>
+                  <h2 
+                    className="text-xl font-semibold"
+                    style={{ color: theme.colors.textPrimary }}
+                  >
+                    {board.name}
+                  </h2>
                   <div className="flex space-x-2">
                     <button
                       onClick={() => copyBoard(board)}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
+                      className="p-2 rounded-lg transition-colors"
+                      style={{ 
+                        color: theme.colors.textSecondary,
+                        backgroundColor: 'transparent'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                        e.currentTarget.style.color = theme.colors.textPrimary;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = theme.colors.textSecondary;
+                      }}
                       title="Copy board"
                     >
                       <Copy className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => deleteBoard(board.id)}
-                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors"
+                      className="p-2 rounded-lg transition-colors"
+                      style={{ 
+                        color: theme.colors.accentDanger,
+                        backgroundColor: 'transparent'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = theme.colors.accentDanger + '20';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
                       title="Delete board"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -224,16 +315,30 @@ const BoardManager = ({ user, onSelectBoard }) => {
                   </div>
                 </div>
 
-                <p className="text-gray-400 mb-4">{board.description}</p>
+                <p 
+                  className="mb-4"
+                  style={{ color: theme.colors.textSecondary }}
+                >
+                  {board.description}
+                </p>
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     {board.isPublic && (
-                      <span className="px-2 py-1 bg-green-900/50 text-green-400 text-xs rounded">
+                      <span 
+                        className="px-2 py-1 text-xs rounded"
+                        style={{ 
+                          backgroundColor: theme.colors.accentSecondary + '20',
+                          color: theme.colors.accentSecondary
+                        }}
+                      >
                         Public
                       </span>
                     )}
-                    <span className="text-xs text-gray-500">
+                    <span 
+                      className="text-xs"
+                      style={{ color: theme.colors.textTertiary }}
+                    >
                       {new Date(board.updatedAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -241,13 +346,31 @@ const BoardManager = ({ user, onSelectBoard }) => {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => onSelectBoard(board)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                      className="px-4 py-2 rounded-lg transition-colors"
+                      style={{ 
+                        backgroundColor: theme.colors.accentPrimary,
+                        color: 'white'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                     >
                       Open
                     </button>
                     {board.isPublic && (
                       <button
-                        className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ 
+                          color: theme.colors.textSecondary,
+                          backgroundColor: 'transparent'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                          e.currentTarget.style.color = theme.colors.textPrimary;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = theme.colors.textSecondary;
+                        }}
                         title="Share board"
                       >
                         <Share2 className="h-4 w-4" />
@@ -262,33 +385,67 @@ const BoardManager = ({ user, onSelectBoard }) => {
 
         {/* Create Board Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-dark-800 rounded-lg shadow-xl max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Create New Board</h2>
+          <div 
+            className="fixed inset-0 flex items-center justify-center p-4 z-50"
+            style={{ backgroundColor: theme.colors.modalOverlay }}
+          >
+            <div 
+              className="rounded-lg shadow-xl max-w-md w-full p-6"
+              style={{ 
+                backgroundColor: theme.colors.modalBackground,
+                border: `1px solid ${theme.colors.blockBorder}`
+              }}
+            >
+              <h2 
+                className="text-xl font-bold mb-4"
+                style={{ color: theme.colors.textPrimary }}
+              >
+                Create New Board
+              </h2>
               
               <form onSubmit={createBoard} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                  <label 
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: theme.colors.textSecondary }}
+                  >
                     Board Name
                   </label>
                   <input
                     type="text"
                     value={newBoardName}
                     onChange={(e) => setNewBoardName(e.target.value)}
-                    className="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400"
+                    className="w-full px-4 py-2 rounded-lg focus:outline-none"
+                    style={{ 
+                      backgroundColor: theme.colors.inputBackground,
+                      border: `1px solid ${theme.colors.inputBorder}`,
+                      color: theme.colors.textPrimary
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = theme.colors.focusBorder}
+                    onBlur={(e) => e.target.style.borderColor = theme.colors.inputBorder}
                     placeholder="Enter board name"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                  <label 
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: theme.colors.textSecondary }}
+                  >
                     Description
                   </label>
                   <textarea
                     value={newBoardDescription}
                     onChange={(e) => setNewBoardDescription(e.target.value)}
-                    className="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400"
+                    className="w-full px-4 py-2 rounded-lg focus:outline-none"
+                    style={{ 
+                      backgroundColor: theme.colors.inputBackground,
+                      border: `1px solid ${theme.colors.inputBorder}`,
+                      color: theme.colors.textPrimary
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = theme.colors.focusBorder}
+                    onBlur={(e) => e.target.style.borderColor = theme.colors.inputBorder}
                     placeholder="Enter board description"
                     rows={3}
                   />
@@ -300,9 +457,16 @@ const BoardManager = ({ user, onSelectBoard }) => {
                     id="isPublic"
                     checked={isPublic}
                     onChange={(e) => setIsPublic(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-dark-600 rounded"
+                    className="h-4 w-4 rounded"
+                    style={{ 
+                      accentColor: theme.colors.accentPrimary
+                    }}
                   />
-                  <label htmlFor="isPublic" className="ml-2 text-sm text-gray-300">
+                  <label 
+                    htmlFor="isPublic" 
+                    className="ml-2 text-sm"
+                    style={{ color: theme.colors.textSecondary }}
+                  >
                     Make this board public
                   </label>
                 </div>
@@ -311,13 +475,25 @@ const BoardManager = ({ user, onSelectBoard }) => {
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                    className="px-4 py-2 rounded-lg transition-colors"
+                    style={{ 
+                      color: theme.colors.textSecondary,
+                      backgroundColor: 'transparent'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = theme.colors.textPrimary}
+                    onMouseLeave={(e) => e.currentTarget.style.color = theme.colors.textSecondary}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    className="px-4 py-2 rounded-lg transition-colors"
+                    style={{ 
+                      backgroundColor: theme.colors.accentPrimary,
+                      color: 'white'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
                     Create Board
                   </button>

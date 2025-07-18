@@ -246,6 +246,17 @@ const MainBoard = ({ board, onBack }) => {
     }
   }, [showPasteHint, isReadOnly]);
 
+  // Update browser title with board name
+  useEffect(() => {
+    const boardName = board?.name || 'Untitled Board';
+    document.title = `${boardName} - LifeBlocks`;
+    
+    // Restore original title when component unmounts
+    return () => {
+      document.title = 'LifeBlocks';
+    };
+  }, [board?.name]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -2104,6 +2115,7 @@ const MainBoard = ({ board, onBack }) => {
         onRedo={handleRedo}
         selectedBlock={selectedBlock}
         boardId={board.id}
+        board={board}
         isSelectionMode={isSelectionMode}
         onToggleSelectionMode={handleToggleSelectionMode}
         onShare={handleShare}

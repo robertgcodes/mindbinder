@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
+import BoardSwitcher from './BoardSwitcher';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock }) => {
+const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, board, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock }) => {
   const { theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -65,11 +66,17 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-6">
             <Link to="/boards" className="flex items-center space-x-2">
               <Brain className="h-6 w-6" style={{ color: theme.colors.accentPrimary }} />
               <span className="font-semibold" style={{ color: theme.colors.textPrimary }}>LifeBlocks</span>
             </Link>
+            {board && (
+              <>
+                <div className="h-6 w-px" style={{ backgroundColor: theme.colors.blockBorder }} />
+                <BoardSwitcher currentBoard={board} />
+              </>
+            )}
           </div>
           <div className="flex items-center space-x-4">
             {isReadOnly && (

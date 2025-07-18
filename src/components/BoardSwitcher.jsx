@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Layout, Clock, Lock, Users } from 'lucide-react';
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { getRecentBoards } from '../hooks/useRecentBoards';
 
 const BoardSwitcher = ({ currentBoard }) => {
   const { currentUser } = useAuth();
@@ -36,52 +35,17 @@ const BoardSwitcher = ({ currentBoard }) => {
     }
   }, [isOpen, currentUser]);
 
-  const loadRecentBoards = async () => {
+  const loadRecentBoards = () => {
     if (!currentUser) return;
     
     setLoading(true);
     try {
-      // Get user's own boards
-      const userBoardsQuery = query(
-        collection(db, 'boards'),
-        where('userId', '==', currentUser.uid),
-        limit(10)
-      );
-      
-      const userBoardsSnapshot = await getDocs(userBoardsQuery);
-      const userBoards = userBoardsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        isOwner: true
-      }));
-
-      // Get shared boards
-      const sharedBoardsQuery = query(
-        collection(db, 'boards'),
-        where('sharedWith', 'array-contains', currentUser.email),
-        limit(5)
-      );
-      
-      const sharedBoardsSnapshot = await getDocs(sharedBoardsQuery);
-      const sharedBoards = sharedBoardsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        isOwner: false
-      }));
-
-      // Combine and sort by last modified (handle missing lastModified)
-      const allBoards = [...userBoards, ...sharedBoards]
-        .sort((a, b) => {
-          const aTime = a.lastModified?.toDate?.() || new Date(0);
-          const bTime = b.lastModified?.toDate?.() || new Date(0);
-          return bTime - aTime;
-        })
-        .filter(board => board.id !== currentBoard?.id) // Filter out current board
-        .slice(0, 8); // Limit to 8 recent boards
-
-      setRecentBoards(allBoards);
+      // Get recent boards from localStorage
+      const boards = getRecentBoards(currentUser.uid, currentBoard?.id);
+      setRecentBoards(boards);
     } catch (error) {
       console.error('Error loading recent boards:', error);
+      setRecentBoards([]);
     } finally {
       setLoading(false);
     }
@@ -94,7 +58,16 @@ const BoardSwitcher = ({ currentBoard }) => {
 
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    // Handle different timestamp formats
+    let date;
+    if (timestamp.toDate) {
+      date = timestamp.toDate();
+    } else if (typeof timestamp === 'string') {
+      date = new Date(timestamp);
+    } else {
+      date = new Date(timestamp);
+    }
+    
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
     
@@ -212,9 +185,9 @@ const BoardSwitcher = ({ currentBoard }) => {
                       <div className="truncate font-medium">
                         {board.name || 'Untitled Board'}
                       </div>
-                      {!board.isOwner && (
+                      {board.userId !== currentUser?.uid && board.userName && (
                         <div className="text-xs opacity-75">
-                          Shared by {board.userName || 'Unknown'}
+                          Shared by {board.userName}
                         </div>
                       )}
                     </div>
@@ -222,7 +195,7 @@ const BoardSwitcher = ({ currentBoard }) => {
                   <div className="flex items-center space-x-2 flex-shrink-0">
                     <Clock className="h-3 w-3" />
                     <span className="text-xs">
-                      {formatDate(board.lastModified)}
+                      {formatDate(board.lastAccessed || board.lastModified)}
                     </span>
                   </div>
                 </button>

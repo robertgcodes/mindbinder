@@ -11,6 +11,7 @@ import imageCompression from 'browser-image-compression';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
 import useMobileDetect from '../hooks/useMobileDetect';
+import { useRecentBoards } from '../hooks/useRecentBoards';
 import MobileBoard from './MobileBoard';
 import GridView from './GridView';
 import TextBlock from './TextBlock';
@@ -130,6 +131,9 @@ const MainBoard = ({ board, onBack }) => {
   const [lastEditor, setLastEditor] = useState(null);
   const [isPasting, setIsPasting] = useState(false);
   const [showPasteHint, setShowPasteHint] = useState(true);
+  
+  // Track board access for recent boards
+  useRecentBoards(board);
 
   // Check user permissions for the board
   const checkUserPermissions = async () => {

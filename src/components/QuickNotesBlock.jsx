@@ -36,6 +36,10 @@ const QuickNotesBlock = ({
     }
   }, [isSelected]);
 
+  useEffect(() => {
+    setEditedText(text);
+  }, [text]);
+
   const handleEdit = () => {
     setEditedText(text);
     setIsEditing(true);

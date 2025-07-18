@@ -3,7 +3,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Settings, ArrowLeft } from 'lucide-react';
+import { GripVertical, Settings, ArrowLeft, Eye, EyeOff, Type, Image, List, Link2, FileText, Calendar, Youtube, Grid, Video } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useTheme } from '../contexts/ThemeContext';
@@ -26,7 +26,141 @@ import DailyHabitTrackerBlock from './DailyHabitTrackerBlock';
 import QuickNotesBlock from './QuickNotesBlock';
 import GratitudeBlock from './GratitudeBlock';
 import AffirmationsBlock from './AffirmationsBlock';
+import TimelineBlock from './TimelineBlock';
+import AnalyticsBlock from './AnalyticsBlock';
+import PDFBlock from './PDFBlock';
+import BookBlock from './BookBlock';
+import GoogleEmbedBlock from './GoogleEmbedBlock';
+import VideoBlock from './VideoBlock';
 import { Stage, Layer } from 'react-konva';
+
+// Get block icon based on type
+const getBlockIcon = (type) => {
+  const iconMap = {
+    'text': Type,
+    'image': Image,
+    'list': List,
+    'link': Link2,
+    'document': FileText,
+    'rich-text': FileText,
+    'calendar': Calendar,
+    'youtube': Youtube,
+    'video': Video,
+    'frame': Grid,
+    'rotating-quote': Type,
+    'code': FileText,
+    'table': Grid,
+    'rss': FileText,
+    'ai-prompt': Type,
+    'yearly-planner': Calendar,
+    'daily-habit-tracker': List,
+    'quick-notes': FileText,
+    'gratitude': FileText,
+    'affirmations': FileText,
+    'timeline': Calendar,
+    'analytics': Grid,
+    'pdf': FileText,
+    'book': FileText,
+    'google-embed': Grid
+  };
+  return iconMap[type] || Grid;
+};
+
+// Get block title
+const getBlockTitle = (block) => {
+  if (block.title) return block.title;
+  if (block.text && block.text.length > 0) return block.text.substring(0, 50) + (block.text.length > 50 ? '...' : '');
+  if (block.url) return block.url;
+  if (block.name) return block.name;
+  
+  const typeLabels = {
+    'text': 'Text Block',
+    'image': 'Image Block',
+    'list': 'List Block',
+    'link': 'Link Block',
+    'document': 'Document Block',
+    'rich-text': 'Rich Text Block',
+    'calendar': 'Calendar Block',
+    'youtube': 'YouTube Block',
+    'frame': 'Frame Block',
+    'rotating-quote': 'Quote Block',
+    'code': 'Code Block',
+    'table': 'Table Block',
+    'rss': 'RSS Feed Block',
+    'ai-prompt': 'AI Prompt Block',
+    'yearly-planner': 'Yearly Planner',
+    'daily-habit-tracker': 'Habit Tracker',
+    'quick-notes': 'Quick Notes',
+    'gratitude': 'Gratitude Block',
+    'affirmations': 'Affirmations Block',
+    'timeline': 'Timeline Block',
+    'analytics': 'Analytics Block',
+    'pdf': 'PDF Block',
+    'book': 'Book Block',
+    'google-embed': 'Google Embed'
+  };
+  return typeLabels[block.type] || 'Unknown Block';
+};
+
+// Collapsed block view for reorder mode
+const CollapsedBlock = ({ block, onToggleVisibility, theme }) => {
+  const IconComponent = getBlockIcon(block.type);
+  const title = getBlockTitle(block);
+  const isHidden = block.mobileHidden || false;
+  
+  return (
+    <div
+      className="p-4 rounded-lg border transition-all duration-200"
+      style={{ 
+        backgroundColor: isHidden ? theme.colors.background : theme.colors.blockBackground,
+        borderColor: theme.colors.blockBorder,
+        opacity: isHidden ? 0.5 : 1
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
+          <div 
+            className="p-2 rounded-md flex-shrink-0"
+            style={{ backgroundColor: theme.colors.accentPrimary + '20' }}
+          >
+            <IconComponent 
+              size={20} 
+              style={{ color: theme.colors.accentPrimary }} 
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 
+              className="font-medium text-sm truncate"
+              style={{ color: theme.colors.textPrimary }}
+            >
+              {title}
+            </h3>
+            <p 
+              className="text-xs capitalize"
+              style={{ color: theme.colors.textSecondary }}
+            >
+              {block.type.replace('-', ' ')}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleVisibility(block.id, !isHidden);
+          }}
+          className="p-2 rounded-md transition-colors flex-shrink-0 ml-2"
+          style={{ 
+            backgroundColor: theme.colors.hoverBackground,
+            color: isHidden ? theme.colors.textSecondary : theme.colors.accentPrimary
+          }}
+          title={isHidden ? "Show in mobile view" : "Hide from mobile view"}
+        >
+          {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // Sortable block wrapper for reordering mode
 const SortableBlock = ({ id, children, isReorderMode }) => {
@@ -61,7 +195,7 @@ const SortableBlock = ({ id, children, isReorderMode }) => {
   );
 };
 
-const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal }) => {
+const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, onExitMobileView }) => {
   const { theme } = useTheme();
   const [blocks, setBlocks] = useState([]);
   const [isReorderMode, setIsReorderMode] = useState(false);
@@ -149,6 +283,43 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal 
     }
   };
 
+  // Toggle block visibility in mobile view
+  const toggleBlockVisibility = async (blockId, isHidden) => {
+    try {
+      // Update local state immediately
+      setBlocks(prevBlocks => 
+        prevBlocks.map(block => 
+          block.id === blockId 
+            ? { ...block, mobileHidden: isHidden }
+            : block
+        )
+      );
+
+      // Update in Firestore
+      const docRef = doc(db, 'boards', board.id);
+      const updatedBlocks = blocks.map(block => 
+        block.id === blockId 
+          ? { ...block, mobileHidden: isHidden }
+          : block
+      );
+      
+      await updateDoc(docRef, {
+        blocks: updatedBlocks,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error updating block visibility:', error);
+      // Revert local state on error
+      setBlocks(prevBlocks => 
+        prevBlocks.map(block => 
+          block.id === blockId 
+            ? { ...block, mobileHidden: !isHidden }
+            : block
+        )
+      );
+    }
+  };
+
   const handleDragEnd = (event) => {
     const { active, over } = event;
 
@@ -225,6 +396,18 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal 
           return <GratitudeBlock {...commonProps} />;
         case 'affirmations':
           return <AffirmationsBlock {...commonProps} />;
+        case 'timeline':
+          return <TimelineBlock {...commonProps} />;
+        case 'analytics':
+          return <AnalyticsBlock {...commonProps} blocks={blocks} />;
+        case 'pdf':
+          return <PDFBlock {...commonProps} />;
+        case 'book':
+          return <BookBlock {...commonProps} />;
+        case 'google-embed':
+          return <GoogleEmbedBlock {...commonProps} />;
+        case 'video':
+          return <VideoBlock {...commonProps} />;
         default:
           return null;
       }
@@ -254,9 +437,15 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal 
 
   // Get ordered blocks - This order is independent of desktop positions
   // Moving blocks on desktop canvas will NOT affect this mobile order
-  const orderedBlocks = mobileOrder
+  const allOrderedBlocks = mobileOrder
     .map(id => blocks.find(block => block.id === id))
     .filter(Boolean); // Remove any undefined blocks
+
+  // In reorder mode, show all blocks (including hidden ones) for management
+  // In normal mode, only show visible blocks
+  const visibleBlocks = isReorderMode 
+    ? allOrderedBlocks 
+    : allOrderedBlocks.filter(block => !block.mobileHidden);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: theme.colors.background }}>
@@ -269,7 +458,7 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal 
         }}
       >
         <button
-          onClick={onBack}
+          onClick={onExitMobileView || onBack}
           className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors"
           style={{ 
             color: theme.colors.textPrimary,
@@ -277,11 +466,11 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal 
           }}
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm">Back</span>
+          <span className="text-sm">{onExitMobileView ? "Exit Mobile View" : "Back"}</span>
         </button>
         
         <h1 className="text-lg font-semibold" style={{ color: theme.colors.textPrimary }}>
-          {board.name}
+          {isReorderMode ? 'Manage Blocks' : board.name}
         </h1>
         
         <button
@@ -301,6 +490,18 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal 
       <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-6 overflow-x-hidden">
         {isReorderMode ? (
           <div className="pl-8 pr-0">
+            <div 
+              className="mb-4 p-3 rounded-lg border-l-4"
+              style={{ 
+                backgroundColor: theme.colors.blockBackground,
+                borderLeftColor: theme.colors.accentPrimary,
+                borderColor: theme.colors.blockBorder
+              }}
+            >
+              <p className="text-sm" style={{ color: theme.colors.textPrimary }}>
+                <strong>Drag</strong> blocks to reorder • <strong>Toggle eye icon</strong> to hide/show in mobile view
+              </p>
+            </div>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -310,21 +511,36 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal 
                 items={mobileOrder}
                 strategy={verticalListSortingStrategy}
               >
-                {orderedBlocks.map((block) => (
+                {allOrderedBlocks.map((block) => (
                   <SortableBlock key={block.id} id={block.id} isReorderMode={true}>
-                    {renderBlock(block)}
+                    <CollapsedBlock 
+                      block={block} 
+                      onToggleVisibility={toggleBlockVisibility}
+                      theme={theme}
+                    />
                   </SortableBlock>
                 ))}
               </SortableContext>
             </DndContext>
+            {allOrderedBlocks.length === 0 && (
+              <div className="text-center py-8" style={{ color: theme.colors.textSecondary }}>
+                <p>No blocks to display</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
-            {orderedBlocks.map((block) => (
+            {visibleBlocks.map((block) => (
               <div key={block.id}>
                 {renderBlock(block)}
               </div>
             ))}
+            {visibleBlocks.length === 0 && (
+              <div className="text-center py-8" style={{ color: theme.colors.textSecondary }}>
+                <p>No visible blocks</p>
+                <p className="text-sm mt-2">Use the settings button to manage block visibility</p>
+              </div>
+            )}
           </div>
         )}
       </div>

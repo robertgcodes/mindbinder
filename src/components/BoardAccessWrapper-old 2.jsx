@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, app } from '../firebase';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import MainBoard from './MainBoard';
 import LoadingSpinner from './LoadingSpinner';
 import { Lock, AlertCircle } from 'lucide-react';
-
-const functions = getFunctions(app);
-const validateBoardAccess = httpsCallable(functions, 'validateBoardAccess');
 
 const BoardAccessWrapper = () => {
   const { boardId } = useParams();
@@ -24,7 +20,6 @@ const BoardAccessWrapper = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hasAccess, setHasAccess] = useState(false);
-  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -35,38 +30,7 @@ const BoardAccessWrapper = () => {
       }
 
       try {
-        // First validate access through Cloud Function (server-side check)
-        if (currentUser) {
-          try {
-            const accessResult = await validateBoardAccess({ 
-              boardId, 
-              action: 'view' 
-            });
-            
-            if (accessResult.data.access) {
-              setUserRole(accessResult.data.role);
-              // Only fetch board data after access is validated
-              const boardDoc = await getDoc(doc(db, 'boards', boardId));
-              if (boardDoc.exists()) {
-                setBoard({ id: boardId, ...boardDoc.data() });
-                setHasAccess(true);
-              } else {
-                setError('Board not found');
-              }
-              setLoading(false);
-              return;
-            }
-          } catch (funcError) {
-            // If function throws permission-denied, user doesn't have access
-            if (funcError.code === 'permission-denied') {
-              // Continue to check public access
-            } else {
-              throw funcError;
-            }
-          }
-        }
-
-        // Check public access or share key (for non-authenticated users)
+        // Get board details
         const boardDoc = await getDoc(doc(db, 'boards', boardId));
         
         if (!boardDoc.exists()) {
@@ -75,17 +39,42 @@ const BoardAccessWrapper = () => {
           return;
         }
 
-        const boardData = boardDoc.data();
+        const boardData = { id: boardId, ...boardDoc.data() };
         
-        // Only allow access if board is public or has valid share key
-        if (boardData.isPublic || (shareKey && shareKey === boardData.shareKey)) {
-          setBoard({ id: boardId, ...boardData });
+        // Check access permissions
+        let accessGranted = false;
+        
+        // 1. Check if user is the owner
+        if (currentUser && boardData.userId === currentUser.uid) {
+          accessGranted = true;
+        }
+        // 2. Check if board is public
+        else if (boardData.isPublic) {
+          accessGranted = true;
+        }
+        // 3. Check if user has valid share key
+        else if (shareKey && shareKey === boardData.shareKey) {
+          accessGranted = true;
+        }
+        // 4. Check if user is a collaborator
+        else if (currentUser) {
+          const collaboratorsQuery = query(
+            collection(db, 'boardCollaborators'),
+            where('boardId', '==', boardId),
+            where('userId', '==', currentUser.uid)
+          );
+          const snapshot = await getDocs(collaboratorsQuery);
+          if (!snapshot.empty) {
+            accessGranted = true;
+          }
+        }
+
+        if (accessGranted) {
+          setBoard(boardData);
           setHasAccess(true);
-          setUserRole('viewer');
         } else {
           setError('You do not have access to this board');
         }
-
       } catch (error) {
         console.error('Error checking board access:', error);
         setError('Failed to load board');
@@ -153,7 +142,7 @@ const BoardAccessWrapper = () => {
   }
 
   if (hasAccess && board) {
-    return <MainBoard board={board} userRole={userRole} onBack={() => navigate('/boards')} />;
+    return <MainBoard board={board} onBack={() => navigate('/boards')} />;
   }
 
   return null;

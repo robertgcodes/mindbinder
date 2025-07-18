@@ -1,0 +1,46 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User profile photos
+    match /profile_photos/{userId} {
+      allow read: if true; // Public profiles
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User uploaded images
+    match /images/{userId}/{allPaths=**} {
+      allow read: if true; // Images can be viewed by anyone with the link
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // PDF uploads - SECURE VERSION: requires ownership validation
+    match /pdfs/{userId}/{boardId}/{fileName} {
+      allow read: if true; // PDFs can be viewed by anyone with the link
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // PDF thumbnails - SECURE VERSION
+    match /pdf-thumbnails/{userId}/{boardId}/{fileName} {
+      allow read: if true; // Thumbnails can be viewed by anyone
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Book covers - organized by user
+    match /book-covers/{userId}/{blockId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Book PDFs - organized by user
+    match /book-pdfs/{userId}/{blockId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

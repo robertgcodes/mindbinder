@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Trash2, Upload, Play, Pause, ChevronLeft, ChevronRight, Plus, X, RotateCw, Maximize2, Minimize2, Square } from 'lucide-react';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth } from '../firebase';
 import { v4 as uuidv4 } from 'uuid';
 import { compressImage, validateImageFile } from '../utils/imageCompression';
 
@@ -27,6 +28,12 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose 
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
 
+    // Check if user is authenticated
+    if (!auth.currentUser) {
+      alert('Please log in to upload images.');
+      return;
+    }
+
     // Validate all files first
     const invalidFile = files.find(file => !validateImageFile(file).valid);
     if (invalidFile) {
@@ -37,6 +44,7 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose 
 
     setIsUploading(true);
     const storage = getStorage();
+    const userId = auth.currentUser.uid;
 
     try {
       const imageUrls = await Promise.all(
@@ -47,8 +55,8 @@ const EnhancedImageBlockToolbar = ({ selectedBlock, onUpdate, onDelete, onClose 
             maxWidthOrHeight: 2048,
           });
 
-          // Upload compressed file
-          const imageRef = ref(storage, `images/${uuidv4()}-${compressedFile.name}`);
+          // Upload compressed file with userId in path
+          const imageRef = ref(storage, `images/${userId}/${uuidv4()}-${compressedFile.name}`);
           const snapshot = await uploadBytes(imageRef, compressedFile);
           const downloadURL = await getDownloadURL(snapshot.ref);
           return downloadURL;

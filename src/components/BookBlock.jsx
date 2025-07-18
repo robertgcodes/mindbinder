@@ -119,8 +119,15 @@ const BookBlock = ({
     setIsUploading(true);
     
     try {
-      // Upload image to Firebase Storage
-      const imageRef = ref(storage, `book-covers/${id}/${file.name}`);
+      // Get current user ID
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        alert('Please log in to upload images');
+        return;
+      }
+      
+      // Upload image to Firebase Storage with user ID
+      const imageRef = ref(storage, `book-covers/${userId}/${id}/${file.name}`);
       await uploadBytes(imageRef, file);
       const downloadUrl = await getDownloadURL(imageRef);
 

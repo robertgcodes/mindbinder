@@ -21,7 +21,10 @@ const LinkToolbar = ({ block, onSave, onClose, onDelete, onOpenImageLibrary }) =
     titleFontWeight: block.titleFontWeight || 'bold',
     descriptionFontSize: block.descriptionFontSize || 14,
     descriptionFontFamily: block.descriptionFontFamily || 'Arial',
-    descriptionTextColor: block.descriptionTextColor || '#e5e7eb'
+    descriptionTextColor: block.descriptionTextColor || '#e5e7eb',
+    imageDisplayMode: block.imageDisplayMode || 'cover',
+    dynamicSize: block.dynamicSize !== false,
+    showFavicon: block.showFavicon !== false
   });
   
   const [isUploading, setIsUploading] = useState(false);
@@ -70,7 +73,7 @@ const LinkToolbar = ({ block, onSave, onClose, onDelete, onOpenImageLibrary }) =
 
       // Create a unique filename
       const timestamp = Date.now();
-      const filename = `link-images/${currentUser.uid}/${timestamp}-${compressedFile.name}`;
+      const filename = `images/${currentUser.uid}/links/${timestamp}-${compressedFile.name}`;
       const storageRef = ref(storage, filename);
 
       // Upload compressed file
@@ -302,6 +305,57 @@ const LinkToolbar = ({ block, onSave, onClose, onDelete, onOpenImageLibrary }) =
                 className="flex-1 p-2 rounded bg-dark-600 text-white border border-dark-500"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Display Settings */}
+        <div className="space-y-2 p-2 bg-dark-700 rounded">
+          <h4 className="text-sm font-semibold text-gray-300">Display Settings</h4>
+          
+          {/* Image Display Mode */}
+          {formData.imageUrl && (
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Image Display Mode</label>
+              <select
+                value={formData.imageDisplayMode}
+                onChange={(e) => handleInputChange('imageDisplayMode', e.target.value)}
+                className="w-full p-2 rounded bg-dark-600 text-white border border-dark-500"
+              >
+                <option value="cover">Cover (stretch to fill)</option>
+                <option value="fit">Fit (show entire image)</option>
+                <option value="fill">Fill (crop to fill)</option>
+              </select>
+            </div>
+          )}
+          
+          {/* Dynamic Size Toggle */}
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-gray-400">Dynamic Size</label>
+            <button
+              onClick={() => handleInputChange('dynamicSize', !formData.dynamicSize)}
+              className={`w-12 h-6 rounded-full transition-colors ${
+                formData.dynamicSize ? 'bg-blue-600' : 'bg-dark-600'
+              }`}
+            >
+              <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
+                formData.dynamicSize ? 'translate-x-6' : 'translate-x-0.5'
+              }`} />
+            </button>
+          </div>
+          
+          {/* Show Favicon Toggle */}
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-gray-400">Show Favicon</label>
+            <button
+              onClick={() => handleInputChange('showFavicon', !formData.showFavicon)}
+              className={`w-12 h-6 rounded-full transition-colors ${
+                formData.showFavicon ? 'bg-blue-600' : 'bg-dark-600'
+              }`}
+            >
+              <div className={`w-5 h-5 bg-white rounded-full transition-transform ${
+                formData.showFavicon ? 'translate-x-6' : 'translate-x-0.5'
+              }`} />
+            </button>
           </div>
         </div>
 

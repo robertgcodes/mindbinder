@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
-import LandingPage from './components/LandingPage';
+import { SubscriptionProvider } from './contexts/SubscriptionContext.jsx';
+import LandingPageEnhanced from './components/LandingPageEnhanced';
 import LoginPage from './components/LoginPage';
-import MainBoard from './components/MainBoard';
 import UserProfile from './components/UserProfile';
 import PublicProfile from './components/PublicProfile';
 import BoardManager from './components/BoardManager';
@@ -14,10 +14,10 @@ import BoardAccessWrapper from './components/BoardAccessWrapper';
 import LoadingSpinner from './components/LoadingSpinner';
 import Friends from './components/Friends';
 import Analytics from './components/Analytics';
+import PricingPage from './components/PricingPage';
 
 function App() {
   const { currentUser, loading } = useAuth();
-  const [selectedBoard, setSelectedBoard] = useState(null);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -27,7 +27,7 @@ function App() {
     <Router>
       <div className="w-full">
         <Routes>
-          <Route path="/" element={!currentUser ? <LandingPage /> : <Navigate to="/boards" />} />
+          <Route path="/" element={!currentUser ? <LandingPageEnhanced /> : <Navigate to="/boards" />} />
           <Route path="/login" element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />} />
           <Route path="/signup" element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />} />
           <Route path="/profile" element={currentUser ? <UserProfile /> : <Navigate to="/login" />} />
@@ -35,6 +35,7 @@ function App() {
           <Route path="/saved-blocks" element={currentUser ? <SavedBlocks /> : <Navigate to="/login" />} />
           <Route path="/friends" element={currentUser ? <Friends /> : <Navigate to="/login" />} />
           <Route path="/analytics" element={currentUser ? <Analytics /> : <Navigate to="/login" />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/user/:userId" element={<PublicProfile />} />
           <Route path="/u/:username" element={<PublicProfile />} />
           <Route path="/u/:username/block/:blockId" element={<SharedBlock />} />
@@ -47,11 +48,7 @@ function App() {
             path="/boards"
             element={
               currentUser ? (
-                selectedBoard ? (
-                  <MainBoard board={selectedBoard} onBack={() => setSelectedBoard(null)} />
-                ) : (
-                  <BoardManager user={currentUser} onSelectBoard={setSelectedBoard} />
-                )
+                <BoardManager user={currentUser} />
               ) : (
                 <Navigate to="/login" />
               )

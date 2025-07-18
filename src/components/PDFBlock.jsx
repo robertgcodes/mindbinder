@@ -158,8 +158,15 @@ const PDFBlock = ({
     setIsUploading(true);
     
     try {
-      // Upload PDF to Firebase Storage
-      const pdfRef = ref(storage, `pdfs/${id}/${file.name}`);
+      // Get current user ID
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        alert('Please log in to upload PDFs');
+        return;
+      }
+      
+      // Upload PDF to Firebase Storage with user ID
+      const pdfRef = ref(storage, `pdfs/${userId}/${id}/${file.name}`);
       await uploadBytes(pdfRef, file);
       const pdfDownloadUrl = await getDownloadURL(pdfRef);
 
@@ -170,7 +177,7 @@ const PDFBlock = ({
       if (thumbnailBlob) {
         console.log('Thumbnail blob created, size:', thumbnailBlob.size);
         // Upload thumbnail to Firebase Storage
-        const thumbnailRef = ref(storage, `pdf-thumbnails/${id}/thumbnail.png`);
+        const thumbnailRef = ref(storage, `pdf-thumbnails/${userId}/${id}/thumbnail.png`);
         await uploadBytes(thumbnailRef, thumbnailBlob);
         const thumbnailDownloadUrl = await getDownloadURL(thumbnailRef);
         console.log('Thumbnail uploaded, URL:', thumbnailDownloadUrl);
@@ -306,7 +313,7 @@ const PDFBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: 'none',
+              pointerEvents: thumbnailUrl ? 'none' : 'auto',
               display: 'flex',
               flexDirection: 'column',
               padding: '10px',
@@ -359,7 +366,7 @@ const PDFBlock = ({
                       opacity: 0,
                       cursor: 'pointer'
                     }}
-                    disabled={isSelected}
+                    disabled={false}
                   />
                 </>
               )}

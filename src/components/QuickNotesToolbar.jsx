@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 
 const QuickNotesToolbar = ({ block, onSave, onClose }) => {
+  const [text, setText] = useState(block.text || '');
   const [fontSize, setFontSize] = useState(block.fontSize || 16);
   const [fontFamily, setFontFamily] = useState(block.fontFamily || 'monospace');
 
   const handleSave = () => {
-    onSave({ ...block, fontSize, fontFamily });
+    onSave({ ...block, text, fontSize, fontFamily });
     onClose();
   };
 
   return (
     <div className="bg-dark-800 border border-dark-700 rounded-lg p-4 shadow-lg">
+      <div className="mb-4">
+        <label className="block text-sm text-gray-400 mb-1">Text Content</label>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="w-full p-2 rounded bg-dark-700 text-white resize-none"
+          rows={6}
+          placeholder="Enter your notes here..."
+        />
+      </div>
       <div className="mb-4">
         <label className="block text-sm text-gray-400 mb-1">Font Size</label>
         <input

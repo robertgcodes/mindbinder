@@ -120,39 +120,3 @@ export const generateGoalsContent = async () => {
     throw error;
   }
 };
-
-export const getAiResponse = async (prompt) => {
-  try {
-    // Add randomization elements to encourage variety
-    const timestamp = new Date().toISOString();
-    const randomSeed = Math.floor(Math.random() * 1000000);
-    
-    // Check if the prompt is asking for random/varied content
-    const wantsRandom = prompt.toLowerCase().includes('random') || 
-                       prompt.toLowerCase().includes('different') ||
-                       prompt.toLowerCase().includes('variety');
-    
-    let enhancedPrompt = prompt;
-    
-    if (wantsRandom) {
-      // Add explicit instruction to avoid repetition
-      enhancedPrompt = `${prompt}\n\nIMPORTANT: Please ensure variety in your responses. Avoid commonly given examples or frequently cited items. Draw from the full breadth of available knowledge to provide diverse and interesting responses each time.\n\n(Random seed: ${randomSeed}, Time: ${timestamp})`;
-    } else {
-      enhancedPrompt = `${prompt}\n\n(Request time: ${timestamp})`;
-    }
-    
-    const response = await generateAIContent({ prompt: enhancedPrompt, blockType: 'ai-prompt' });
-    return response.data.content;
-
-  } catch (error) {
-    console.error('Error getting AI response:', error);
-    
-    if (error.code === 'resource-exhausted') {
-      return 'Daily AI request limit reached. Please try again tomorrow.';
-    } else if (error.code === 'unauthenticated') {
-      return 'Please log in to use AI features.';
-    }
-    
-    return 'Failed to get AI response. Please try again.';
-  }
-};

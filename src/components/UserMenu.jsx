@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, LogOut, Bookmark, Users, BarChart3 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, LogOut, Bookmark, Users, BarChart3, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -9,6 +9,23 @@ const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const menuRef = useRef(null);
+
+  // Handle click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isOpen]);
 
   const handleSignOut = async () => {
     try {
@@ -20,7 +37,7 @@ const UserMenu = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 rounded-lg transition-colors"
@@ -47,7 +64,10 @@ const UserMenu = () => {
         >
           <div className="p-2">
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => {
+                navigate('/profile');
+                setIsOpen(false);
+              }}
               className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
               style={{ color: theme.colors.textSecondary }}
               onMouseEnter={(e) => {
@@ -120,7 +140,29 @@ const UserMenu = () => {
               <span>Saved Blocks</span>
             </button>
             <button
-              onClick={handleSignOut}
+              onClick={() => {
+                navigate('/pricing');
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
+              style={{ color: theme.colors.textSecondary }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+                e.target.style.color = theme.colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = theme.colors.textSecondary;
+              }}
+            >
+              <CreditCard size={16} />
+              <span>Upgrade</span>
+            </button>
+            <button
+              onClick={() => {
+                handleSignOut();
+                setIsOpen(false);
+              }}
               className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
               style={{ color: theme.colors.textSecondary }}
               onMouseEnter={(e) => {

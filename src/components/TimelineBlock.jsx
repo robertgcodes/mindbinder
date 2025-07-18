@@ -64,7 +64,10 @@ const TimelineBlock = ({
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    // Parse the date string as local date (not UTC)
+    // Split YYYY-MM-DD and create date with local timezone
+    const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+    const date = new Date(year, month - 1, day); // month is 0-indexed
     return date.toLocaleDateString('en-US', { 
       year: 'numeric',
       month: 'short',
@@ -72,8 +75,14 @@ const TimelineBlock = ({
     });
   };
 
+  // Helper to parse date string as local date
+  const parseLocalDate = (dateString) => {
+    const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+    return new Date(year, month - 1, day);
+  };
+  
   // Sort events by date
-  const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const sortedEvents = [...events].sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
 
   return (
     <>
@@ -108,7 +117,7 @@ const TimelineBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: 'none',
+              pointerEvents: 'auto',
               display: 'flex',
               flexDirection: 'column',
               padding: '16px',
@@ -118,6 +127,22 @@ const TimelineBlock = ({
             }
           }}
         >
+          <style>{`
+            .timeline-scrollable::-webkit-scrollbar {
+              width: 6px;
+            }
+            .timeline-scrollable::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .timeline-scrollable::-webkit-scrollbar-thumb {
+              background: ${accentColor};
+              borderRadius: 3px;
+              opacity: 0.6;
+            }
+            .timeline-scrollable::-webkit-scrollbar-thumb:hover {
+              opacity: 1;
+            }
+          `}</style>
           {/* Header */}
           <div style={{ marginBottom: '16px' }}>
             <h3 style={{ 
@@ -130,14 +155,14 @@ const TimelineBlock = ({
               alignItems: 'center',
               gap: '8px'
             }}>
-              <Clock size={20} style={{ opacity: 0.8 }} />
+              <Clock size={20} style={{ opacity: 0.9 }} />
               {title}
             </h3>
             <p style={{ 
               margin: 0, 
               fontSize: `${descriptionFontSize}px`,
               fontFamily: descriptionFontFamily,
-              opacity: 0.8,
+              opacity: 0.9,
               color: textColor
             }}>
               {description}
@@ -145,16 +170,22 @@ const TimelineBlock = ({
           </div>
 
           {/* Timeline */}
-          <div style={{ 
-            flex: 1, 
-            overflowY: 'auto',
-            paddingRight: '8px',
-            position: 'relative'
-          }}>
+          <div 
+            className="timeline-scrollable"
+            style={{ 
+              flex: 1, 
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              paddingRight: '8px',
+              position: 'relative',
+              maxHeight: `${height - 100}px`,
+              scrollbarWidth: 'thin',
+              scrollbarColor: `${accentColor} transparent`
+            }}>
             {sortedEvents.length === 0 ? (
               <div style={{
                 textAlign: 'center',
-                opacity: 0.5,
+                opacity: 0.7,
                 padding: '40px 20px',
                 fontSize: '14px'
               }}>
@@ -167,15 +198,15 @@ const TimelineBlock = ({
                 paddingTop: '20px',
                 paddingBottom: '20px'
               }}>
-                {/* Vertical line */}
+                {/* Vertical line - centered with circles */}
                 <div style={{
                   position: 'absolute',
-                  left: '20px',
-                  top: '30px',
-                  bottom: '30px',
+                  left: '19px',
+                  top: '8px',
+                  bottom: '8px',
                   width: '2px',
                   backgroundColor: lineColor,
-                  opacity: 0.3
+                  opacity: 0.6
                 }} />
 
                 {/* Events */}
@@ -191,11 +222,11 @@ const TimelineBlock = ({
                         paddingLeft: '10px'
                       }}
                     >
-                      {/* Event circle */}
+                      {/* Event circle - properly positioned */}
                       <div style={{
                         position: 'absolute',
-                        left: '-30px',
-                        top: '0',
+                        left: '-28px',
+                        top: '2px',
                         width: '16px',
                         height: '16px',
                         borderRadius: '50%',
@@ -207,7 +238,7 @@ const TimelineBlock = ({
 
                       {/* Event content */}
                       <div style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
                         borderRadius: '8px',
                         padding: '12px',
                         border: `1px solid ${isPast ? accentColor : 'transparent'}`,
@@ -220,7 +251,7 @@ const TimelineBlock = ({
                           alignItems: 'center',
                           gap: '6px',
                           marginBottom: '4px',
-                          opacity: 0.8
+                          opacity: 0.9
                         }}>
                           <Calendar size={14} />
                           <span style={{
@@ -251,11 +282,11 @@ const TimelineBlock = ({
             <div style={{
               marginTop: '12px',
               padding: '8px',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
               borderRadius: '8px',
               fontSize: '12px',
               textAlign: 'center',
-              opacity: 0.7
+              opacity: 0.9
             }}>
               {sortedEvents.length} event{sortedEvents.length !== 1 ? 's' : ''} • 
               {sortedEvents[0] && sortedEvents[sortedEvents.length - 1] && (

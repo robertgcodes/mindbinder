@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Droplet, RefreshCw, ArrowUp, ArrowDown, Trash } from 'lucide-react';
+import { Plus, Trash2, Droplet, RefreshCw, ArrowUp, ArrowDown, Trash, List } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { useTheme } from '../contexts/ThemeContext';
+import StandardModal, { FormGroup, Label, Input, Textarea } from './StandardModal';
 
 const ListBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
+  const { theme } = useTheme();
   const [title, setTitle] = useState(block.title || '');
   const [description, setDescription] = useState(block.description || '');
   const [items, setItems] = useState(block.items || []);
@@ -53,96 +56,186 @@ const ListBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
   };
 
   return (
-    <div className="bg-dark-800 border border-dark-700 rounded-lg p-4 shadow-lg min-w-96 max-w-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-white">Edit List Block</h3>
-        <button
-          onClick={onClose}
-          className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg transition-colors"
-          title="Close toolbar"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-1">Title</label>
-        <input
+    <StandardModal
+      isOpen={true}
+      onClose={onClose}
+      title="Edit List Block"
+      icon={List}
+      onSave={handleSave}
+      onDelete={handleDelete}
+      saveText="Save & Close"
+      showDelete={true}
+    >
+      <FormGroup>
+        <Label>Title</Label>
+        <Input
           type="text"
           value={title}
           onChange={e => setTitle(e.target.value)}
-          className="w-full p-2 rounded bg-dark-700 text-white"
+          placeholder="List title"
         />
-      </div>
-      <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-1">Description</label>
-        <textarea
+      </FormGroup>
+
+      <FormGroup>
+        <Label>Description</Label>
+        <Textarea
           value={description}
           onChange={e => setDescription(e.target.value)}
-          className="w-full p-2 rounded bg-dark-700 text-white resize-none"
+          placeholder="List description"
           rows={2}
         />
-      </div>
-      <div className="mb-4">
-        <label className="block text-xs text-gray-400 mb-1">Items</label>
-        <div>
+      </FormGroup>
+
+      <FormGroup>
+        <Label>Items</Label>
+        <div style={{ 
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          borderRadius: '8px',
+          padding: '12px',
+          border: `1px solid ${theme.colors.blockBorder}`
+        }}>
           {items.map((item, index) => (
-            <div key={item.id} className="flex items-center gap-2 mb-2">
-              <div className="flex flex-col">
-                <button onClick={() => moveItem(index, 'up')} disabled={index === 0} className="p-1 text-gray-400 hover:text-white disabled:opacity-30"><ArrowUp size={14} /></button>
-                <button onClick={() => moveItem(index, 'down')} disabled={index === items.length - 1} className="p-1 text-gray-400 hover:text-white disabled:opacity-30"><ArrowDown size={14} /></button>
+            <div key={item.id} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '8px'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <button 
+                  onClick={() => moveItem(index, 'up')} 
+                  disabled={index === 0} 
+                  style={{
+                    padding: '4px',
+                    color: index === 0 ? theme.colors.textSecondary : theme.colors.textPrimary,
+                    opacity: index === 0 ? 0.3 : 1,
+                    background: 'none',
+                    border: 'none',
+                    cursor: index === 0 ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <ArrowUp size={14} />
+                </button>
+                <button 
+                  onClick={() => moveItem(index, 'down')} 
+                  disabled={index === items.length - 1} 
+                  style={{
+                    padding: '4px',
+                    color: index === items.length - 1 ? theme.colors.textSecondary : theme.colors.textPrimary,
+                    opacity: index === items.length - 1 ? 0.3 : 1,
+                    background: 'none',
+                    border: 'none',
+                    cursor: index === items.length - 1 ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <ArrowDown size={14} />
+                </button>
               </div>
-              <input
+              <Input
                 type="text"
                 value={item.text}
                 onChange={e => handleItemChange(item.id, e.target.value)}
-                className="w-full p-2 rounded bg-dark-700 text-white"
+                placeholder="List item"
+                style={{ flex: 1 }}
               />
               <button
                 onClick={() => handleRemoveItem(item.id)}
-                className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                style={{
+                  padding: '8px',
+                  color: '#ef4444',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 size={16} />
               </button>
             </div>
           ))}
+          <button
+            onClick={handleAddItem}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              marginTop: '8px',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
+            }}
+          >
+            <Plus size={16} />
+            <span>Add Item</span>
+          </button>
         </div>
-        <button
-          onClick={handleAddItem}
-          className="flex items-center gap-2 px-3 py-2 mt-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Add Item</span>
-        </button>
-      </div>
-      <div className="mb-4 flex items-center gap-2">
-        <button
-          onClick={() => setInverted(!inverted)}
-          className={`p-2 rounded ${inverted ? 'bg-blue-600 text-white' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
-        >
-          <RefreshCw className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => setIsTransparent(!isTransparent)}
-          className={`p-2 rounded ${isTransparent ? 'bg-blue-600 text-white' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
-        >
-          <Droplet className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="flex justify-between">
-        <button
-          onClick={handleSave}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Save & Close
-        </button>
-        <button
-          onClick={handleDelete}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          <Trash className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
+      </FormGroup>
+
+      <FormGroup>
+        <Label>Style Options</Label>
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px',
+          alignItems: 'center'
+        }}>
+          <button
+            onClick={() => setInverted(!inverted)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: inverted ? '#3b82f6' : 'rgba(0, 0, 0, 0.4)',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease'
+            }}
+            title="Invert colors"
+          >
+            <RefreshCw size={16} />
+            <span>Inverted</span>
+          </button>
+          <button
+            onClick={() => setIsTransparent(!isTransparent)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: isTransparent ? '#3b82f6' : 'rgba(0, 0, 0, 0.4)',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease'
+            }}
+            title="Transparent background"
+          >
+            <Droplet size={16} />
+            <span>Transparent</span>
+          </button>
+        </div>
+      </FormGroup>
+    </StandardModal>
   );
 };
 

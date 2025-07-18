@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User profiles with privacy settings
+    match /users/{userId} {
+      // Only allow reading public fields unless it's the user themselves
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if resource.data.isPublic == true && 
+        request.auth != null &&
+        // Only expose specific public fields
+        request.resource.data.keys().hasOnly(['username', 'profilePhotoURL', 'bio', 'isPublic']);
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Boards with enhanced security
+    match /boards/{boardId} {
+      // Helper functions
+      function isOwner() {
+        return request.auth != null && resource.data.userId == request.auth.uid;
+      }
+      
+      function isCollaborator() {
+        return request.auth != null && 
+               request.auth.uid in resource.data.collaborators;
+      }
+      
+      function canRead() {
+        return resource.data.isPublic == true || isOwner() || isCollaborator();
+      }
+      
+      function canWrite() {
+        return isOwner() || 
+               (isCollaborator() && resource.data.collaboratorPermissions[request.auth.uid] == 'edit');
+      }
+      
+      // Read access - check permissions first
+      allow read: if canRead();
+      
+      // Create - ensure userId matches auth and has required fields
+      allow create: if request.auth != null && 
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['userId', 'name', 'createdAt', 'blocks']);
+      
+      // Update - validate collaborator additions
+      allow update: if canWrite() &&
+                      // If adding collaborators, ensure it's only the owner
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['collaborators']) || isOwner());
+      
+      // Delete - only owner
+      allow delete: if isOwner();
+    }
+    
+    // Board invitations (separate collection for security)
+    match /boardInvitations/{inviteId} {
+      allow read: if request.auth != null && 
+                    (resource.data.invitedEmail == request.auth.email ||
+                     resource.data.boardOwnerId == request.auth.uid);
+      allow create: if request.auth != null && 
+                      request.resource.data.boardOwnerId == request.auth.uid;
+      allow update: if request.auth != null && 
+                      resource.data.invitedEmail == request.auth.email;
+      allow delete: if request.auth != null && 
+                      (resource.data.boardOwnerId == request.auth.uid ||
+                       resource.data.invitedEmail == request.auth.email);
+    }
+    
+    // Saved blocks with ownership validation
+    match /savedBlocks/{blockId} {
+      allow read: if request.auth != null && 
+                    (resource.data.userId == request.auth.uid || 
+                     resource.data.isPublic == true);
+      allow create: if request.auth != null && 
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['userId', 'blockData', 'createdAt']);
+      allow update: if request.auth != null && 
+                      resource.data.userId == request.auth.uid &&
+                      request.resource.data.userId == request.auth.uid; // Prevent userId changes
+      allow delete: if request.auth != null && 
+                      resource.data.userId == request.auth.uid;
+    }
+    
+    // Add rate limiting collection
+    match /rateLimits/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Only backend can write
+    }
+  }
+}

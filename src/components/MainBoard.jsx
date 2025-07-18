@@ -31,7 +31,7 @@ import EnhancedRotatingQuoteToolbar from './EnhancedRotatingQuoteToolbar';
 import EnhancedImageBlockToolbar from './EnhancedImageBlockToolbar';
 import BlockToolbar from './BlockToolbar';
 import ImageToolbar from './ImageToolbar';
-import LinkToolbar from './LinkToolbar';
+import LinkBlockModal from './LinkBlockModal';
 import DocumentToolbar from './DocumentToolbar';
 import CodeToolbar from './CodeToolbar';
 import ListToolbar from './ListToolbar';
@@ -61,11 +61,15 @@ import TimelineBlockModal from './TimelineBlockModal';
 import AnalyticsBlock from './AnalyticsBlock';
 import AnalyticsBlockModal from './AnalyticsBlockModal';
 import GoogleEmbedBlock from './GoogleEmbedBlock';
-import GoogleEmbedToolbar from './GoogleEmbedToolbar';
+import GoogleEmbedModal from './GoogleEmbedModal';
 import PDFBlock from './PDFBlock';
 import PDFBlockModal from './PDFBlockModal';
 import BookBlock from './BookBlock';
 import BookBlockModal from './BookBlockModal';
+import VideoBlock from './VideoBlock';
+import VideoBlockModal from './VideoBlockModal';
+import ActionItemBlock from './ActionItemBlock';
+import ActionItemModal from './ActionItemModal';
 import UserImageLibrary from './UserImageLibrary';
 import ShareBoardModal from './ShareBoardModal';
 import { getAiResponse } from '../aiService';
@@ -262,11 +266,17 @@ const MainBoard = ({ board, onBack }) => {
         e.preventDefault();
         handleDuplicateBlock();
       }
+      
+      // Edit: Ctrl/Cmd + E
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e' && selectedId && selectedBlockIds.size === 0 && !isReadOnly) {
+        e.preventDefault();
+        handleEditBlock();
+      }
     };
     
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, isReadOnly]);
+  }, [selectedId, selectedBlockIds.size, isReadOnly]);
 
   // Save board data
   const saveBoard = async (blocksToSave) => {
@@ -1072,8 +1082,23 @@ const MainBoard = ({ board, onBack }) => {
         return <PDFBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('pdf', block)} />;
       case 'book':
         return <BookBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('book', block)} />;
+      case 'video':
+        return <VideoBlock 
+          key={id} 
+          {...commonProps} 
+          {...block} 
+          data={block.data || {}} 
+          updateBlock={updateBlock} 
+          deleteBlock={() => {
+            setBlocks(blocks.filter(b => b.id !== id));
+            setSelectedId(null);
+          }}
+          onDoubleClick={isReadOnly ? undefined : () => openModal('video', block)}
+        />;
       case 'google-embed':
-        return <GoogleEmbedBlock key={id} {...commonProps} theme={theme} block={block} onUpdate={(updates) => updateBlock(id, updates)} />;
+        return <GoogleEmbedBlock key={id} {...commonProps} theme={theme} block={block} onUpdate={(updates) => updateBlock(id, updates)} onDoubleClick={isReadOnly ? undefined : () => openModal('google-embed', block)} />;
+      case 'action-item':
+        return <ActionItemBlock key={id} {...commonProps} {...block} onUpdate={(updates) => updateBlock(id, updates)} onDoubleClick={isReadOnly ? undefined : () => openModal('action-item', block)} />;
       default:
         return null;
     }
@@ -1122,9 +1147,10 @@ const MainBoard = ({ board, onBack }) => {
         return <EnhancedImageBlockToolbar {...commonProps} selectedBlock={currentBlockForModal} onUpdate={(updates) => updateBlock(modalBlock.id, updates)} />;
       case 'link':
         return (
-          <LinkToolbar 
+          <LinkBlockModal 
             {...commonProps} 
-            onSave={(updates) => updateBlock(modalBlock.id, updates)}
+            block={currentBlockForModal}
+            onChange={(updates) => updateBlock(modalBlock.id, updates)}
             onOpenImageLibrary={() => {
               setShowImageLibrary(true);
               setImageLibraryCallback(() => (imageUrl) => {
@@ -1148,8 +1174,12 @@ const MainBoard = ({ board, onBack }) => {
         return <PDFBlockModal {...commonProps} />;
       case 'book':
         return <BookBlockModal {...commonProps} />;
+      case 'video':
+        return <VideoBlockModal {...commonProps} />;
       case 'google-embed':
-        return <GoogleEmbedToolbar {...commonProps} />;
+        return <GoogleEmbedModal {...commonProps} block={currentBlockForModal} onChange={(updates) => updateBlock(modalBlock.id, updates)} />;
+      case 'action-item':
+        return <ActionItemModal {...commonProps} />;
       default:
         return null;
     }
@@ -1596,6 +1626,29 @@ const MainBoard = ({ board, onBack }) => {
     setSelectedId(newBlock.id);
   };
 
+  const addNewVideoBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: `video-${Date.now()}`,
+      type: 'video',
+      x: center.x - 200,
+      y: center.y - 150,
+      width: 400,
+      height: 300,
+      rotation: 0,
+      data: {
+        videoUrl: '',
+        title: '',
+        description: '',
+        sourceLink: '',
+        showText: true,
+        metadata: null
+      }
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
   const addNewGoogleEmbedBlock = () => {
     const center = getCenterOfViewport();
     const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
@@ -1608,8 +1661,35 @@ const MainBoard = ({ board, onBack }) => {
       height: 300,
       url: '',
       title: 'Google Document',
-      description: 'View and collaborate on Google Docs, Sheets, or Calendar',
+      description: 'View and collaborate on Google Docs, Sheets, Calendar, or Maps',
       embedMode: false, // Start in link mode
+      scale: 1,
+      rotation: 0,
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+  
+  const addNewActionItemBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: `action-item-${Date.now()}`,
+      type: 'action-item',
+      x: center.x - 150,
+      y: center.y - 60,
+      width: 300,
+      height: 120,
+      title: 'New Action Item',
+      description: '',
+      notes: '',
+      status: 'needs-action',
+      dueDate: null,
+      actionType: 'task',
+      subtasks: [],
+      isExpanded: false,
+      showProgress: true,
+      iconStyle: 'checkbox',
+      links: [],
       scale: 1,
       rotation: 0,
     };
@@ -1680,8 +1760,14 @@ const MainBoard = ({ board, onBack }) => {
       case 'book':
         addNewBookBlock();
         break;
+      case 'video':
+        addNewVideoBlock();
+        break;
       case 'google-embed':
         addNewGoogleEmbedBlock();
+        break;
+      case 'action-item':
+        addNewActionItemBlock();
         break;
       // Add more cases for other block types as needed
       default:
@@ -1775,6 +1861,21 @@ const MainBoard = ({ board, onBack }) => {
       setHistoryIndex(newHistory.length - 1);
       
       console.log(`Deleted ${blocksToDelete.length} block(s)`);
+    }
+  };
+
+  // Handle edit block from navigation
+  const handleEditBlock = () => {
+    if (isReadOnly) return;
+    
+    // Only edit if single block selected
+    if (selectedBlockIds.size > 0) return;
+    
+    if (selectedId) {
+      const block = blocks.find(b => b.id === selectedId);
+      if (block) {
+        openModal(block.type, block);
+      }
     }
   };
 
@@ -2011,6 +2112,7 @@ const MainBoard = ({ board, onBack }) => {
         onCenterView={centerViewOnBlocks}
         onBringIntoView={bringBlocksIntoView}
         onDuplicateBlock={handleDuplicateBlock}
+        onEditBlock={handleEditBlock}
         hasMultiSelection={selectedBlockIds.size > 0}
       />
       <div className="flex-1 relative">
@@ -2073,7 +2175,7 @@ const MainBoard = ({ board, onBack }) => {
             >
               <Clipboard className="h-4 w-4" style={{ color: theme.colors.accentPrimary }} />
               <span className="text-sm" style={{ color: theme.colors.textSecondary }}>
-                Tips: Paste (Ctrl+V), Duplicate (Ctrl+D), Delete (Del key)
+                Tips: Paste (Ctrl+V), Edit (Ctrl+E), Duplicate (Ctrl+D), Delete (Del key)
               </span>
               <button
                 onClick={() => setShowPasteHint(false)}

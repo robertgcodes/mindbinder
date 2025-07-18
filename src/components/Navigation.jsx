@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move } from 'lucide-react';
+import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView }) => {
+const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock }) => {
   const { theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -17,6 +17,7 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
     { type: 'image', icon: Image, label: 'Image' },
     { type: 'list', icon: List, label: 'List' },
     { type: 'youtube', icon: Film, label: 'YouTube' },
+    { type: 'video', icon: Video, label: 'Video' },
     { type: 'ai-prompt', icon: Bot, label: 'AI Prompt' },
     { type: 'frame', icon: Square, label: 'Frame' },
     { type: 'yearly-planner', icon: GanttChartSquare, label: 'Yearly Planner' },
@@ -24,6 +25,7 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
     { type: 'quick-notes', icon: FileText, label: 'Quick Notes' },
     { type: 'link', icon: Link2, label: 'Link' },
     { type: 'google-embed', icon: FileSpreadsheet, label: 'Google Embed' },
+    { type: 'action-item', icon: ListTodo, label: 'Action Item' },
     { type: 'gratitude', icon: Heart, label: 'Gratitude' },
     { type: 'affirmations', icon: Sparkles, label: 'Affirmations' },
     { type: 'timeline', icon: Clock, label: 'Timeline' },
@@ -91,14 +93,14 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
               }}
               onMouseEnter={(e) => {
                 if (!isReadOnly) {
-                  e.target.style.backgroundColor = theme.colors.hoverBackground;
-                  e.target.style.color = theme.colors.textPrimary;
+                  e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                  e.currentTarget.style.color = theme.colors.textPrimary;
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isReadOnly) {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = theme.colors.textSecondary;
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.colors.textSecondary;
                 }
               }}
               title="Undo"
@@ -115,14 +117,14 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
               }}
               onMouseEnter={(e) => {
                 if (!isReadOnly) {
-                  e.target.style.backgroundColor = theme.colors.hoverBackground;
-                  e.target.style.color = theme.colors.textPrimary;
+                  e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                  e.currentTarget.style.color = theme.colors.textPrimary;
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isReadOnly) {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = theme.colors.textSecondary;
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.colors.textSecondary;
                 }
               }}
               title="Redo"
@@ -137,12 +139,12 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                   className="p-2 rounded-lg transition-colors"
                   style={{ color: theme.colors.textSecondary }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = theme.colors.hoverBackground;
-                    e.target.style.color = theme.colors.textPrimary;
+                    e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                    e.currentTarget.style.color = theme.colors.textPrimary;
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.color = theme.colors.textSecondary;
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.colors.textSecondary;
                   }}
                   title="Share Board"
                 >
@@ -157,12 +159,12 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                 className="p-2 rounded-lg transition-colors"
                 style={{ color: theme.colors.textSecondary }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = theme.colors.hoverBackground;
-                  e.target.style.color = theme.colors.textPrimary;
+                  e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                  e.currentTarget.style.color = theme.colors.textPrimary;
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = theme.colors.textSecondary;
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.colors.textSecondary;
                 }}
                 title="Center View on All Blocks"
               >
@@ -175,12 +177,12 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                 className="p-2 rounded-lg transition-colors"
                 style={{ color: theme.colors.textSecondary }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = theme.colors.hoverBackground;
-                  e.target.style.color = theme.colors.textPrimary;
+                  e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                  e.currentTarget.style.color = theme.colors.textPrimary;
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = theme.colors.textSecondary;
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.colors.textSecondary;
                 }}
                 title="Bring All Blocks Into View"
               >
@@ -197,14 +199,14 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                 }}
                 onMouseEnter={(e) => {
                   if (!isSelectionMode) {
-                    e.target.style.backgroundColor = theme.colors.hoverBackground;
-                    e.target.style.color = theme.colors.textPrimary;
+                    e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                    e.currentTarget.style.color = theme.colors.textPrimary;
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isSelectionMode) {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.color = theme.colors.textSecondary;
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.colors.textSecondary;
                   }
                 }}
                 title={isSelectionMode ? "Exit Selection Mode" : "Selection Tool"}
@@ -223,17 +225,38 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                     cursor: 'pointer'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = theme.colors.hoverBackground;
-                    e.target.style.color = theme.colors.textPrimary;
+                    e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                    e.currentTarget.style.color = theme.colors.textPrimary;
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.color = theme.colors.textSecondary;
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.colors.textSecondary;
                   }}
                   title={hasMultiSelection ? "Duplicate Selected Blocks" : "Duplicate Block"}
                 >
                   <Copy className="h-5 w-5" />
                 </button>
+                {!hasMultiSelection && onEditBlock && (
+                  <button
+                    onClick={onEditBlock}
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ 
+                      color: theme.colors.textSecondary,
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                      e.currentTarget.style.color = theme.colors.textPrimary;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = theme.colors.textSecondary;
+                    }}
+                    title="Edit Block"
+                  >
+                    <Edit className="h-5 w-5" />
+                  </button>
+                )}
                 <button
                   onClick={onDeleteBlock}
                   className="p-2 rounded-lg transition-colors"
@@ -242,12 +265,12 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                     cursor: 'pointer'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                    e.target.style.color = '#ef4444';
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                    e.currentTarget.style.color = '#ef4444';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.color = theme.colors.textSecondary;
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.colors.textSecondary;
                   }}
                   title={hasMultiSelection ? "Delete Selected Blocks" : "Delete Block"}
                 >
@@ -265,12 +288,12 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                   className="p-2 rounded-lg transition-colors"
                   style={{ color: theme.colors.textSecondary }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = theme.colors.hoverBackground;
-                    e.target.style.color = theme.colors.textPrimary;
+                    e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                    e.currentTarget.style.color = theme.colors.textPrimary;
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.color = theme.colors.textSecondary;
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.colors.textSecondary;
                   }}
                   title="Add Block"
                 >
@@ -294,12 +317,12 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, isSele
                         className="w-full flex items-center px-4 py-2 text-sm transition-colors"
                         style={{ color: theme.colors.textSecondary }}
                         onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = theme.colors.hoverBackground;
-                          e.target.style.color = theme.colors.textPrimary;
+                          e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                          e.currentTarget.style.color = theme.colors.textPrimary;
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent';
-                          e.target.style.color = theme.colors.textSecondary;
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = theme.colors.textSecondary;
                         }}
                       >
                         <Icon className="h-4 w-4 mr-3" />

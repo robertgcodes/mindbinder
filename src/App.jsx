@@ -15,6 +15,8 @@ import LoadingSpinner from './components/LoadingSpinner';
 import Friends from './components/Friends';
 import Analytics from './components/Analytics';
 import PricingPage from './components/PricingPage';
+import BillingPage from './components/BillingPage';
+import AdminDashboard from './components/admin/AdminDashboard';
 
 function App() {
   const { currentUser, loading } = useAuth();
@@ -36,6 +38,8 @@ function App() {
           <Route path="/friends" element={currentUser ? <Friends /> : <Navigate to="/login" />} />
           <Route path="/analytics" element={currentUser ? <Analytics /> : <Navigate to="/login" />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/billing" element={currentUser ? <BillingPage /> : <Navigate to="/login" />} />
+          <Route path="/admin" element={currentUser ? <AdminDashboard /> : <Navigate to="/login" />} />
           <Route path="/user/:userId" element={<PublicProfile />} />
           <Route path="/u/:username" element={<PublicProfile />} />
           <Route path="/u/:username/block/:blockId" element={<SharedBlock />} />

@@ -1,15 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, LogOut, Bookmark, Users, BarChart3, CreditCard } from 'lucide-react';
+import { User, LogOut, Bookmark, Users, BarChart3, CreditCard, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const UserMenu = () => {
+  const { currentUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { theme } = useTheme();
   const menuRef = useRef(null);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          const userData = userDoc.data();
+          setIsAdmin(userData?.isAdmin || false);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+        }
+      }
+    };
+    checkAdminStatus();
+  }, [currentUser]);
 
   // Handle click outside to close menu
   useEffect(() => {
@@ -141,7 +162,7 @@ const UserMenu = () => {
             </button>
             <button
               onClick={() => {
-                navigate('/pricing');
+                navigate('/billing');
                 setIsOpen(false);
               }}
               className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
@@ -156,8 +177,29 @@ const UserMenu = () => {
               }}
             >
               <CreditCard size={16} />
-              <span>Upgrade</span>
+              <span>Billing</span>
             </button>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  navigate('/admin');
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
+                style={{ color: theme.colors.textSecondary }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                  e.target.style.color = theme.colors.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = theme.colors.textSecondary;
+                }}
+              >
+                <Shield size={16} />
+                <span>Admin</span>
+              </button>
+            )}
             <button
               onClick={() => {
                 handleSignOut();

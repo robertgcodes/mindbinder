@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { X, Globe, Lock, Users, Mail, Copy, Check, Trash2, Eye, Edit3, Link } from 'lucide-react';
+import { X, Globe, Lock, Users, Mail, Copy, Check, Trash2, Eye, Edit3, Link, Shield, AlertCircle } from 'lucide-react';
 import { doc, updateDoc, collection, addDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useTeam } from '../contexts/TeamContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 const ShareBoardModal = ({ board, onClose }) => {
   const { currentUser } = useAuth();
   const { theme } = useTheme();
+  const { team, userRole } = useTeam();
+  const { tier } = useSubscription();
   const [isPublic, setIsPublic] = useState(board.isPublic || false);
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);
@@ -16,6 +20,9 @@ const ShareBoardModal = ({ board, onClose }) => {
   const [invitations, setInvitations] = useState([]);
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Check if user can share with edit permissions
+  const canShareEdit = tier?.id === 'team' && team !== null;
 
   // Generate share link
   useEffect(() => {
@@ -121,6 +128,9 @@ const ShareBoardModal = ({ board, onClose }) => {
       
       // Validate emails
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      
+      // Force view-only permission if user doesn't have team access
+      const finalPermission = canShareEdit ? invitePermission : 'view';
       const invalidEmails = emails.filter(email => !emailRegex.test(email));
       
       if (invalidEmails.length > 0) {
@@ -154,7 +164,7 @@ const ShareBoardModal = ({ board, onClose }) => {
             invitedBy: currentUser.uid,
             invitedByName: currentUser.displayName || currentUser.email,
             email: email,
-            permission: invitePermission,
+            permission: finalPermission,
             status: 'pending',
             createdAt: new Date().toISOString()
           });
@@ -196,15 +206,15 @@ Subject: ${currentUser.displayName || currentUser.email} invited you to collabor
 
 Hi there,
 
-${currentUser.displayName || currentUser.email} has invited you to ${invitePermission === 'edit' ? 'collaborate on' : 'view'} their LifeBlocks board "${board.name}".
+${currentUser.displayName || currentUser.email} has invited you to ${finalPermission === 'edit' ? 'collaborate on' : 'view'} their LifeBlocks.ai board "${board.name}".
 
 Click here to accept the invitation:
 ${inv.link}
 
-This invitation grants you ${invitePermission === 'edit' ? 'full editing' : 'view-only'} access to the board.
+This invitation grants you ${finalPermission === 'edit' ? 'full editing' : 'view-only'} access to the board.
 
 Best regards,
-The LifeBlocks Team`;
+The LifeBlocks.ai Team`;
         
         alert(`Invitation sent! Here's a preview of the email that would be sent to ${inv.email}:\n\n${emailPreview}`);
       } else {
@@ -262,9 +272,19 @@ The LifeBlocks Team`;
           className="flex items-center justify-between p-6 border-b"
           style={{ borderColor: theme.colors.blockBorder }}
         >
-          <h2 className="text-xl font-semibold" style={{ color: theme.colors.textPrimary }}>
-            Share Board
-          </h2>
+          <div className="flex items-center space-x-3">
+            <h2 className="text-xl font-semibold" style={{ color: theme.colors.textPrimary }}>
+              Share Board
+            </h2>
+            {!canShareEdit && (
+              <span className="text-xs px-2 py-1 rounded-full" style={{ 
+                backgroundColor: theme.colors.warningBackground || theme.colors.yellow + '20',
+                color: theme.colors.yellow
+              }}>
+                View-only sharing
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-opacity-10 transition-colors"
@@ -295,7 +315,10 @@ The LifeBlocks Team`;
                   <Globe className="h-5 w-5" style={{ color: isPublic ? theme.colors.accentPrimary : theme.colors.textSecondary }} />
                   <div className="text-left">
                     <div className="font-medium">Public</div>
-                    <div className="text-sm opacity-70">Anyone with the link can view this board</div>
+                    <div className="text-sm opacity-70">
+                      Anyone with the link can view this board
+                      {!canShareEdit && <span className="block text-xs mt-1">(View-only access for non-team users)</span>}
+                    </div>
                   </div>
                 </div>
                 <div className={`w-12 h-6 rounded-full transition-colors ${isPublic ? 'bg-blue-500' : 'bg-gray-400'}`}>
@@ -328,9 +351,17 @@ The LifeBlocks Team`;
 
           {/* Share Link */}
           <div>
-            <h3 className="text-lg font-medium mb-4" style={{ color: theme.colors.textPrimary }}>
-              Share Link
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium" style={{ color: theme.colors.textPrimary }}>
+                Share Link
+              </h3>
+              {canShareEdit && (
+                <div className="flex items-center space-x-2 text-sm" style={{ color: theme.colors.accentPrimary }}>
+                  <Shield className="h-4 w-4" />
+                  <span>Team Feature</span>
+                </div>
+              )}
+            </div>
             <div className="flex items-center space-x-2">
               <input
                 type="text"
@@ -362,6 +393,22 @@ The LifeBlocks Team`;
             <h3 className="text-lg font-medium mb-4" style={{ color: theme.colors.textPrimary }}>
               Invite People
             </h3>
+            {!canShareEdit && (
+              <div className="mb-4 p-3 rounded-lg flex items-start space-x-2" style={{ 
+                backgroundColor: theme.colors.warningBackground || theme.colors.yellow + '20',
+                border: `1px solid ${theme.colors.yellow}40`
+              }}>
+                <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: theme.colors.yellow }} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium" style={{ color: theme.colors.textPrimary }}>
+                    Edit permissions are only available for team subscribers
+                  </p>
+                  <p className="text-sm mt-1" style={{ color: theme.colors.textSecondary }}>
+                    Upgrade to a team plan to share boards with edit access. Currently, you can only share view-only access.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <input
@@ -385,9 +432,12 @@ The LifeBlocks Team`;
                     borderColor: theme.colors.blockBorder,
                     color: theme.colors.textPrimary
                   }}
+                  disabled={!canShareEdit}
                 >
                   <option value="view">View Only</option>
-                  <option value="edit">Can Edit</option>
+                  <option value="edit" disabled={!canShareEdit}>
+                    {canShareEdit ? 'Can Edit' : 'Can Edit (Team only)'}
+                  </option>
                 </select>
                 <button
                   onClick={handleSendInvitation}
@@ -490,9 +540,12 @@ The LifeBlocks Team`;
                             borderColor: theme.colors.blockBorder,
                             color: theme.colors.textPrimary
                           }}
+                          disabled={!canShareEdit}
                         >
                           <option value="view">View Only</option>
-                          <option value="edit">Can Edit</option>
+                          <option value="edit" disabled={!canShareEdit}>
+                            {canShareEdit ? 'Can Edit' : 'Can Edit (Team only)'}
+                          </option>
                         </select>
                         <button
                           onClick={() => handleRemoveCollaborator(collaborator.id)}

@@ -11,13 +11,15 @@ We've updated the board sharing functionality to ensure:
 
 ### Deploy the New Security Rules
 
-1. **Copy the rules** from `firestore-rules-team-sharing.txt`
+1. **Copy the rules** from `firestore-rules-simplified.txt`
 
 2. **Go to Firebase Console**:
    - Navigate to Firestore Database
    - Click on "Rules" tab
    - Replace the existing rules with the new ones
    - Click "Publish"
+
+✅ **Rules have been successfully deployed!**
 
 ### Key Security Changes
 

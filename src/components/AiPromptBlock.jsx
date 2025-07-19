@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Group, Rect, Transformer, Text } from 'react-konva';
 import { Html } from 'react-konva-utils';
 import { RefreshCw, Bot } from 'lucide-react';
-import { getAiResponse } from '../aiService';
+import { getAiResponseEnhanced } from '../aiServiceEnhanced';
 
 const AiPromptBlock = ({
   id,
@@ -38,10 +38,14 @@ const AiPromptBlock = ({
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const newResponse = await getAiResponse(prompt);
+      const newResponse = await getAiResponseEnhanced(prompt);
       onChange({ response: newResponse, lastRefreshed: new Date().toISOString() });
     } catch (error) {
       console.error("Failed to refresh AI prompt:", error);
+      // Show error to user if it's a Pro feature issue
+      if (error.message?.includes('Pro feature') || error.message?.includes('API key')) {
+        onChange({ response: error.message });
+      }
     } finally {
       setIsRefreshing(false);
     }

@@ -4,7 +4,7 @@ import {
   ArrowLeft, Users, TrendingUp, DollarSign, Activity,
   Search, Filter, Download, Eye, Shield, AlertCircle,
   CheckCircle, XCircle, Clock, RefreshCw, MoreVertical,
-  Calendar, Mail, Package, CreditCard, UserCheck, UserX
+  Calendar, Mail, Package, CreditCard, UserCheck, UserX, X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';

@@ -45,6 +45,8 @@ import YouTubeBlock from './YouTubeBlock';
 import YouTubeToolbar from './YouTubeToolbar';
 import AiPromptBlock from './AiPromptBlock';
 import AiPromptToolbar from './AiPromptToolbar';
+import AIImageBlock from './AIImageBlock';
+import AIImageBlockModal from './AIImageBlockModal';
 import FrameBlock from './FrameBlock';
 import FrameToolbar from './FrameToolbar';
 import YearlyPlannerBlock from './YearlyPlannerBlock';
@@ -1049,6 +1051,8 @@ const MainBoard = ({ board, onBack }) => {
         return <FrameBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('frame', block)} />;
       case 'ai-prompt':
         return <AiPromptBlock key={id} {...commonProps} {...block} onChange={(updates) => updateBlock(id, updates)} onDoubleClick={isReadOnly ? undefined : () => openModal('ai-prompt', block)} />;
+      case 'ai-image':
+        return <AIImageBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('ai-image', block)} />;
       case 'youtube':
         return <YouTubeBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('youtube', block)} />;
       case 'text':
@@ -1150,6 +1154,8 @@ const MainBoard = ({ board, onBack }) => {
         return <FrameToolbar {...commonProps} />;
       case 'ai-prompt':
         return <AiPromptToolbar {...commonProps} />;
+      case 'ai-image':
+        return <AIImageBlockModal {...commonProps} onSave={(updates) => updateBlock(modalBlock.id, updates)} />;
       case 'youtube':
         return <YouTubeToolbar {...commonProps} />;
       case 'text':
@@ -1249,6 +1255,29 @@ const MainBoard = ({ board, onBack }) => {
       lastRefreshed: null,
       refreshInterval: 86400000, // 24 hours
       backgroundColor: '#1a1a1a',
+      rotation: 0,
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewAIImageBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: uuidv4(),
+      type: 'ai-image',
+      x: center.x - 175,
+      y: center.y - 125,
+      width: 350,
+      height: 250,
+      data: {
+        prompt: '',
+        imageUrl: '',
+        style: 'realistic',
+        aspectRatio: '1:1',
+        quality: 'standard',
+        history: []
+      },
       rotation: 0,
     };
     setBlocks([...blocks, newBlock]);
@@ -1738,6 +1767,9 @@ const MainBoard = ({ board, onBack }) => {
         break;
       case 'ai-prompt':
         addNewAiPromptBlock();
+        break;
+      case 'ai-image':
+        addNewAIImageBlock();
         break;
       case 'frame':
         addNewFrameBlock();

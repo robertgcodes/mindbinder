@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bot, RefreshCw, Save, Trash2, Sun, Moon, Droplet, Clock, Type, AlignLeft, AlignCenter, AlignRight, Bold, Italic } from 'lucide-react';
-import { getAiResponse } from '../aiService';
+import { X, Bot, RefreshCw, Save, Trash2, Sun, Moon, Droplet, Clock, Type, AlignLeft, AlignCenter, AlignRight, Bold, Italic, Sparkles, Settings } from 'lucide-react';
+import { getAiResponseEnhanced } from '../aiServiceEnhanced';
+import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { Link } from 'react-router-dom';
 
 const AiPromptToolbar = ({ block, onChange, onClose, onDelete }) => {
+  const { currentUser } = useAuth();
+  const { hasProAccess } = useSubscription();
+  const { theme } = useTheme();
   const [title, setTitle] = useState(block.title || 'AI Prompt');
   const [prompt, setPrompt] = useState(block.prompt || 'Give me a random bible verse and a brief explanation.');
   const [testResponse, setTestResponse] = useState('');
@@ -41,7 +48,7 @@ const AiPromptToolbar = ({ block, onChange, onClose, onDelete }) => {
     setIsTesting(true);
     setTestResponse('');
     try {
-      const response = await getAiResponse(prompt);
+      const response = await getAiResponseEnhanced(prompt);
       setTestResponse(response);
     } catch (error) {
       setTestResponse('Error: Could not get a response.');
@@ -53,7 +60,7 @@ const AiPromptToolbar = ({ block, onChange, onClose, onDelete }) => {
   const handleSave = async () => {
     setIsTesting(true);
     try {
-      const newResponse = await getAiResponse(prompt);
+      const newResponse = await getAiResponseEnhanced(prompt);
       onChange({
         title,
         prompt,
@@ -105,8 +112,23 @@ const AiPromptToolbar = ({ block, onChange, onClose, onDelete }) => {
         <h3 className="text-sm font-medium text-white flex items-center">
           <Bot className="h-4 w-4 mr-2 text-purple-400" />
           Edit AI Prompt Block
+          {hasProAccess && (
+            <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 flex items-center">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Pro Enhanced
+            </span>
+          )}
         </h3>
         <div className="flex items-center gap-2">
+          {hasProAccess && (
+            <Link
+              to="/pro-ai-settings"
+              className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg"
+              title="AI Settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Link>
+          )}
           <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-gray-400 hover:text-white hover:bg-dark-700 rounded-lg">
             {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>

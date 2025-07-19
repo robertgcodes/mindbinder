@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, LogOut, Bookmark, Users, BarChart3, CreditCard, Shield } from 'lucide-react';
+import { User, LogOut, Bookmark, Users, BarChart3, CreditCard, Shield, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -202,6 +202,27 @@ const UserMenu = () => {
               <CreditCard size={16} />
               <span>Billing</span>
             </button>
+            {(tier?.id === 'pro' || tier?.id === 'team' || isAdmin) && (
+              <button
+                onClick={() => {
+                  navigate('/pro-ai-settings');
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
+                style={{ color: theme.colors.textSecondary }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                  e.target.style.color = theme.colors.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = theme.colors.textSecondary;
+                }}
+              >
+                <Bot size={16} />
+                <span>AI Settings</span>
+              </button>
+            )}
             {isAdmin && (
               <button
                 onClick={() => {

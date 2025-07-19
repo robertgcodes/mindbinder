@@ -21,6 +21,7 @@ export const SubscriptionProvider = ({ children }) => {
   const [tier, setTier] = useState(PRICING_TIERS.FREE);
   const [loading, setLoading] = useState(true);
   const [storageUsed, setStorageUsed] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Load subscription data
   useEffect(() => {
@@ -40,6 +41,9 @@ export const SubscriptionProvider = ({ children }) => {
           
           // Set storage used
           setStorageUsed(userData.storageUsed || 0);
+          
+          // Set admin status
+          setIsAdmin(userData.isAdmin || false);
           
           // Set subscription from Firestore (synced by webhook)
           if (userData.subscription) {
@@ -104,6 +108,7 @@ export const SubscriptionProvider = ({ children }) => {
     tier,
     loading,
     storageUsed,
+    isAdmin,
     canUseFeature,
     checkStorageLimit,
     checkFileSize,
@@ -111,7 +116,8 @@ export const SubscriptionProvider = ({ children }) => {
     isFreeTier: tier.id === 'free',
     isProTier: tier.id === 'pro',
     isTeamTier: tier.id === 'team',
-    hasActiveSubscription: subscription?.status === 'active'
+    hasActiveSubscription: subscription?.status === 'active',
+    hasProAccess: isAdmin || tier.id === 'pro' || tier.id === 'team'
   };
 
   return (

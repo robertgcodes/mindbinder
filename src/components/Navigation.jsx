@@ -33,6 +33,7 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, board,
     { type: 'analytics', icon: BarChart3, label: 'Analytics' },
     { type: 'pdf', icon: FileDown, label: 'PDF' },
     { type: 'book', icon: Book, label: 'Book' },
+    { type: 'ai-image', icon: Image, label: 'AI Image' },
   ];
 
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);

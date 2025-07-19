@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import { SubscriptionProvider } from './contexts/SubscriptionContext.jsx';
+import { TeamProvider } from './contexts/TeamContext.jsx';
 import LandingPageEnhanced from './components/LandingPageEnhanced';
 import LoginPage from './components/LoginPage';
 import UserProfile from './components/UserProfile';
@@ -17,6 +18,8 @@ import Analytics from './components/Analytics';
 import PricingPage from './components/PricingPage';
 import BillingPage from './components/BillingPage';
 import AdminDashboard from './components/admin/AdminDashboard';
+import TeamManagement from './components/TeamManagement';
+import JoinTeam from './components/JoinTeam';
 
 function App() {
   const { currentUser, loading } = useAuth();
@@ -40,6 +43,8 @@ function App() {
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/billing" element={currentUser ? <BillingPage /> : <Navigate to="/login" />} />
           <Route path="/admin" element={currentUser ? <AdminDashboard /> : <Navigate to="/login" />} />
+          <Route path="/team" element={currentUser ? <TeamManagement /> : <Navigate to="/login" />} />
+          <Route path="/team/join/:invitationCode" element={<JoinTeam />} />
           <Route path="/user/:userId" element={<PublicProfile />} />
           <Route path="/u/:username" element={<PublicProfile />} />
           <Route path="/u/:username/block/:blockId" element={<SharedBlock />} />

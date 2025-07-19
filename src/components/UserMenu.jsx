@@ -5,11 +5,13 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const UserMenu = () => {
   const { currentUser } = useAuth();
+  const { tier } = useSubscription();
   const [isOpen, setIsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
@@ -160,6 +162,27 @@ const UserMenu = () => {
               <Bookmark size={16} />
               <span>Saved Blocks</span>
             </button>
+            {tier?.id === 'team' && (
+              <button
+                onClick={() => {
+                  navigate('/team');
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
+                style={{ color: theme.colors.textSecondary }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                  e.target.style.color = theme.colors.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.color = theme.colors.textSecondary;
+                }}
+              >
+                <Users size={16} />
+                <span>Team</span>
+              </button>
+            )}
             <button
               onClick={() => {
                 navigate('/billing');

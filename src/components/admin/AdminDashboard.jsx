@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { collection, query, getDocs, where, orderBy, limit, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, getDocs, where, orderBy, limit, updateDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { PRICING_TIERS, formatBytes } from '../../config/pricing';
 import ScrollableLayout from '../ScrollableLayout';
@@ -47,15 +47,20 @@ const AdminDashboard = () => {
     }
 
     try {
-      const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', currentUser.uid), limit(1)));
-      const userData = userDoc.docs[0]?.data();
+      console.log('Checking admin access for user:', currentUser.uid);
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      const userData = userDoc.data();
+      console.log('User data:', userData);
+      console.log('isAdmin field:', userData?.isAdmin);
       
       // Check if user is admin (you'll need to set this field in Firestore for admin users)
       if (!userData?.isAdmin) {
+        console.log('User is not admin, redirecting to boards');
         navigate('/boards');
         return;
       }
 
+      console.log('User is admin, loading dashboard data');
       loadDashboardData();
     } catch (error) {
       console.error('Error checking admin access:', error);

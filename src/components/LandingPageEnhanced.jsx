@@ -172,7 +172,7 @@ const LandingPageEnhanced = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
               <Brain className="h-7 w-7" style={{ color: colors.blue }} />
-              <span className="font-bold text-xl" style={{ color: colors.textPrimary }}>lifeblocks.ai</span>
+              <span className="font-bold text-xl" style={{ color: colors.textPrimary }}>LifeBlocks.ai</span>
             </div>
             <div className="flex items-center space-x-4">
               <Link 
@@ -208,7 +208,7 @@ const LandingPageEnhanced = () => {
             color: colors.blueLight
           }}>
             <Zap size={16} />
-            <span className="text-sm font-medium">Free while in Beta • No credit card required</span>
+            <span className="text-sm font-medium">Start Free • No credit card required</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight" style={{ color: colors.textPrimary }}>
@@ -522,7 +522,7 @@ const LandingPageEnhanced = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Brain className="h-6 w-6" style={{ color: colors.blue }} />
-                <span className="font-semibold" style={{ color: colors.textPrimary }}>lifeblocks.ai</span>
+                <span className="font-semibold" style={{ color: colors.textPrimary }}>LifeBlocks.ai</span>
               </div>
               <p className="text-sm" style={{ color: colors.textSecondary }}>
                 The infinite canvas for organizing your life with dynamic blocks.
@@ -564,7 +564,7 @@ const LandingPageEnhanced = () => {
             borderTop: `1px solid ${colors.border}`,
             color: colors.textSecondary 
           }}>
-            <p>&copy; 2024 lifeblocks.ai. All rights reserved.</p>
+            <p>&copy; 2024 LifeBlocks.ai. All rights reserved.</p>
           </div>
         </div>
       </footer>

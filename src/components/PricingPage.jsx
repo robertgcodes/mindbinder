@@ -311,11 +311,11 @@ const PricingPage = () => {
               <p className="mt-2" style={{ color: theme.colors.textSecondary }}>
                 Questions? Contact us at{' '}
                 <a 
-                  href="mailto:support@lifeblocks.ai" 
+                  href="mailto:support@LifeBlocks.ai" 
                   style={{ color: theme.colors.accentPrimary }}
                   className="hover:underline"
                 >
-                  support@lifeblocks.ai
+                  support@LifeBlocks.ai
                 </a>
               </p>
             </div>

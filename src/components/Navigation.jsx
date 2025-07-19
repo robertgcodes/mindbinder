@@ -69,7 +69,7 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, board,
           <div className="flex items-center space-x-6">
             <Link to="/boards" className="flex items-center space-x-2">
               <Brain className="h-6 w-6" style={{ color: theme.colors.accentPrimary }} />
-              <span className="font-semibold" style={{ color: theme.colors.textPrimary }}>LifeBlocks</span>
+              <span className="font-semibold" style={{ color: theme.colors.textPrimary }}>LifeBlocks.ai</span>
             </Link>
             {board && (
               <>

@@ -364,7 +364,7 @@ const BoardManager = ({ user }) => {
               className="text-xl font-bold"
               style={{ color: theme.colors.textPrimary }}
             >
-              lifeblocks.ai
+              LifeBlocks.ai
             </span>
           </Link>
 

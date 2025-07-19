@@ -1,8 +1,25 @@
 import React, { useState } from 'react';
 import { Check, X, Zap, Users, Clock, Sparkles, Upload, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 const PricingSection = () => {
   const [billingPeriod, setBillingPeriod] = useState('monthly');
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
+  const handlePlanClick = (plan) => {
+    if (plan.name === 'Free') {
+      if (currentUser) {
+        navigate('/boards');
+      } else {
+        navigate('/signup');
+      }
+    } else {
+      // For Pro and Team plans, navigate to pricing page
+      navigate('/pricing');
+    }
+  };
 
   const plans = [
     {
@@ -27,6 +44,7 @@ const PricingSection = () => {
       name: 'Pro',
       price: { monthly: 10, yearly: 100 },
       description: 'For power users and professionals',
+      priceId: { monthly: 'price_pro_monthly', yearly: 'price_pro_yearly' },
       features: [
         { text: 'Unlimited boards', included: true },
         { text: 'Unlimited blocks', included: true },
@@ -37,15 +55,16 @@ const PricingSection = () => {
         { text: 'Priority email support', included: true },
         { text: 'Custom themes', included: true }
       ],
-      cta: 'Coming Soon',
+      cta: 'Start Pro',
       popular: true,
-      available: false,
+      available: true,
       badge: 'Most Popular'
     },
     {
       name: 'Team',
       price: { monthly: 20, yearly: 200 },
       description: 'Collaborate with your team',
+      priceId: { monthly: 'price_team_monthly', yearly: 'price_team_yearly' },
       features: [
         { text: 'Everything in Pro', included: true },
         { text: '3 team members', included: true },
@@ -56,9 +75,9 @@ const PricingSection = () => {
         { text: 'Priority phone support', included: true },
         { text: 'Custom onboarding', included: true }
       ],
-      cta: 'Coming Soon',
+      cta: 'Start Team',
       popular: false,
-      available: false
+      available: true
     }
   ];
 
@@ -155,11 +174,12 @@ const PricingSection = () => {
               </div>
 
               <button
+                onClick={() => handlePlanClick(plan)}
                 className={`w-full py-3 rounded-lg font-semibold transition-all ${
                   plan.available
                     ? plan.popular
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
-                      : 'bg-gray-800 text-white hover:bg-dark-600'
+                      : 'bg-gray-800 text-white hover:bg-gray-700'
                     : 'bg-gray-800/50 text-gray-500 cursor-not-allowed'
                 }`}
                 disabled={!plan.available}
@@ -202,9 +222,9 @@ const PricingSection = () => {
           <h3 className="text-2xl font-bold text-white mb-4">Frequently Asked Questions</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-4xl mx-auto">
             <div className="bg-gray-900/30 rounded-lg p-6 border border-gray-800">
-              <h4 className="text-white font-semibold mb-2">When will paid plans be available?</h4>
+              <h4 className="text-white font-semibold mb-2">How does billing work?</h4>
               <p className="text-sm text-gray-400">
-                We're targeting Q2 2024 for Pro and Team plans. Early beta users will get special pricing.
+                Choose monthly or yearly billing. Cancel anytime. Yearly plans save 17% off the monthly price.
               </p>
             </div>
             <div className="bg-gray-900/30 rounded-lg p-6 border border-gray-800">

@@ -47,20 +47,15 @@ const AdminDashboard = () => {
     }
 
     try {
-      console.log('Checking admin access for user:', currentUser.uid);
       const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
       const userData = userDoc.data();
-      console.log('User data:', userData);
-      console.log('isAdmin field:', userData?.isAdmin);
       
-      // Check if user is admin (you'll need to set this field in Firestore for admin users)
+      // Check if user is admin
       if (!userData?.isAdmin) {
-        console.log('User is not admin, redirecting to boards');
         navigate('/boards');
         return;
       }
 
-      console.log('User is admin, loading dashboard data');
       loadDashboardData();
     } catch (error) {
       console.error('Error checking admin access:', error);
@@ -310,7 +305,7 @@ const AdminDashboard = () => {
               </div>
               <p className="text-sm" style={{ color: theme.colors.textSecondary }}>Active Subscriptions</p>
               <p className="mt-2 text-xs" style={{ color: theme.colors.green }}>
-                {Math.round((stats.activeSubscriptions / stats.totalUsers) * 100)}% conversion rate
+                {stats.totalUsers > 0 ? Math.round((stats.activeSubscriptions / stats.totalUsers) * 100) : 0}% conversion rate
               </p>
             </div>
 
@@ -342,7 +337,7 @@ const AdminDashboard = () => {
               </div>
               <p className="text-sm" style={{ color: theme.colors.textSecondary }}>Total Storage Used</p>
               <p className="mt-2 text-xs" style={{ color: theme.colors.textSecondary }}>
-                {formatBytes(Math.round(stats.storageUsed / stats.totalUsers))} per user avg
+                {stats.totalUsers > 0 ? formatBytes(Math.round(stats.storageUsed / stats.totalUsers)) : '0 Bytes'} per user avg
               </p>
             </div>
           </div>
@@ -452,7 +447,14 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user) => {
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="px-4 py-8 text-center" style={{ color: theme.colors.textSecondary }}>
+                        No users found. Users will appear here once they sign up.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((user) => {
                     const tier = getUserTier(user);
                     return (
                       <tr key={user.id} className="border-b hover:bg-opacity-5" 
@@ -530,7 +532,8 @@ const AdminDashboard = () => {
                         </td>
                       </tr>
                     );
-                  })}
+                  })
+                  )}
                 </tbody>
               </table>
             </div>

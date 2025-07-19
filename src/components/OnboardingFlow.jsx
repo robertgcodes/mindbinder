@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, X, Check, Sun, Moon, Palette, Monitor, Smartphone, LayoutGrid, Brain, Plus, Settings, Type, Heart, CheckSquare } from 'lucide-react';
+import { ChevronRight, ChevronLeft, X, Check, Sun, Moon, Palette, Monitor, Smartphone, LayoutGrid, Plus, Settings, Type, Heart, CheckSquare } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -149,7 +149,7 @@ const OnboardingFlow = ({ onComplete, isReturningUser = false }) => {
           <div className="text-center p-12">
             <div className="flex justify-center mb-8">
               <div className="p-4 rounded-full" style={{ backgroundColor: theme.colors.accentPrimary + '20' }}>
-                <Brain size={64} style={{ color: theme.colors.accentPrimary }} />
+                <LayoutGrid size={64} style={{ color: theme.colors.accentPrimary }} />
               </div>
             </div>
             <h1 className="text-4xl font-bold mb-4" style={{ color: theme.colors.textPrimary }}>

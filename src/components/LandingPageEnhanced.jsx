@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Brain, Type, MessageSquare, Image, List, Youtube, 
+  LayoutGrid, Type, MessageSquare, Image, List, Youtube, 
   Bot, Square, Calendar, CheckSquare, FileText, Link2,
   ArrowRight, Sparkles, Zap, Layers, Users, Shield,
   Globe, Infinity, Target, Palette, MousePointer, Cloud,
@@ -105,7 +105,7 @@ const LandingPageEnhanced = () => {
       blocks: [
         { icon: Bot, name: 'AI Assistant', description: 'ChatGPT powered helper' },
         { icon: Sparkles, name: 'AI Writer', description: 'Content generation' },
-        { icon: Brain, name: 'AI Analyzer', description: 'Data insights' },
+        { icon: LayoutGrid, name: 'AI Analyzer', description: 'Data insights' },
         { icon: MessageSquare, name: 'AI Chat', description: 'Conversational AI' },
         { icon: Award, name: 'AI Coach', description: 'Personal development' },
         { icon: BarChart3, name: 'AI Reports', description: 'Automated summaries' }
@@ -171,7 +171,7 @@ const LandingPageEnhanced = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
-              <Brain className="h-7 w-7" style={{ color: colors.blue }} />
+              <LayoutGrid className="h-7 w-7" style={{ color: colors.blue }} />
               <span className="font-bold text-xl" style={{ color: colors.textPrimary }}>LifeBlocks.ai</span>
             </div>
             <div className="flex items-center space-x-4">
@@ -521,7 +521,7 @@ const LandingPageEnhanced = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Brain className="h-6 w-6" style={{ color: colors.blue }} />
+                <LayoutGrid className="h-6 w-6" style={{ color: colors.blue }} />
                 <span className="font-semibold" style={{ color: colors.textPrimary }}>LifeBlocks.ai</span>
               </div>
               <p className="text-sm" style={{ color: colors.textSecondary }}>

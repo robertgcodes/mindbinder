@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { Plus, Trash2, Share2, Copy, Settings, Brain, Search, Filter, Archive, MoreVertical, Tag, Globe, Lock, Edit3 } from 'lucide-react';
+import { Plus, Trash2, Share2, Copy, Settings, LayoutGrid, Search, Filter, Archive, MoreVertical, Tag, Globe, Lock, Edit3 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import OnboardingFlow from './OnboardingFlow';
 import UserMenu from './UserMenu';
@@ -356,7 +356,7 @@ const BoardManager = ({ user }) => {
             to="/boards" 
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
           >
-            <Brain 
+            <LayoutGrid 
               className="h-8 w-8" 
               style={{ color: theme.colors.accentPrimary }} 
             />

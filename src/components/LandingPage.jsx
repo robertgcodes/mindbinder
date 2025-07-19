@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Brain, Type, MessageSquare, Image, List, Youtube, 
+  LayoutGrid, Type, MessageSquare, Image, List, Youtube, 
   Bot, Square, Calendar, CheckSquare, FileText, Link2,
   ArrowRight, Sparkles, Zap, Layers, Users, Shield,
   Globe, Infinity, Target, Palette, MousePointer, Cloud
@@ -65,7 +65,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
-              <Brain className="h-7 w-7 text-blue-400" />
+              <LayoutGrid className="h-7 w-7 text-blue-400" />
               <span className="text-white font-bold text-xl">LifeBlocks.ai</span>
             </div>
             <div className="flex items-center space-x-4">
@@ -339,7 +339,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Brain className="h-6 w-6 text-blue-400" />
+                <LayoutGrid className="h-6 w-6 text-blue-400" />
                 <span className="text-white font-semibold">LifeBlocks.ai</span>
               </div>
               <p className="text-sm text-gray-400">

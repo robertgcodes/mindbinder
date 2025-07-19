@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
-import { Brain, Quote, ArrowLeft } from 'lucide-react';
+import { LayoutGrid, Quote, ArrowLeft } from 'lucide-react';
 import ScrollableLayout from './ScrollableLayout';
 
 const LoginPage = () => {
@@ -51,7 +51,7 @@ const LoginPage = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-dark-800 to-dark-900 flex-col justify-center px-12">
         <div className="max-w-md">
           <div className="flex items-center mb-8">
-            <Brain className="h-10 w-10 text-blue-400 mr-3" />
+            <LayoutGrid className="h-10 w-10 text-blue-400 mr-3" />
             <h1 className="text-3xl font-bold text-white">LifeBlocks.ai</h1>
           </div>
           <p className="text-xl text-gray-300 mb-8">Organize your life with dynamic blocks.</p>
@@ -85,7 +85,7 @@ const LoginPage = () => {
         <div className="max-w-md w-full">
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center mb-4">
-              <Brain className="h-8 w-8 text-blue-400 mr-2" />
+              <LayoutGrid className="h-8 w-8 text-blue-400 mr-2" />
               <h1 className="text-2xl font-bold text-white">LifeBlocks.ai</h1>
             </div>
             <p className="text-gray-400">Organize your life with dynamic blocks.</p>

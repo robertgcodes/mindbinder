@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit } from 'lucide-react';
+import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
 import BoardSwitcher from './BoardSwitcher';
@@ -69,7 +69,7 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, board,
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-6">
             <Link to="/boards" className="flex items-center space-x-2">
-              <Brain className="h-6 w-6" style={{ color: theme.colors.accentPrimary }} />
+              <LayoutGrid className="h-6 w-6" style={{ color: theme.colors.accentPrimary }} />
               <span className="font-semibold" style={{ color: theme.colors.textPrimary }}>LifeBlocks.ai</span>
             </Link>
             {board && (

@@ -320,7 +320,7 @@ const BoardManager = ({ user }) => {
   }
 
   return (
-    <>
+    <div className="h-screen flex flex-col overflow-hidden">
       {showOnboarding && (
         <OnboardingFlow
           onComplete={handleOnboardingComplete}
@@ -342,7 +342,7 @@ const BoardManager = ({ user }) => {
       
       {/* Navigation Header */}
       <nav 
-        className="sticky top-0 z-40 px-4 py-2 border-b"
+        className="flex-shrink-0 z-40 px-4 py-2 border-b"
         style={{ 
           backgroundColor: theme.colors.navigationBackground, 
           borderColor: theme.colors.blockBorder,
@@ -374,7 +374,7 @@ const BoardManager = ({ user }) => {
       </nav>
 
       <div 
-        className="min-h-screen py-12 px-4 sm:px-6 lg:px-8"
+        className="flex-1 overflow-y-auto py-12 px-4 sm:px-6 lg:px-8"
         style={{ backgroundColor: theme.colors.canvasBackground }}
       >
         <div className="max-w-7xl mx-auto">
@@ -989,7 +989,7 @@ const BoardManager = ({ user }) => {
         )}
       </div>
     </div>
-    </>
+    </div>
   );
 };
 

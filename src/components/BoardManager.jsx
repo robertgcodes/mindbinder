@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { Plus, Trash2, Share2, Copy, Settings, LayoutGrid, Search, Filter, Archive, MoreVertical, Tag, Globe, Lock, Edit3 } from 'lucide-react';
+import { Plus, Trash2, Share2, Copy, Settings, LayoutGrid, Search, Filter, Archive, MoreVertical, Tag, Globe, Lock, Edit3, Users } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import OnboardingFlow from './OnboardingFlow';
 import UserMenu from './UserMenu';
@@ -12,6 +12,7 @@ const BoardManager = ({ user }) => {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const [boards, setBoards] = useState([]);
+  const [sharedBoards, setSharedBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -55,6 +56,7 @@ const BoardManager = ({ user }) => {
 
   const loadBoards = async () => {
     try {
+      // Load user's own boards
       const boardsRef = collection(db, 'boards');
       const q = query(boardsRef, where('userId', '==', user.uid));
       const querySnapshot = await getDocs(q);
@@ -65,6 +67,30 @@ const BoardManager = ({ user }) => {
       }));
       
       setBoards(boardsData);
+      
+      // Load shared boards (where user is a collaborator)
+      const collaboratorsRef = collection(db, 'boardCollaborators');
+      const collabQuery = query(collaboratorsRef, where('userId', '==', user.uid));
+      const collabSnapshot = await getDocs(collabQuery);
+      
+      // Get board IDs where user is a collaborator
+      const sharedBoardPromises = collabSnapshot.docs.map(async (collabDoc) => {
+        const collabData = collabDoc.data();
+        const boardDoc = await getDoc(doc(db, 'boards', collabData.boardId));
+        if (boardDoc.exists()) {
+          return {
+            id: boardDoc.id,
+            ...boardDoc.data(),
+            userRole: collabData.permission || 'viewer',
+            isShared: true
+          };
+        }
+        return null;
+      });
+      
+      const sharedBoardsData = (await Promise.all(sharedBoardPromises)).filter(board => board !== null);
+      setSharedBoards(sharedBoardsData);
+      
     } catch (err) {
       setError('Error loading boards');
       console.error(err);
@@ -802,6 +828,91 @@ const BoardManager = ({ user }) => {
             </div>
           ))}
         </div>
+
+        {/* Shared Boards Section */}
+        {!showArchived && !showTrashed && sharedBoards.length > 0 && (
+          <div className="mt-12">
+            <h2 
+              className="text-2xl font-bold mb-6"
+              style={{ color: theme.colors.textPrimary }}
+            >
+              Shared with Me
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sharedBoards.map((board) => (
+                <div
+                  key={board.id}
+                  className="rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-105"
+                  style={{ 
+                    backgroundColor: theme.colors.blockBackground,
+                    border: `1px solid ${theme.colors.blockBorder}`
+                  }}
+                >
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h2 
+                            className="text-xl font-semibold"
+                            style={{ color: theme.colors.textPrimary }}
+                          >
+                            {board.name}
+                          </h2>
+                          <Users 
+                            className="h-4 w-4" 
+                            style={{ color: theme.colors.accentPrimary }}
+                            title="Shared board"
+                          />
+                          <span 
+                            className="text-xs px-2 py-1 rounded-full"
+                            style={{ 
+                              backgroundColor: board.userRole === 'edit' 
+                                ? theme.colors.accentPrimary + '20' 
+                                : theme.colors.blockBorder,
+                              color: board.userRole === 'edit' 
+                                ? theme.colors.accentPrimary 
+                                : theme.colors.textSecondary
+                            }}
+                          >
+                            {board.userRole === 'edit' ? 'Can Edit' : 'View Only'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p 
+                      className="mb-4 text-sm"
+                      style={{ color: theme.colors.textSecondary }}
+                    >
+                      {board.description || 'No description'}
+                    </p>
+
+                    <div className="flex items-center justify-between">
+                      <span 
+                        className="text-xs"
+                        style={{ color: theme.colors.textTertiary }}
+                      >
+                        Shared by {board.ownerName || 'Unknown'}
+                      </span>
+                      <button
+                        onClick={() => navigate(`/board/${board.id}`)}
+                        className="px-4 py-2 rounded-lg transition-colors"
+                        style={{ 
+                          backgroundColor: theme.colors.accentPrimary,
+                          color: 'white'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                      >
+                        Open
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Create Board Modal */}
         {showCreateModal && (

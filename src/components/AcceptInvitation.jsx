@@ -28,6 +28,12 @@ const AcceptInvitation = () => {
         return;
       }
 
+      // If user is not logged in, show login prompt instead of error
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
       try {
         // Get invitation details
         const inviteDoc = await getDoc(doc(db, 'boardInvitations', invitationId));
@@ -43,7 +49,7 @@ const AcceptInvitation = () => {
 
         // Check if invitation is for current user
         if (currentUser && inviteData.email !== currentUser.email) {
-          setError('This invitation is for a different email address');
+          setError('This invitation is for a different email address. Please sign in with ' + inviteData.email);
           setLoading(false);
           return;
         }
@@ -57,7 +63,11 @@ const AcceptInvitation = () => {
         }
       } catch (error) {
         console.error('Error loading invitation:', error);
-        setError('Failed to load invitation');
+        if (error.code === 'permission-denied') {
+          setError('Please sign in to view this invitation');
+        } else {
+          setError('Failed to load invitation. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -194,6 +204,32 @@ const AcceptInvitation = () => {
             Board Invitation
           </h1>
         </div>
+
+        {!currentUser && !loading && (
+          <div className="space-y-6">
+            <div 
+              className="p-6 rounded-lg text-center"
+              style={{ backgroundColor: theme.colors.blockBackground }}
+            >
+              <p className="text-lg mb-4" style={{ color: theme.colors.textPrimary }}>
+                Please sign in to view and accept this board invitation
+              </p>
+              <p className="text-sm mb-6" style={{ color: theme.colors.textSecondary }}>
+                You'll be redirected back here after signing in
+              </p>
+              <button
+                onClick={() => navigate(`/login?redirect=/accept-invitation/${invitationId}`)}
+                className="px-6 py-3 rounded-lg transition-colors font-medium"
+                style={{
+                  backgroundColor: theme.colors.accentPrimary,
+                  color: 'white'
+                }}
+              >
+                Sign In to Continue
+              </button>
+            </div>
+          </div>
+        )}
 
         {invitation && board && (
           <div className="space-y-6">

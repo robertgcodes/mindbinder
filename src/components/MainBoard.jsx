@@ -360,68 +360,126 @@ const MainBoard = ({ board, onBack }) => {
     }
   };
 
-  // Auto-save every 2 seconds
+  // Track if we have local changes that need saving
+  const [hasLocalChanges, setHasLocalChanges] = useState(false);
+  
+  // Auto-save with debouncing
   useEffect(() => {
-    if (!loading) {
-      const timer = setTimeout(() => saveBoard(), 2000);
+    if (!loading && hasLocalChanges && !isReadOnly) {
+      const timer = setTimeout(() => {
+        saveBoard();
+        setHasLocalChanges(false);
+      }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [blocks, shapes, stagePos, stageScale, loading]);
+  }, [blocks, shapes, stagePos, stageScale, loading, hasLocalChanges, isReadOnly]);
+  
+  // Mark that we have local changes when blocks/shapes change
+  useEffect(() => {
+    if (!loading && !isReadOnly) {
+      setHasLocalChanges(true);
+    }
+  }, [blocks.length, shapes.length]);
 
   // Real-time sync for collaborative editing
   useEffect(() => {
     if (!board || !board.id) return;
 
+    let isInitialLoad = true;
+    
     const unsubscribe = onSnapshot(
       doc(db, 'boards', board.id),
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
           
+          // Skip the initial load to prevent overwriting local state
+          if (isInitialLoad) {
+            isInitialLoad = false;
+            setLastSaveTimestamp(data.updatedAt || new Date().toISOString());
+            return;
+          }
+          
           // Check if this update is from another user
-          if (data.lastEditedBy && data.lastEditedBy !== currentUser?.uid) {
-            // Don't update if we're currently dragging
+          if (data.lastEditedBy && data.lastEditedBy !== currentUser?.uid && data.updatedAt !== lastSaveTimestamp) {
+            // Don't update if we're currently dragging or actively editing
             if (isDraggingBlock || isDraggingStage) {
               console.log('Skipping real-time update while dragging');
               return;
             }
             
-            // Check if the update is newer than our last save
-            if (data.updatedAt !== lastSaveTimestamp) {
-              console.log(`Real-time update from ${data.lastEditedByEmail || 'another user'}`);
+            console.log(`Real-time update from ${data.lastEditedByEmail || 'another user'}`);
+            
+            // Update last editor info
+            if (data.lastEditedByEmail && data.lastEditedByEmail !== currentUser?.email) {
+              setLastEditor({
+                email: data.lastEditedByEmail,
+                timestamp: data.updatedAt
+              });
               
-              // Update last editor info
-              if (data.lastEditedByEmail && data.lastEditedByEmail !== currentUser?.email) {
-                setLastEditor({
-                  email: data.lastEditedByEmail,
-                  timestamp: data.updatedAt
+              // Clear after 5 seconds
+              setTimeout(() => setLastEditor(null), 5000);
+            }
+            
+            // Merge blocks instead of replacing - preserves blocks that might be in-progress
+            if (data.blocks && Array.isArray(data.blocks)) {
+              setBlocks(prevBlocks => {
+                // Create a map of existing blocks by ID
+                const blockMap = new Map();
+                
+                // Add all blocks from database
+                data.blocks.forEach(block => {
+                  if (block && block.id) {
+                    blockMap.set(block.id, block);
+                  }
                 });
                 
-                // Clear after 5 seconds
-                setTimeout(() => setLastEditor(null), 5000);
+                // Preserve any local blocks that aren't in the database yet
+                prevBlocks.forEach(block => {
+                  if (block && block.id && !blockMap.has(block.id)) {
+                    // This is a new local block that hasn't been saved yet
+                    blockMap.set(block.id, block);
+                  }
+                });
+                
+                return Array.from(blockMap.values());
+              });
+            }
+            
+            // Merge shapes similarly
+            if (data.shapes && Array.isArray(data.shapes)) {
+              setShapes(prevShapes => {
+                const shapeMap = new Map();
+                
+                data.shapes.forEach(shape => {
+                  if (shape && shape.id) {
+                    shapeMap.set(shape.id, shape);
+                  }
+                });
+                
+                prevShapes.forEach(shape => {
+                  if (shape && shape.id && !shapeMap.has(shape.id)) {
+                    shapeMap.set(shape.id, shape);
+                  }
+                });
+                
+                return Array.from(shapeMap.values());
+              });
+            }
+            
+            // Only update viewport if user hasn't moved it recently
+            const timeSinceLastMove = Date.now() - (localStorage.getItem(`lastViewportMove-${board.id}`) || 0);
+            if (timeSinceLastMove > 5000) { // 5 seconds
+              if (data.stagePos) {
+                setStagePos(data.stagePos);
               }
-              
-              // Update blocks
-              if (data.blocks) {
-                setBlocks(data.blocks);
-              }
-              
-              // Update shapes
-              if (data.shapes) {
-                setShapes(data.shapes);
-              }
-              
-              // Only update viewport if user hasn't moved it recently
-              const timeSinceLastMove = Date.now() - (localStorage.getItem(`lastViewportMove-${board.id}`) || 0);
-              if (timeSinceLastMove > 5000) { // 5 seconds
-                if (data.stagePos) {
-                  setStagePos(data.stagePos);
-                }
-                if (data.stageScale) {
-                  setStageScale(data.stageScale);
-                }
+              if (data.stageScale) {
+                setStageScale(data.stageScale);
               }
             }
+            
+            // Update our timestamp to match the database
+            setLastSaveTimestamp(data.updatedAt);
           }
         }
       },
@@ -431,7 +489,7 @@ const MainBoard = ({ board, onBack }) => {
     );
 
     return () => unsubscribe();
-  }, [board?.id, currentUser?.uid, lastSaveTimestamp, isDraggingBlock, isDraggingStage]);
+  }, [board?.id, currentUser?.uid, isDraggingBlock, isDraggingStage]);
 
   // Handle paste events for images and text
   useEffect(() => {

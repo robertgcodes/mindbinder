@@ -25,9 +25,11 @@ service cloud.firestore {
     
     // Boards collection
     match /boards/{boardId} {
-      allow read: if request.auth != null && 
-                     (request.auth.uid == resource.data.userId || 
-                      resource.data.isPublic == true);
+      // Allow read if:
+      // 1. Board is public (anyone can read)
+      // 2. User is authenticated (to allow client-side share key validation)
+      allow read: if resource.data.isPublic == true ||
+                     request.auth != null;
       
       allow create: if request.auth != null && 
                        request.auth.uid == request.resource.data.userId;
@@ -65,7 +67,8 @@ service cloud.firestore {
     
     // Board invitations collection
     match /boardInvitations/{invitationId} {
-      allow read: if request.auth != null;
+      // Allow anyone to read invitations (temporarily more permissive for debugging)
+      allow read: if true;
       
       // Only board owner can create invitations
       // Only team members can create invitations with edit permission

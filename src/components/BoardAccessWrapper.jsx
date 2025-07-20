@@ -35,39 +35,7 @@ const BoardAccessWrapper = () => {
       }
 
       try {
-        // First validate access through Cloud Function (server-side check)
-        if (currentUser) {
-          try {
-            const accessResult = await validateBoardAccess({ 
-              boardId, 
-              shareKey: shareKey,
-              action: 'view' 
-            });
-            
-            if (accessResult.data.access) {
-              setUserRole(accessResult.data.role);
-              // Only fetch board data after access is validated
-              const boardDoc = await getDoc(doc(db, 'boards', boardId));
-              if (boardDoc.exists()) {
-                setBoard({ id: boardId, ...boardDoc.data() });
-                setHasAccess(true);
-              } else {
-                setError('Board not found');
-              }
-              setLoading(false);
-              return;
-            }
-          } catch (funcError) {
-            // If function throws permission-denied, user doesn't have access
-            if (funcError.code === 'permission-denied') {
-              // Continue to check public access
-            } else {
-              throw funcError;
-            }
-          }
-        }
-
-        // Check public access or share key (for non-authenticated users)
+        // Get the board document
         const boardDoc = await getDoc(doc(db, 'boards', boardId));
         
         if (!boardDoc.exists()) {
@@ -77,19 +45,43 @@ const BoardAccessWrapper = () => {
         }
 
         const boardData = boardDoc.data();
-        
-        // Only allow access if board is public or has valid share key
-        if (boardData.isPublic || (shareKey && shareKey === boardData.shareKey)) {
-          setBoard({ id: boardId, ...boardData });
+        setBoard({ id: boardId, ...boardData });
+
+        // Check access permissions
+        let accessGranted = false;
+        let role = 'viewer';
+
+        // 1. Check if user is owner
+        if (currentUser && boardData.userId === currentUser.uid) {
+          accessGranted = true;
+          role = 'owner';
+        }
+        // 2. Check if board is public
+        else if (boardData.isPublic) {
+          accessGranted = true;
+          role = 'viewer';
+        }
+        // 3. Check if valid share key provided
+        else if (shareKey && shareKey === boardData.shareKey) {
+          accessGranted = true;
+          role = 'viewer';
+        }
+        // 4. TODO: Check if user is a collaborator (would need another query)
+
+        if (accessGranted) {
           setHasAccess(true);
-          setUserRole('viewer');
+          setUserRole(role);
         } else {
           setError('You do not have access to this board');
         }
 
       } catch (error) {
         console.error('Error checking board access:', error);
-        setError('Failed to load board');
+        if (error.code === 'permission-denied') {
+          setError('You need to sign in to access this board');
+        } else {
+          setError('Failed to load board');
+        }
       } finally {
         setLoading(false);
       }

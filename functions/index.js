@@ -83,6 +83,164 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
   }
 });
 
+// Validate board access
+exports.validateBoardAccess = functions.https.onCall(async (data, context) => {
+  const { boardId, shareKey, action = 'view' } = data;
+
+  if (!boardId) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Board ID is required'
+    );
+  }
+
+  try {
+    // Get board document
+    const boardDoc = await admin.firestore()
+      .collection('boards')
+      .doc(boardId)
+      .get();
+
+    if (!boardDoc.exists) {
+      throw new functions.https.HttpsError(
+        'not-found',
+        'Board not found'
+      );
+    }
+
+    const board = boardDoc.data();
+    
+    // Check if user is authenticated
+    if (context.auth) {
+      const userId = context.auth.uid;
+      
+      // Check if user is the owner
+      if (board.userId === userId) {
+        return {
+          access: true,
+          role: 'owner'
+        };
+      }
+
+      // Check if user is a collaborator
+      const collaboratorsSnapshot = await admin.firestore()
+        .collection('boardCollaborators')
+        .where('boardId', '==', boardId)
+        .where('userId', '==', userId)
+        .get();
+
+      if (!collaboratorsSnapshot.empty) {
+        const collaborator = collaboratorsSnapshot.docs[0].data();
+        
+        // Check permission level
+        if (action === 'edit' && collaborator.permission === 'view') {
+          throw new functions.https.HttpsError(
+            'permission-denied',
+            'You only have view access to this board'
+          );
+        }
+        
+        return {
+          access: true,
+          role: collaborator.permission || 'view'
+        };
+      }
+    }
+
+    // Check public access
+    if (board.isPublic) {
+      return {
+        access: true,
+        role: 'view'
+      };
+    }
+
+    // Check share key for private boards
+    if (board.shareKey && shareKey === board.shareKey) {
+      return {
+        access: true,
+        role: 'view'
+      };
+    }
+
+    // No access
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'You do not have access to this board'
+    );
+
+  } catch (error) {
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    
+    console.error('Error validating board access:', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to validate board access'
+    );
+  }
+});
+
+// Send board invitation email
+exports.sendBoardInvitation = functions.https.onCall(async (data, context) => {
+  // Verify user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated to send invitations'
+    );
+  }
+
+  const { invitationId, recipientEmail, boardName, inviterName, permission, invitationLink } = data;
+
+  if (!invitationId || !recipientEmail || !boardName || !invitationLink) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Missing required invitation details'
+    );
+  }
+
+  try {
+    // Here you would integrate with an email service like SendGrid, Mailgun, etc.
+    // For now, we'll just log the email that would be sent
+    console.log('Would send invitation email:', {
+      to: recipientEmail,
+      subject: `${inviterName || 'Someone'} invited you to collaborate on "${boardName}"`,
+      body: `
+Hi there,
+
+${inviterName || 'Someone'} has invited you to ${permission === 'edit' ? 'collaborate on' : 'view'} their LifeBlocks.ai board "${boardName}".
+
+Click here to accept the invitation:
+${invitationLink}
+
+This invitation grants you ${permission === 'edit' ? 'full editing' : 'view-only'} access to the board.
+
+Best regards,
+The LifeBlocks.ai Team
+      `
+    });
+
+    // TODO: Implement actual email sending using a service like:
+    // - SendGrid: https://sendgrid.com/docs/for-developers/sending-email/v3-nodejs-code-example/
+    // - Mailgun: https://documentation.mailgun.com/en/latest/quickstart-sending.html
+    // - Firebase Email Extension: https://extensions.dev/extensions/firebase/firestore-send-email
+
+    return { 
+      success: true,
+      message: 'Invitation logged (email service not configured yet)'
+    };
+
+  } catch (error) {
+    console.error('Error sending invitation email:', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to send invitation email'
+    );
+  }
+});
+
 // Create Stripe customer portal session
 exports.createPortalSession = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated

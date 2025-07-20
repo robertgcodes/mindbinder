@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { X, Globe, Lock, Users, Mail, Copy, Check, Trash2, Eye, Edit3, Link, Shield, AlertCircle } from 'lucide-react';
 import { doc, updateDoc, collection, addDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, app } from '../firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useTeam } from '../contexts/TeamContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
+
+const functions = getFunctions(app);
+const sendBoardInvitation = httpsCallable(functions, 'sendBoardInvitation');
 
 const ShareBoardModal = ({ board, onClose }) => {
   const { currentUser } = useAuth();
@@ -22,7 +26,17 @@ const ShareBoardModal = ({ board, onClose }) => {
   const [loading, setLoading] = useState(false);
   
   // Check if user can share with edit permissions
-  const canShareEdit = tier?.id === 'team' && team !== null;
+  const canShareEdit = tier?.id === 'team' || tier?.id === 'pro';
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('ShareBoardModal Debug:', {
+      tier: tier,
+      team: team,
+      userRole: userRole,
+      canShareEdit: canShareEdit
+    });
+  }, [tier, team, userRole, canShareEdit]);
 
   // Generate share link
   useEffect(() => {
@@ -216,12 +230,40 @@ This invitation grants you ${finalPermission === 'edit' ? 'full editing' : 'view
 Best regards,
 The LifeBlocks.ai Team`;
         
+        // Try to send email (optional - won't break if function isn't deployed)
+        try {
+          await sendBoardInvitation({
+            invitationId: inv.invitationId,
+            recipientEmail: inv.email,
+            boardName: board.name,
+            inviterName: currentUser.displayName || currentUser.email,
+            permission: finalPermission,
+            invitationLink: inv.link
+          });
+        } catch (emailError) {
+          console.log('Email function not available:', emailError);
+        }
+        
         alert(`Invitation sent! Here's a preview of the email that would be sent to ${inv.email}:\n\n${emailPreview}`);
       } else {
+        // Try to send emails for multiple invitations
+        for (const inv of results.sent) {
+          try {
+            await sendBoardInvitation({
+              invitationId: inv.invitationId,
+              recipientEmail: inv.email,
+              boardName: board.name,
+              inviterName: currentUser.displayName || currentUser.email,
+              permission: finalPermission,
+              invitationLink: inv.link
+            });
+          } catch (emailError) {
+            console.log('Email function not available:', emailError);
+          }
+        }
+        
         alert(resultMessage);
       }
-
-      // TODO: Send email notification using a cloud function or email service
       
       setInviteEmail('');
     } catch (error) {

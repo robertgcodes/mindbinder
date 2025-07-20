@@ -40,6 +40,7 @@ const BoardAccessWrapper = () => {
           try {
             const accessResult = await validateBoardAccess({ 
               boardId, 
+              shareKey: shareKey,
               action: 'view' 
             });
             

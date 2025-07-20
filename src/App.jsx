@@ -22,6 +22,8 @@ import TeamManagement from './components/TeamManagement';
 import JoinTeam from './components/JoinTeam';
 import ProAISettings from './components/ProAISettings';
 import BlockManager from './pages/BlockManager';
+import SubscriptionSuccess from './components/SubscriptionSuccess';
+import SubscriptionCancelled from './components/SubscriptionCancelled';
 
 function App() {
   const { currentUser, loading } = useAuth();
@@ -44,6 +46,8 @@ function App() {
           <Route path="/analytics" element={currentUser ? <Analytics /> : <Navigate to="/login" />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/billing" element={currentUser ? <BillingPage /> : <Navigate to="/login" />} />
+          <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+          <Route path="/subscription/cancelled" element={<SubscriptionCancelled />} />
           <Route path="/admin" element={currentUser ? <AdminDashboard /> : <Navigate to="/login" />} />
           <Route path="/team" element={currentUser ? <TeamManagement /> : <Navigate to="/login" />} />
           <Route path="/team/join/:invitationCode" element={<JoinTeam />} />

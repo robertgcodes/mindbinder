@@ -50,7 +50,15 @@ export const SubscriptionProvider = ({ children }) => {
           // Set subscription from Firestore (synced by webhook)
           if (userData.subscription) {
             setSubscription(userData.subscription);
-            setTier(getCurrentTier(userData.subscription));
+            
+            // Check if we have a direct subscriptionTier field (manual updates)
+            if (userData.subscriptionTier === 'team') {
+              setTier(PRICING_TIERS.TEAM);
+            } else if (userData.subscriptionTier === 'pro') {
+              setTier(PRICING_TIERS.PRO);
+            } else {
+              setTier(getCurrentTier(userData.subscription));
+            }
           } else {
             // Fallback: fetch from Stripe directly
             try {

@@ -4,7 +4,11 @@ service cloud.firestore {
     // Helper function to check if user has team access
     function hasTeamAccess(userId) {
       return exists(/databases/$(database)/documents/users/$(userId)) &&
-             get(/databases/$(database)/documents/users/$(userId)).data.teamId != null;
+             (get(/databases/$(database)/documents/users/$(userId)).data.teamId != null ||
+              get(/databases/$(database)/documents/users/$(userId)).data.subscriptionTier == 'team' ||
+              (get(/databases/$(database)/documents/users/$(userId)).data.subscription != null &&
+               get(/databases/$(database)/documents/users/$(userId)).data.subscription.status == 'active' &&
+               get(/databases/$(database)/documents/users/$(userId)).data.subscription.items[0].price.product == 'prod_team'));
     }
     
     // Helper function to check if user is board owner

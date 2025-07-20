@@ -182,6 +182,165 @@ exports.validateBoardAccess = functions.https.onCall(async (data, context) => {
   }
 });
 
+// Admin function to manually sync subscription
+exports.syncUserSubscription = functions.https.onCall(async (data, context) => {
+  // Verify admin user
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated'
+    );
+  }
+
+  const { userId, forceTeam } = data;
+  const requestingUserId = context.auth.uid;
+
+  try {
+    // Check if requesting user is admin
+    const requestingUserDoc = await admin.firestore()
+      .collection('users')
+      .doc(requestingUserId)
+      .get();
+    
+    if (!requestingUserDoc.exists || !requestingUserDoc.data().isAdmin) {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'Only admins can sync subscriptions'
+      );
+    }
+
+    const targetUserId = userId || requestingUserId;
+
+    // Get user's Stripe customer ID
+    const userDoc = await admin.firestore()
+      .collection('users')
+      .doc(targetUserId)
+      .get();
+    
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError(
+        'not-found',
+        'User not found'
+      );
+    }
+
+    const stripeCustomerId = userDoc.data().stripeCustomerId;
+
+    if (forceTeam) {
+      // Force update to team tier for testing/fixing
+      const teamSubscriptionData = {
+        id: `sub_manual_${Date.now()}`,
+        status: 'active',
+        current_period_start: Math.floor(Date.now() / 1000),
+        current_period_end: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60),
+        cancel_at_period_end: false,
+        items: [{
+          id: `si_manual_${Date.now()}`,
+          price: {
+            id: 'price_team_monthly', // This will be matched in the pricing config
+            product: 'prod_team',
+            unit_amount: 2000,
+            currency: 'usd',
+            recurring: {
+              interval: 'month',
+              interval_count: 1
+            }
+          }
+        }]
+      };
+
+      await admin.firestore()
+        .collection('users')
+        .doc(targetUserId)
+        .update({
+          subscription: teamSubscriptionData,
+          subscriptionTier: 'team',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+      return { 
+        success: true, 
+        message: 'Manually updated to team tier',
+        subscription: teamSubscriptionData
+      };
+    }
+
+    if (!stripeCustomerId) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'User has no Stripe customer ID'
+      );
+    }
+
+    // Get active subscriptions from Stripe
+    const subscriptions = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: 'active',
+      limit: 1
+    });
+
+    if (subscriptions.data.length === 0) {
+      await admin.firestore()
+        .collection('users')
+        .doc(targetUserId)
+        .update({
+          subscription: null,
+          subscriptionTier: 'free',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+      return { 
+        success: true, 
+        message: 'No active subscription found, set to free tier'
+      };
+    }
+
+    // Update with the latest subscription
+    const subscription = subscriptions.data[0];
+    
+    await admin.firestore()
+      .collection('users')
+      .doc(targetUserId)
+      .update({
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          current_period_start: subscription.current_period_start,
+          current_period_end: subscription.current_period_end,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          items: subscription.items.data.map(item => ({
+            id: item.id,
+            price: {
+              id: item.price.id,
+              product: item.price.product,
+              unit_amount: item.price.unit_amount,
+              currency: item.price.currency,
+              recurring: item.price.recurring
+            }
+          }))
+        },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+    return { 
+      success: true, 
+      message: 'Subscription synced from Stripe',
+      subscription: subscription
+    };
+
+  } catch (error) {
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    
+    console.error('Error syncing subscription:', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to sync subscription'
+    );
+  }
+});
+
 // Send board invitation email
 exports.sendBoardInvitation = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated

@@ -4,7 +4,7 @@ import {
   ArrowLeft, Users, TrendingUp, DollarSign, Activity,
   Search, Filter, Download, Eye, Shield, AlertCircle,
   CheckCircle, XCircle, Clock, RefreshCw, MoreVertical,
-  Calendar, Mail, Package, CreditCard, UserCheck, UserX, X, Gift
+  Calendar, Mail, Package, CreditCard, UserCheck, UserX, X, Gift, Settings
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -13,6 +13,7 @@ import { db } from '../../firebase';
 import { PRICING_TIERS, formatBytes } from '../../config/pricing';
 import ScrollableLayout from '../ScrollableLayout';
 import CouponManagement from './CouponManagement';
+import ManualSubscriptionUpdate from './ManualSubscriptionUpdate';
 
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
@@ -374,6 +375,20 @@ const AdminDashboard = () => {
                 <span>Coupons</span>
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('tools')}
+              className="px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{
+                backgroundColor: activeTab === 'tools' ? theme.colors.accentPrimary : theme.colors.blockBackground,
+                color: activeTab === 'tools' ? 'white' : theme.colors.textSecondary,
+                border: `1px solid ${activeTab === 'tools' ? theme.colors.accentPrimary : theme.colors.blockBorder}`
+              }}
+            >
+              <div className="flex items-center space-x-2">
+                <Settings className="h-4 w-4" />
+                <span>Tools</span>
+              </div>
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -575,6 +590,10 @@ const AdminDashboard = () => {
           </div>
           ) : activeTab === 'coupons' ? (
             <CouponManagement />
+          ) : activeTab === 'tools' ? (
+            <div className="space-y-6">
+              <ManualSubscriptionUpdate />
+            </div>
           ) : null}
         </div>
 

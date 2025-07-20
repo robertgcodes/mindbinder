@@ -26,15 +26,19 @@ const ShareBoardModal = ({ board, onClose }) => {
   const [loading, setLoading] = useState(false);
   
   // Check if user can share with edit permissions
+  // Team tier includes edit permissions, Pro tier gets limited collaborators
   const canShareEdit = tier?.id === 'team' || tier?.id === 'pro';
   
   // Debug logging
   useEffect(() => {
     console.log('ShareBoardModal Debug:', {
       tier: tier,
+      tierId: tier?.id,
+      tierName: tier?.name,
       team: team,
       userRole: userRole,
-      canShareEdit: canShareEdit
+      canShareEdit: canShareEdit,
+      subscription: tier
     });
   }, [tier, team, userRole, canShareEdit]);
 
@@ -468,13 +472,12 @@ The LifeBlocks.ai Team`;
                 <select
                   value={invitePermission}
                   onChange={(e) => setInvitePermission(e.target.value)}
-                  className="px-4 py-2 rounded-lg border"
+                  className="px-4 py-2 rounded-lg border cursor-pointer"
                   style={{
                     backgroundColor: theme.colors.inputBackground,
                     borderColor: theme.colors.blockBorder,
                     color: theme.colors.textPrimary
                   }}
-                  disabled={!canShareEdit}
                 >
                   <option value="view">View Only</option>
                   <option value="edit" disabled={!canShareEdit}>

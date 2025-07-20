@@ -45,13 +45,19 @@ service cloud.firestore {
     match /boardCollaborators/{collaboratorId} {
       allow read: if request.auth != null;
       
-      // Only board owner can add collaborators
-      // Only team members can add collaborators with edit permission
+      // Allow creating collaborators if:
+      // 1. Board owner is adding someone
+      // 2. User is adding themselves (accepting an invitation)
       allow create: if request.auth != null && 
                        exists(/databases/$(database)/documents/boards/$(request.resource.data.boardId)) &&
-                       get(/databases/$(database)/documents/boards/$(request.resource.data.boardId)).data.userId == request.auth.uid &&
-                       (request.resource.data.permission == 'view' || 
-                        (request.resource.data.permission == 'edit' && hasTeamAccess(request.auth.uid)));
+                       (
+                         // Board owner can add anyone
+                         (get(/databases/$(database)/documents/boards/$(request.resource.data.boardId)).data.userId == request.auth.uid &&
+                          (request.resource.data.permission == 'view' || 
+                           (request.resource.data.permission == 'edit' && hasTeamAccess(request.auth.uid)))) ||
+                         // User can add themselves if they match the userId being added
+                         (request.auth.uid == request.resource.data.userId)
+                       );
       
       allow update: if request.auth != null && 
                        exists(/databases/$(database)/documents/boards/$(resource.data.boardId)) &&
@@ -78,8 +84,13 @@ service cloud.firestore {
                        (request.resource.data.permission == 'view' || 
                         (request.resource.data.permission == 'edit' && hasTeamAccess(request.auth.uid)));
       
+      // Allow update if:
+      // 1. The inviter is updating the invitation
+      // 2. The invited user is accepting/declining (matching email)
       allow update: if request.auth != null && 
-                       resource.data.invitedBy == request.auth.uid;
+                       (resource.data.invitedBy == request.auth.uid ||
+                        (request.auth.token.email == resource.data.email &&
+                         request.resource.data.status in ['accepted', 'declined']));
       
       allow delete: if request.auth != null && 
                        resource.data.invitedBy == request.auth.uid;

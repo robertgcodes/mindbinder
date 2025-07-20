@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db, app } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -66,7 +66,21 @@ const BoardAccessWrapper = () => {
           accessGranted = true;
           role = 'viewer';
         }
-        // 4. TODO: Check if user is a collaborator (would need another query)
+        // 4. Check if user is a collaborator
+        else if (currentUser) {
+          const collaboratorsQuery = query(
+            collection(db, 'boardCollaborators'),
+            where('boardId', '==', boardId),
+            where('userId', '==', currentUser.uid)
+          );
+          const collaboratorSnapshot = await getDocs(collaboratorsQuery);
+          
+          if (!collaboratorSnapshot.empty) {
+            const collaboratorData = collaboratorSnapshot.docs[0].data();
+            accessGranted = true;
+            role = collaboratorData.permission || 'viewer';
+          }
+        }
 
         if (accessGranted) {
           setHasAccess(true);

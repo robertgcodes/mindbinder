@@ -342,6 +342,26 @@ The LifeBlocks.ai Team`;
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Info Box */}
+          <div className="p-4 rounded-lg" style={{ 
+            backgroundColor: theme.colors.infoBackground || theme.colors.accentPrimary + '10',
+            border: `1px solid ${theme.colors.accentPrimary}30`
+          }}>
+            <h4 className="font-medium mb-2 flex items-center space-x-2" style={{ color: theme.colors.textPrimary }}>
+              <AlertCircle className="h-4 w-4" style={{ color: theme.colors.accentPrimary }} />
+              <span>Two Ways to Share</span>
+            </h4>
+            <ul className="space-y-2 text-sm" style={{ color: theme.colors.textSecondary }}>
+              <li className="flex items-start space-x-2">
+                <span>•</span>
+                <span><strong>Quick Share Link:</strong> Instant view-only access. No sign-in required.</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <span>•</span>
+                <span><strong>Invitation Link:</strong> Grant view or edit permissions. Requires sign-in. Perfect for team collaboration.</span>
+              </li>
+            </ul>
+          </div>
           {/* Public/Private Toggle */}
           <div>
             <h3 className="text-lg font-medium mb-4" style={{ color: theme.colors.textPrimary }}>
@@ -395,42 +415,58 @@ The LifeBlocks.ai Team`;
             </div>
           </div>
 
-          {/* Share Link */}
+          {/* Share Links Section */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium" style={{ color: theme.colors.textPrimary }}>
-                Share Link
-              </h3>
-              {canShareEdit && (
-                <div className="flex items-center space-x-2 text-sm" style={{ color: theme.colors.accentPrimary }}>
-                  <Shield className="h-4 w-4" />
-                  <span>Team Feature</span>
+            <h3 className="text-lg font-medium mb-4" style={{ color: theme.colors.textPrimary }}>
+              Share Links
+            </h3>
+            
+            {/* Quick Share Link */}
+            <div className="mb-4 p-4 rounded-lg" style={{ 
+              backgroundColor: theme.colors.blockBackground,
+              border: `1px solid ${theme.colors.blockBorder}`
+            }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <Link className="h-4 w-4" style={{ color: theme.colors.accentPrimary }} />
+                  <span className="font-medium" style={{ color: theme.colors.textPrimary }}>
+                    Quick Share Link
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded-full" style={{ 
+                    backgroundColor: theme.colors.blockBorder,
+                    color: theme.colors.textSecondary
+                  }}>
+                    View Only
+                  </span>
                 </div>
-              )}
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={shareLink}
-                readOnly
-                className="flex-1 px-4 py-2 rounded-lg border"
-                style={{
-                  backgroundColor: theme.colors.inputBackground,
-                  borderColor: theme.colors.blockBorder,
-                  color: theme.colors.textPrimary
-                }}
-              />
-              <button
-                onClick={handleCopyLink}
-                className="px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-                style={{
-                  backgroundColor: copied ? theme.colors.successBackground : theme.colors.accentPrimary,
-                  color: 'white'
-                }}
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
-              </button>
+              </div>
+              <p className="text-sm mb-3" style={{ color: theme.colors.textSecondary }}>
+                Anyone with this link can view the board. No sign-in required.
+              </p>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={shareLink}
+                  readOnly
+                  className="flex-1 px-3 py-2 text-sm rounded border"
+                  style={{
+                    backgroundColor: theme.colors.inputBackground,
+                    borderColor: theme.colors.blockBorder,
+                    color: theme.colors.textPrimary
+                  }}
+                />
+                <button
+                  onClick={handleCopyLink}
+                  className="px-3 py-2 text-sm rounded transition-colors flex items-center space-x-1"
+                  style={{
+                    backgroundColor: copied ? theme.colors.successBackground : theme.colors.accentPrimary,
+                    color: 'white'
+                  }}
+                >
+                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  <span>{copied ? 'Copied!' : 'Copy'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -507,47 +543,79 @@ The LifeBlocks.ai Team`;
               <h3 className="text-lg font-medium mb-4" style={{ color: theme.colors.textPrimary }}>
                 Pending Invitations
               </h3>
-              <div className="space-y-2">
-                {invitations.map(invitation => (
-                  <div
-                    key={invitation.id}
-                    className="flex items-center justify-between p-3 rounded-lg"
-                    style={{ backgroundColor: theme.colors.blockBackground }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-4 w-4" style={{ color: theme.colors.textSecondary }} />
-                      <span style={{ color: theme.colors.textPrimary }}>{invitation.email}</span>
-                      <span className="text-sm px-2 py-1 rounded" style={{ 
-                        backgroundColor: invitation.permission === 'edit' ? theme.colors.accentPrimary + '20' : theme.colors.blockBorder,
-                        color: theme.colors.textSecondary 
-                      }}>
-                        {invitation.permission === 'edit' ? 'Can Edit' : 'View Only'}
-                      </span>
+              <div className="mb-3 p-3 rounded-lg" style={{ 
+                backgroundColor: theme.colors.infoBackground || theme.colors.accentPrimary + '10',
+                border: `1px solid ${theme.colors.accentPrimary}30`
+              }}>
+                <p className="text-sm flex items-start space-x-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.colors.accentPrimary }} />
+                  <span style={{ color: theme.colors.textPrimary }}>
+                    Since email is not set up, share these invitation links directly with the invited users. 
+                    Invitation links allow you to grant edit permissions.
+                  </span>
+                </p>
+              </div>
+              <div className="space-y-3">
+                {invitations.map(invitation => {
+                  const invitationLink = `${window.location.origin}/accept-invitation/${invitation.id}`;
+                  return (
+                    <div
+                      key={invitation.id}
+                      className="p-4 rounded-lg"
+                      style={{ backgroundColor: theme.colors.blockBackground }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-4 w-4" style={{ color: theme.colors.textSecondary }} />
+                          <span style={{ color: theme.colors.textPrimary }}>{invitation.email}</span>
+                          <span className="text-sm px-2 py-1 rounded" style={{ 
+                            backgroundColor: invitation.permission === 'edit' ? theme.colors.accentPrimary + '20' : theme.colors.blockBorder,
+                            color: invitation.permission === 'edit' ? theme.colors.accentPrimary : theme.colors.textSecondary 
+                          }}>
+                            {invitation.permission === 'edit' ? 'Can Edit' : 'View Only'}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleCancelInvitation(invitation.id)}
+                          className="p-1 rounded hover:bg-opacity-10 transition-colors"
+                          style={{ color: theme.colors.errorColor }}
+                          title="Cancel invitation"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={invitationLink}
+                          readOnly
+                          className="flex-1 px-3 py-2 text-sm rounded border font-mono"
+                          style={{
+                            backgroundColor: theme.colors.inputBackground,
+                            borderColor: theme.colors.blockBorder,
+                            color: theme.colors.textPrimary,
+                            fontSize: '12px'
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(invitationLink);
+                            alert(`Invitation link copied!\n\n${invitationLink}`);
+                          }}
+                          className="px-3 py-2 text-sm rounded transition-colors flex items-center space-x-1"
+                          style={{
+                            backgroundColor: theme.colors.accentPrimary,
+                            color: 'white'
+                          }}
+                          title="Copy invitation link"
+                        >
+                          <Copy className="h-3 w-3" />
+                          <span>Copy</span>
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => {
-                          const invitationLink = `${window.location.origin}/accept-invitation/${invitation.id}`;
-                          navigator.clipboard.writeText(invitationLink);
-                          alert(`Invitation link copied!\n\n${invitationLink}`);
-                        }}
-                        className="p-2 rounded hover:bg-opacity-10 transition-colors"
-                        style={{ color: theme.colors.accentPrimary }}
-                        title="Copy invitation link"
-                      >
-                        <Link className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleCancelInvitation(invitation.id)}
-                        className="p-2 rounded hover:bg-opacity-10 transition-colors"
-                        style={{ color: theme.colors.errorColor }}
-                        title="Cancel invitation"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

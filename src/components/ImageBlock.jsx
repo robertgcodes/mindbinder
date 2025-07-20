@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Group, Rect, Image as KonvaImage, Transformer, Text } from 'react-konva';
+import FullscreenImageModal from './FullscreenImageModal';
 
 const ImageBlock = ({
   id,
@@ -16,6 +17,8 @@ const ImageBlock = ({
   backgroundColor = 'rgba(0, 0, 0, 0.1)',
   rotation = 0,
   imageDisplayMode = 'fit', // 'fit', 'fill', 'stretch'
+  title = '',
+  sourceUrl = '',
   isSelected,
   onSelect,
   onChange,
@@ -29,6 +32,7 @@ const ImageBlock = ({
   const [currentIndex, setCurrentIndex] = useState(currentImageIndex);
   const [isPlaying, setIsPlaying] = useState(autoRotate);
   const [loadedImages, setLoadedImages] = useState({});
+  const [showFullscreen, setShowFullscreen] = useState(false);
   const intervalRef = useRef();
 
   // Auto-rotation effect
@@ -145,7 +149,10 @@ const ImageBlock = ({
   };
 
   const handleDoubleClick = (e) => {
-    if (onDoubleClick) {
+    // Show fullscreen modal on double-click if there are images
+    if (images.length > 0) {
+      setShowFullscreen(true);
+    } else if (onDoubleClick) {
       onDoubleClick();
     }
   };
@@ -407,6 +414,16 @@ const ImageBlock = ({
           resizeEnabled={true}
         />
       )}
+      
+      {/* Fullscreen Image Modal */}
+      <FullscreenImageModal
+        isOpen={showFullscreen}
+        onClose={() => setShowFullscreen(false)}
+        images={images}
+        currentImageIndex={currentIndex}
+        sourceUrl={sourceUrl}
+        title={title}
+      />
     </>
   );
 };

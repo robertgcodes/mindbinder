@@ -21,6 +21,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import TeamManagement from './components/TeamManagement';
 import JoinTeam from './components/JoinTeam';
 import ProAISettings from './components/ProAISettings';
+import BlockManager from './pages/BlockManager';
 
 function App() {
   const { currentUser, loading } = useAuth();
@@ -47,6 +48,7 @@ function App() {
           <Route path="/team" element={currentUser ? <TeamManagement /> : <Navigate to="/login" />} />
           <Route path="/team/join/:invitationCode" element={<JoinTeam />} />
           <Route path="/pro-ai-settings" element={currentUser ? <ProAISettings /> : <Navigate to="/login" />} />
+          <Route path="/blocks" element={currentUser ? <BlockManager /> : <Navigate to="/login" />} />
           <Route path="/user/:userId" element={<PublicProfile />} />
           <Route path="/u/:username" element={<PublicProfile />} />
           <Route path="/u/:username/block/:blockId" element={<SharedBlock />} />

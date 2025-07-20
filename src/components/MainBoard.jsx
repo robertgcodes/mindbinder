@@ -78,6 +78,7 @@ import ActionItemBlock from './ActionItemBlock';
 import ActionItemModal from './ActionItemModal';
 import UserImageLibrary from './UserImageLibrary';
 import ShareBoardModal from './ShareBoardModal';
+import BlockSearchModal from './BlockSearchModal';
 import { getAiResponse } from '../aiService';
 import { getBlockDefaultColors } from '../utils/themeUtils';
 
@@ -130,6 +131,7 @@ const MainBoard = ({ board, onBack }) => {
   const [showImageLibrary, setShowImageLibrary] = useState(false);
   const [imageLibraryCallback, setImageLibraryCallback] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showBlockSearch, setShowBlockSearch] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   
   // Selection mode state
@@ -2115,6 +2117,25 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   // Add block handler for toolbar
+  const handleImportBlock = (importedBlock) => {
+    // Don't add blocks if in read-only mode
+    if (isReadOnly) {
+      console.log('Board is read-only, cannot add blocks');
+      return;
+    }
+
+    // Add the imported block with proper positioning
+    const newBlock = {
+      ...importedBlock,
+      x: Math.max(100, Math.random() * 500),
+      y: Math.max(100, Math.random() * 400),
+      boardId: board.id
+    };
+
+    setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+    saveToHistory([...blocks, newBlock]);
+  };
+
   const handleAddBlock = (type) => {
     // Don't add blocks if in read-only mode
     if (isReadOnly) {
@@ -2691,6 +2712,8 @@ const MainBoard = ({ board, onBack }) => {
         onDeleteBlock={deleteSelectedBlock}
         onOpenModal={openModal}
         onExitMobileView={forceMobileView ? () => setForceMobileView(false) : null}
+        onAddBlock={handleAddBlock}
+        onOpenBlockPicker={openModal ? () => openModal('block-picker') : null}
       />
     );
   }
@@ -2741,6 +2764,7 @@ const MainBoard = ({ board, onBack }) => {
         onDuplicateBlock={handleDuplicateBlock}
         onEditBlock={handleEditBlock}
         hasMultiSelection={selectedBlockIds.size > 0}
+        onOpenBlockSearch={() => setShowBlockSearch(true)}
       />
       <div className="flex-1 relative">
         <div className="absolute top-4 left-4 z-10 flex items-center space-x-4">
@@ -2997,6 +3021,15 @@ const MainBoard = ({ board, onBack }) => {
           <ShareBoardModal
             board={board}
             onClose={() => setShowShareModal(false)}
+          />
+        )}
+        
+        {showBlockSearch && (
+          <BlockSearchModal
+            isOpen={showBlockSearch}
+            onClose={() => setShowBlockSearch(false)}
+            onImportBlock={handleImportBlock}
+            currentBoardId={board.id}
           />
         )}
       </div>

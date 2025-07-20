@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DndContext, DragOverlay, closestCenter, pointerWithin, rectIntersection } from '@dnd-kit/core';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { ArrowLeft, LayoutGrid, Settings, Eye, EyeOff, Type, Image, List, Link2, FileText, Calendar, Youtube, Grid } from 'lucide-react';
+import { ArrowLeft, LayoutGrid, Settings, Eye, EyeOff, Type, Image, List, Link2, FileText, Calendar, Youtube, Grid, CheckSquare } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useTheme } from '../contexts/ThemeContext';
@@ -49,6 +49,8 @@ import YouTubeToolbar from './YouTubeToolbar';
 import AiPromptToolbar from './AiPromptToolbar';
 import FrameToolbar from './FrameToolbar';
 import GoogleEmbedToolbar from './GoogleEmbedToolbar';
+import ActionItemBlock from './ActionItemBlock';
+import ActionItemModal from './ActionItemModal';
 
 // Block types that should take up 2 grid spaces horizontally
 const WIDE_BLOCKS = ['yearly-planner', 'analytics', 'book'];
@@ -82,7 +84,8 @@ const getBlockIcon = (type) => {
     'analytics': Grid,
     'pdf': FileText,
     'book': FileText,
-    'google-embed': Grid
+    'google-embed': Grid,
+    'action-item': CheckSquare
   };
   return iconMap[type] || Grid;
 };
@@ -118,7 +121,8 @@ const getBlockTitle = (block) => {
     'analytics': 'Analytics Block',
     'pdf': 'PDF Block',
     'book': 'Book Block',
-    'google-embed': 'Google Embed'
+    'google-embed': 'Google Embed',
+    'action-item': 'Action Item'
   };
   return typeLabels[block.type] || 'Unknown Block';
 };
@@ -282,6 +286,7 @@ const GridView = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, on
   const [editMode, setEditMode] = useState(false);
   const [gridCols, setGridCols] = useState(4);
   const [hideTitleBars, setHideTitleBars] = useState(false);
+  const [hideShapes, setHideShapes] = useState(false);
   const [gridPositions, setGridPositions] = useState({});
   const [activeId, setActiveId] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
@@ -302,12 +307,15 @@ const GridView = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, on
         console.log('No affirmations block found in board.blocks');
       }
       
-      setBlocks(board.blocks);
+      // Filter out shapes if hideShapes is enabled
+      const filteredBlocks = hideShapes ? board.blocks.filter(block => block.type !== 'shape') : board.blocks;
+      setBlocks(filteredBlocks);
       
       // Load grid settings
       const cols = board.gridCols || 4; // Default to 4 if not set
       setGridCols(cols);
       setHideTitleBars(board.hideTitleBars || false);
+      setHideShapes(board.hideShapes || false);
       
       // Load grid positions
       if (board.gridPositions && Object.keys(board.gridPositions).length > 0) {
@@ -469,7 +477,7 @@ const GridView = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, on
         saveGridPositions(positions);
       }
     }
-  }, [board?.id, board?.blocks?.length, board?.gridPositions, board?.gridCols, board?.hideTitleBars]);
+  }, [board?.id, board?.blocks?.length, board?.gridPositions, board?.gridCols, board?.hideTitleBars, hideShapes]);
 
   // Reset and recalculate all positions
   const resetGridPositions = () => {
@@ -545,12 +553,13 @@ const GridView = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, on
   };
 
   // Save grid settings
-  const saveGridSettings = async (newCols = gridCols, newHideTitleBars = hideTitleBars) => {
+  const saveGridSettings = async (newCols = gridCols, newHideTitleBars = hideTitleBars, newHideShapes = hideShapes) => {
     try {
       const docRef = doc(db, 'boards', board.id);
       await updateDoc(docRef, {
         gridCols: newCols,
         hideTitleBars: newHideTitleBars,
+        hideShapes: newHideShapes,
         updatedAt: new Date().toISOString()
       });
     } catch (error) {
@@ -843,6 +852,8 @@ const GridView = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, on
           return <BookBlock {...bookProps} />;
         case 'google-embed':
           return <GoogleEmbedBlock {...commonProps} />;
+        case 'action-item':
+          return <ActionItemBlock {...commonProps} />;
         default:
           return null;
       }
@@ -966,6 +977,8 @@ const GridView = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, on
         return <BookBlockModal {...commonProps} onSave={(updates) => onUpdateBlock(modalBlock.id, updates)} />;
       case 'google-embed':
         return <GoogleEmbedToolbar {...commonProps} />;
+      case 'action-item':
+        return <ActionItemModal {...commonProps} />;
       default:
         return null;
     }
@@ -1068,7 +1081,7 @@ const GridView = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, on
                   onChange={(e) => {
                     const newHideTitleBars = e.target.checked;
                     setHideTitleBars(newHideTitleBars);
-                    saveGridSettings(gridCols, newHideTitleBars);
+                    saveGridSettings(gridCols, newHideTitleBars, hideShapes);
                   }}
                   className="rounded"
                   style={{
@@ -1076,6 +1089,23 @@ const GridView = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, on
                   }}
                 />
                 <span>Hide title bars</span>
+              </label>
+              
+              <label className="flex items-center space-x-2" style={{ color: theme.colors.textPrimary, fontSize: '14px' }}>
+                <input
+                  type="checkbox"
+                  checked={hideShapes}
+                  onChange={(e) => {
+                    const newHideShapes = e.target.checked;
+                    setHideShapes(newHideShapes);
+                    saveGridSettings(gridCols, hideTitleBars, newHideShapes);
+                  }}
+                  className="rounded"
+                  style={{
+                    accentColor: theme.colors.accentPrimary
+                  }}
+                />
+                <span>Hide shapes</span>
               </label>
             </div>
             <div className="flex items-center space-x-4">

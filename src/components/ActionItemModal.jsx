@@ -208,11 +208,95 @@ const ActionItemModal = ({ block, onChange, onClose, onDelete }) => {
           <Calendar size={14} style={{ display: 'inline-block', marginRight: '4px' }} />
           Due Date
         </Label>
+        
+        {/* Quick date selection buttons */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          {[
+            { label: 'Today', days: 0 },
+            { label: 'Tomorrow', days: 1 },
+            { label: 'Next Week', days: 7 },
+            { label: 'Next Monday', days: (() => {
+              const today = new Date();
+              const daysUntilMonday = (8 - today.getDay()) % 7;
+              return daysUntilMonday === 0 ? 7 : daysUntilMonday;
+            })() }
+          ].map(({ label, days }) => (
+            <button
+              key={label}
+              onClick={() => {
+                const date = new Date();
+                date.setDate(date.getDate() + days);
+                date.setHours(17, 0, 0, 0); // Default to 5 PM
+                handleInputChange('dueDate', date.toISOString().slice(0, 16));
+              }}
+              style={{
+                padding: '4px 8px',
+                fontSize: '12px',
+                backgroundColor: theme.colors.hoverBackground,
+                border: `1px solid ${theme.colors.blockBorder}`,
+                borderRadius: '4px',
+                color: theme.colors.textSecondary,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.accentPrimary;
+                e.target.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+                e.target.style.color = theme.colors.textSecondary;
+              }}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            onClick={() => handleInputChange('dueDate', '')}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              backgroundColor: 'transparent',
+              border: `1px solid ${theme.colors.blockBorder}`,
+              borderRadius: '4px',
+              color: theme.colors.textSecondary,
+              cursor: 'pointer'
+            }}
+          >
+            Clear
+          </button>
+        </div>
+        
         <Input
           type="datetime-local"
           value={formData.dueDate || ''}
           onChange={(e) => handleInputChange('dueDate', e.target.value)}
         />
+        
+        {/* Show formatted date preview */}
+        {formData.dueDate && (
+          <div style={{ 
+            marginTop: '8px', 
+            fontSize: '12px', 
+            color: theme.colors.textSecondary,
+            fontStyle: 'italic'
+          }}>
+            Due: {(() => {
+              const date = new Date(formData.dueDate);
+              const today = new Date();
+              const diffTime = date - today;
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              
+              if (diffDays === 0) return `Today at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+              if (diffDays === 1) return `Tomorrow at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+              if (diffDays === -1) return `Yesterday at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+              if (diffDays > 0 && diffDays <= 7) return `In ${diffDays} days - ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+              if (diffDays < 0) return `${Math.abs(diffDays)} days overdue - ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+              
+              return `${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })} at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+            })()}
+          </div>
+        )}
       </FormGroup>
       
       {/* Description */}

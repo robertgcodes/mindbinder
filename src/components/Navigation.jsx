@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit, User, Circle, Triangle, Minus, Shapes } from 'lucide-react';
+import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit, User, Circle, Triangle, Minus, Shapes, Search } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
 import BoardSwitcher from './BoardSwitcher';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boardId, board, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock }) => {
+const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boardId, board, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock, onOpenBlockSearch }) => {
   const { theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isShapesDropdownOpen, setIsShapesDropdownOpen] = useState(false);
@@ -218,6 +218,24 @@ const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boa
                 title="Bring All Blocks Into View"
               >
                 <Move className="h-5 w-5" />
+              </button>
+            )}
+            {!isReadOnly && onOpenBlockSearch && (
+              <button
+                onClick={onOpenBlockSearch}
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: theme.colors.textSecondary }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                  e.currentTarget.style.color = theme.colors.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = theme.colors.textSecondary;
+                }}
+                title="Find Existing Blocks"
+              >
+                <Search className="h-5 w-5" />
               </button>
             )}
             {!isReadOnly && (

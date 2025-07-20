@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, LogOut, Bookmark, Users, BarChart3, CreditCard, Shield, Bot } from 'lucide-react';
+import { User, LogOut, Bookmark, Users, BarChart3, CreditCard, Shield, Bot, LayoutGrid } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -161,6 +161,25 @@ const UserMenu = () => {
             >
               <Bookmark size={16} />
               <span>Saved Blocks</span>
+            </button>
+            <button
+              onClick={() => {
+                navigate('/blocks');
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm rounded transition-colors"
+              style={{ color: theme.colors.textSecondary }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+                e.target.style.color = theme.colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = theme.colors.textSecondary;
+              }}
+            >
+              <LayoutGrid size={16} />
+              <span>Block Manager</span>
             </button>
             {tier?.id === 'team' && (
               <button

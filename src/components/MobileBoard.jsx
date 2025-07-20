@@ -3,7 +3,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Settings, ArrowLeft, Eye, EyeOff, Type, Image, List, Link2, FileText, Calendar, Youtube, Grid, Video } from 'lucide-react';
+import { GripVertical, Settings, ArrowLeft, Eye, EyeOff, Type, Image, List, Link2, FileText, Calendar, Youtube, Grid, Video, CheckSquare, Plus, PlusCircle, StickyNote, LayoutGrid } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useTheme } from '../contexts/ThemeContext';
@@ -32,6 +32,7 @@ import PDFBlock from './PDFBlock';
 import BookBlock from './BookBlock';
 import GoogleEmbedBlock from './GoogleEmbedBlock';
 import VideoBlock from './VideoBlock';
+import ActionItemBlock from './ActionItemBlock';
 import { Stage, Layer } from 'react-konva';
 
 // Get block icon based on type
@@ -61,7 +62,8 @@ const getBlockIcon = (type) => {
     'analytics': Grid,
     'pdf': FileText,
     'book': FileText,
-    'google-embed': Grid
+    'google-embed': Grid,
+    'action-item': CheckSquare
   };
   return iconMap[type] || Grid;
 };
@@ -97,7 +99,8 @@ const getBlockTitle = (block) => {
     'analytics': 'Analytics Block',
     'pdf': 'PDF Block',
     'book': 'Book Block',
-    'google-embed': 'Google Embed'
+    'google-embed': 'Google Embed',
+    'action-item': 'Action Item'
   };
   return typeLabels[block.type] || 'Unknown Block';
 };
@@ -195,11 +198,13 @@ const SortableBlock = ({ id, children, isReorderMode }) => {
   );
 };
 
-const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, onExitMobileView }) => {
+const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, onExitMobileView, onAddBlock, onOpenBlockPicker }) => {
   const { theme } = useTheme();
   const [blocks, setBlocks] = useState([]);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [mobileOrder, setMobileOrder] = useState([]);
+  const [hideShapes, setHideShapes] = useState(false);
+  const [todoMode, setTodoMode] = useState(false);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(window.innerWidth - 32); // 16px padding on each side
 
@@ -408,6 +413,8 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal,
           return <GoogleEmbedBlock {...commonProps} />;
         case 'video':
           return <VideoBlock {...commonProps} />;
+        case 'action-item':
+          return <ActionItemBlock {...commonProps} />;
         default:
           return null;
       }
@@ -441,11 +448,33 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal,
     .map(id => blocks.find(block => block.id === id))
     .filter(Boolean); // Remove any undefined blocks
 
+  // Apply filtering based on current mode and settings
+  let filteredBlocks = allOrderedBlocks;
+  
+  // Filter by shapes if hideShapes is enabled
+  if (hideShapes && !isReorderMode) {
+    filteredBlocks = filteredBlocks.filter(block => block.type !== 'shape');
+  }
+  
+  // Filter for todo mode (only list and action-item blocks)
+  if (todoMode && !isReorderMode) {
+    filteredBlocks = filteredBlocks.filter(block => 
+      block.type === 'list' || block.type === 'action-item'
+    );
+  }
+  
   // In reorder mode, show all blocks (including hidden ones) for management
   // In normal mode, only show visible blocks
   const visibleBlocks = isReorderMode 
     ? allOrderedBlocks 
-    : allOrderedBlocks.filter(block => !block.mobileHidden);
+    : filteredBlocks.filter(block => !block.mobileHidden);
+
+  // Handle quick add functions
+  const handleQuickAddBlock = (type) => {
+    if (onAddBlock) {
+      onAddBlock(type);
+    }
+  };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: theme.colors.background }}>
@@ -473,17 +502,67 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal,
           {isReorderMode ? 'Manage Blocks' : board.name}
         </h1>
         
-        <button
-          onClick={() => setIsReorderMode(!isReorderMode)}
-          className="p-2 rounded-lg transition-colors"
-          style={{ 
-            color: isReorderMode ? theme.colors.accentPrimary : theme.colors.textSecondary,
-            backgroundColor: isReorderMode ? theme.colors.hoverBackground : 'transparent'
-          }}
-          title={isReorderMode ? "Done Reordering" : "Reorder Blocks"}
-        >
-          <Settings className="h-5 w-5" />
-        </button>
+        <div className="flex items-center space-x-2">
+          {/* Todo Mode Toggle */}
+          {!isReorderMode && (
+            <button
+              onClick={() => setTodoMode(!todoMode)}
+              className="px-2 py-1 rounded text-xs transition-colors"
+              style={{ 
+                color: todoMode ? '#ffffff' : theme.colors.textSecondary,
+                backgroundColor: todoMode ? theme.colors.accentPrimary : theme.colors.blockBackground,
+                border: `1px solid ${todoMode ? theme.colors.accentPrimary : theme.colors.blockBorder}`
+              }}
+              title="Show only to-do blocks"
+            >
+              📝 TODO
+            </button>
+          )}
+          
+          {/* Hide Shapes Toggle */}
+          {!isReorderMode && !todoMode && (
+            <button
+              onClick={() => setHideShapes(!hideShapes)}
+              className="px-2 py-1 rounded text-xs transition-colors"
+              style={{ 
+                color: hideShapes ? '#ffffff' : theme.colors.textSecondary,
+                backgroundColor: hideShapes ? theme.colors.accentPrimary : theme.colors.blockBackground,
+                border: `1px solid ${hideShapes ? theme.colors.accentPrimary : theme.colors.blockBorder}`
+              }}
+              title="Hide shape blocks"
+            >
+              {hideShapes ? '🚫📐' : '📐'}
+            </button>
+          )}
+          
+          {/* Add Block Button */}
+          {!isReorderMode && onOpenBlockPicker && (
+            <button
+              onClick={onOpenBlockPicker}
+              className="p-2 rounded-lg transition-colors"
+              style={{ 
+                color: theme.colors.accentPrimary,
+                backgroundColor: theme.colors.blockBackground,
+                border: `1px solid ${theme.colors.blockBorder}`
+              }}
+              title="Add new block"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          )}
+          
+          <button
+            onClick={() => setIsReorderMode(!isReorderMode)}
+            className="p-2 rounded-lg transition-colors"
+            style={{ 
+              color: isReorderMode ? theme.colors.accentPrimary : theme.colors.textSecondary,
+              backgroundColor: isReorderMode ? theme.colors.hoverBackground : 'transparent'
+            }}
+            title={isReorderMode ? "Done Reordering" : "Reorder Blocks"}
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       {/* Blocks Container */}
@@ -544,6 +623,61 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal,
           </div>
         )}
       </div>
+      
+      {/* Bottom Add Block Toolbar */}
+      {!isReorderMode && (onAddBlock || onOpenBlockPicker) && (
+        <div 
+          className="flex-shrink-0 px-4 py-3 border-t"
+          style={{ 
+            backgroundColor: theme.colors.navigationBackground,
+            borderColor: theme.colors.blockBorder
+          }}
+        >
+          <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto">
+            {/* All Blocks Button */}
+            <button
+              onClick={onOpenBlockPicker}
+              className="flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-colors"
+              style={{
+                backgroundColor: theme.colors.blockBackground,
+                border: `1px solid ${theme.colors.blockBorder}`,
+                color: theme.colors.textPrimary
+              }}
+            >
+              <LayoutGrid className="h-5 w-5 mb-1" />
+              <span className="text-xs">All Blocks</span>
+            </button>
+            
+            {/* Action Item Button */}
+            <button
+              onClick={() => handleQuickAddBlock('action-item')}
+              className="flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-colors"
+              style={{
+                backgroundColor: theme.colors.blockBackground,
+                border: `1px solid ${theme.colors.blockBorder}`,
+                color: theme.colors.textPrimary
+              }}
+            >
+              <CheckSquare className="h-5 w-5 mb-1" />
+              <span className="text-xs">Action Item</span>
+            </button>
+            
+            {/* Quick Notes Button */}
+            <button
+              onClick={() => handleQuickAddBlock('quick-notes')}
+              className="flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-colors"
+              style={{
+                backgroundColor: theme.colors.blockBackground,
+                border: `1px solid ${theme.colors.blockBorder}`,
+                color: theme.colors.textPrimary
+              }}
+            >
+              <StickyNote className="h-5 w-5 mb-1" />
+              <span className="text-xs">Quick Notes</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -26,7 +26,7 @@ const ActionItemBlock = ({
     x = 0,
     y = 0,
     width = 300,
-    height = 120,
+    height = 140,
     title = 'New Action Item',
     description = '',
     notes = '',
@@ -73,7 +73,7 @@ const ActionItemBlock = ({
   const isOverdue = dueDate && new Date(dueDate) < new Date() && status !== 'complete';
   
   // Calculate dynamic height based on expansion and subtasks
-  const baseHeight = description ? 140 : 120;
+  const baseHeight = description ? 150 : 130;
   const expandedHeight = baseHeight + (subtasks.length * 30) + (subtasks.length > 0 ? 60 : 0);
   const actualHeight = isExpanded && subtasks.length > 0 ? expandedHeight : (description ? Math.max(height, baseHeight) : height);
   
@@ -153,21 +153,12 @@ const ActionItemBlock = ({
         cornerRadius={[12, 12, 0, 0]}
       />
       
-      {/* Header section */}
+      {/* Header section - maximized space */}
       <Group y={15}>
-        {/* Action type icon */}
-        <Text
-          x={15}
-          y={0}
-          text={actionIcon}
-          fontSize={24}
-          fill={statusColor}
-        />
-        
         {/* Main checkbox/icon */}
         <Group 
-          x={50} 
-          y={3}
+          x={15} 
+          y={0}
           onClick={(e) => {
             e.cancelBubble = true;
             onUpdate({
@@ -184,8 +175,8 @@ const ActionItemBlock = ({
           {iconStyle === 'checkbox' ? (
             <>
               <Rect
-                width={20}
-                height={20}
+                width={22}
+                height={22}
                 stroke={statusColor}
                 strokeWidth={2}
                 cornerRadius={4}
@@ -193,7 +184,7 @@ const ActionItemBlock = ({
               />
               {status === 'complete' && (
                 <Path
-                  data="M 5 10 L 8 13 L 15 6"
+                  data="M 5 11 L 9 15 L 17 7"
                   stroke="white"
                   strokeWidth={2}
                   lineCap="round"
@@ -203,9 +194,9 @@ const ActionItemBlock = ({
             </>
           ) : (
             <Circle
-              x={10}
-              y={10}
-              radius={12}
+              x={11}
+              y={11}
+              radius={11}
               fill={status === 'complete' ? statusColor : 'transparent'}
               stroke={statusColor}
               strokeWidth={2}
@@ -213,58 +204,38 @@ const ActionItemBlock = ({
           )}
         </Group>
         
-        {/* Title - adjusted vertical alignment */}
+        {/* Title - maximized space */}
         <Text
-          x={80}
-          y={5}
+          x={50}
+          y={2}
           text={title}
           fontSize={18}
           fontStyle="bold"
           fill={theme.colors.textPrimary}
-          width={width - 100}
+          width={width - 70}
+          height={44}
+          wrap="word"
           ellipsis={true}
-          verticalAlign="middle"
+          lineHeight={1.2}
         />
-        
-        {/* Overdue warning */}
-        {isOverdue && (
-          <Text
-            x={width - 30}
-            y={0}
-            text="⚠️"
-            fontSize={20}
-            fill={statusColors.urgent}
-          />
-        )}
       </Group>
       
-      {/* Description - always show if present */}
+      {/* Description - under checkbox and title */}
       {description && (
         <Text
-          x={80}
-          y={40}
+          x={50}
+          y={60}
           text={description}
           fontSize={13}
           fill={theme.colors.textSecondary}
-          width={width - 100}
-          height={isExpanded ? 40 : 25}
+          width={width - 70}
+          height={isExpanded ? 35 : 25}
           ellipsis={true}
           wrap="word"
           lineHeight={1.3}
         />
       )}
       
-      {/* Due date */}
-      {dueDate && (
-        <Text
-          x={80}
-          y={description ? 70 : 40}
-          text={formatDate(dueDate)}
-          fontSize={12}
-          fill={isOverdue ? statusColors.urgent : theme.colors.textSecondary}
-          fontStyle={isOverdue ? 'bold' : 'normal'}
-        />
-      )}
       
       {/* Progress section */}
       {totalSubtasks > 0 && showProgress && (
@@ -300,9 +271,99 @@ const ActionItemBlock = ({
         </Group>
       )}
       
-      {/* Expanded content */}
+      {/* Bottom section with icons and status */}
+      <Group y={actualHeight - 30}>
+        {/* Action type icon - bottom left */}
+        <Text
+          x={15}
+          y={0}
+          text={actionIcon}
+          fontSize={20}
+          fill={statusColor}
+        />
+        
+        {/* Link icon - next to action type if links exist */}
+        {links && links.length > 0 && (
+          <Group
+            x={45}
+            y={2}
+            onClick={(e) => {
+              e.cancelBubble = true;
+              if (links[0]) {
+                window.open(links[0], '_blank');
+              }
+            }}
+            onTap={(e) => {
+              e.cancelBubble = true;
+              if (links[0]) {
+                window.open(links[0], '_blank');
+              }
+            }}
+          >
+            <Text
+              text="🔗"
+              fontSize={16}
+              fill={theme.colors.textSecondary}
+            />
+          </Group>
+        )}
+        
+        {/* Due date - in bottom row */}
+        {dueDate && (
+          <Group x={links && links.length > 0 ? 75 : 45} y={2}>
+            <Text
+              text={isOverdue ? '⏰ ' : '📅 '}
+              fontSize={14}
+              fill={isOverdue ? statusColors.urgent : theme.colors.textSecondary}
+            />
+            <Text
+              x={20}
+              y={0}
+              text={formatDate(dueDate)}
+              fontSize={12}
+              fill={isOverdue ? statusColors.urgent : theme.colors.textSecondary}
+              fontStyle={isOverdue ? 'bold' : 'normal'}
+            />
+          </Group>
+        )}
+        
+        {/* Status badge - bottom right */}
+        <Group x={width - 90} y={-2}>
+          <Rect
+            width={85}
+            height={20}
+            fill={statusColor}
+            cornerRadius={10}
+            opacity={0.15}
+          />
+          <Text
+            x={0}
+            y={5}
+            text={status.replace('-', ' ').toUpperCase()}
+            fontSize={9}
+            fontStyle="bold"
+            fill={statusColor}
+            width={85}
+            align="center"
+            verticalAlign="middle"
+          />
+        </Group>
+        
+        {/* Overdue warning - bottom right corner */}
+        {isOverdue && (
+          <Text
+            x={width - 25}
+            y={-5}
+            text="⚠️"
+            fontSize={18}
+            fill={statusColors.urgent}
+          />
+        )}
+      </Group>
+      
+      {/* Expanded content - subtasks under description */}
       {isExpanded && subtasks.length > 0 && (
-        <Group y={description ? (dueDate ? 90 : 80) : (dueDate ? 65 : 55)} isSubtask={true}>
+        <Group y={description ? 95 : 65} isSubtask={true}>
           {subtasks.map((subtask, index) => (
             <Group key={subtask.id} y={index * 30} isSubtask={true}>
               {/* Subtask checkbox - make it clickable */}

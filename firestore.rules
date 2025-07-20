@@ -188,5 +188,20 @@ service cloud.firestore {
       // Allow authenticated users to write logs (the service handles validation)
       allow write: if request.auth != null;
     }
+    
+    // Synced blocks collection - users can manage their own synced blocks
+    match /syncedBlocks/{syncId} {
+      allow read: if request.auth != null && 
+                     request.auth.uid == resource.data.userId;
+      
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      allow update: if request.auth != null && 
+                       request.auth.uid == resource.data.userId;
+      
+      allow delete: if request.auth != null && 
+                       request.auth.uid == resource.data.userId;
+    }
   }
 }

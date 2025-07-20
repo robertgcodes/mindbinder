@@ -3,7 +3,8 @@ import {
   X, Save, User, Briefcase, MapPin, Calendar, Link2, 
   FileText, Search, Plus, Trash2, Globe, Sparkles,
   ChevronDown, ChevronUp, Upload, ExternalLink, Bot,
-  Shield, Heart, Building, Flag, Book, Users, Edit2
+  Shield, Heart, Building, Flag, Book, Users, Edit2,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
@@ -13,8 +14,9 @@ import imageCompression from 'browser-image-compression';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import StandardModal, { FormGroup, Label, Input, Textarea, Select } from './StandardModal';
+import { blockSyncService } from '../services/blockSyncService';
 
-const BioBlockModal = ({ block, onClose, onUpdate }) => {
+const BioBlockModal = ({ block, onClose, onUpdate, boardId }) => {
   const { currentUser } = useAuth();
   const { hasProAccess } = useSubscription();
   const { theme } = useTheme();
@@ -25,6 +27,9 @@ const BioBlockModal = ({ block, onClose, onUpdate }) => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [activeSection, setActiveSection] = useState('basic');
   const [showCustomFieldForm, setShowCustomFieldForm] = useState(false);
+  const [isSynced, setIsSynced] = useState(false);
+  const [syncId, setSyncId] = useState(null);
+  const [enableSync, setEnableSync] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -52,6 +57,19 @@ const BioBlockModal = ({ block, onClose, onUpdate }) => {
 
   // Custom field form
   const [newField, setNewField] = useState({ label: '', value: '', notes: '' });
+
+  // Check if block is synced on mount
+  useEffect(() => {
+    const checkSyncStatus = async () => {
+      if (block.id && boardId) {
+        const { isSynced: synced, syncId: id } = await blockSyncService.isBlockSynced(block.id, boardId);
+        setIsSynced(synced);
+        setSyncId(id);
+        setEnableSync(synced);
+      }
+    };
+    checkSyncStatus();
+  }, [block.id, boardId]);
 
   // Predefined field templates
   const fieldTemplates = [
@@ -195,13 +213,55 @@ const BioBlockModal = ({ block, onClose, onUpdate }) => {
     }));
   };
 
-  const handleSave = () => {
-    const updatedData = {
-      ...formData,
-      lastUpdated: new Date().toISOString()
-    };
-    onUpdate({ data: updatedData });
-    onClose();
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const updatedData = {
+        ...formData,
+        lastUpdated: new Date().toISOString()
+      };
+
+      // Handle sync logic
+      if (enableSync && !isSynced) {
+        // Create new sync group
+        const newSyncId = await blockSyncService.createSyncGroup(
+          currentUser.uid,
+          { ...block, data: updatedData },
+          block.id,
+          boardId
+        );
+        onUpdate({ 
+          data: updatedData, 
+          syncId: newSyncId 
+        });
+      } else if (enableSync && isSynced && syncId) {
+        // Update synced blocks
+        await blockSyncService.updateSyncedBlocks(
+          syncId,
+          updatedData,
+          block.id,
+          boardId
+        );
+        onUpdate({ data: updatedData });
+      } else if (!enableSync && isSynced && syncId) {
+        // Remove from sync group
+        await blockSyncService.removeFromSyncGroup(syncId, block.id, boardId);
+        onUpdate({ 
+          data: updatedData,
+          syncId: null 
+        });
+      } else {
+        // Just update normally
+        onUpdate({ data: updatedData });
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('Error saving bio block:', error);
+      alert('Failed to save changes. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sections = [
@@ -274,6 +334,46 @@ const BioBlockModal = ({ block, onClose, onUpdate }) => {
               <span>{section.label}</span>
             </button>
           ))}
+        </div>
+
+        {/* Sync Toggle */}
+        <div style={{
+          marginTop: '20px',
+          marginBottom: '20px',
+          padding: '12px 16px',
+          backgroundColor: theme.colors.hoverBackground,
+          borderRadius: '8px',
+          border: `1px solid ${theme.colors.blockBorder}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <RefreshCw size={16} style={{ color: theme.colors.accentPrimary }} />
+              <span style={{ fontWeight: 500 }}>Sync Across Boards</span>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={enableSync}
+                onChange={(e) => setEnableSync(e.target.checked)}
+                style={{ marginRight: '8px' }}
+              />
+              <span style={{ fontSize: '14px', color: theme.colors.textSecondary }}>
+                {enableSync ? 'Enabled' : 'Disabled'}
+              </span>
+            </label>
+          </div>
+          {enableSync && (
+            <p style={{ 
+              fontSize: '12px', 
+              color: theme.colors.textSecondary, 
+              marginTop: '8px', 
+              marginBottom: 0 
+            }}>
+              {isSynced 
+                ? `This bio is synced across ${syncId ? 'multiple boards' : 'boards'}. Changes will update all instances.`
+                : 'Enable to sync this bio across all your boards. Changes in one place will update everywhere.'}
+            </p>
+          )}
         </div>
 
         {/* Content */}

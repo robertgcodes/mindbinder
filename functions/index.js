@@ -4,6 +4,11 @@ const stripe = require('stripe')(functions.config().stripe.secret);
 
 admin.initializeApp();
 
+// Import video access functions
+// Temporarily disabled - needs manual v2 migration
+// const { getVideoUrl } = require('./videoAccess');
+// exports.getVideoUrl = getVideoUrl;
+
 // Create Stripe checkout session
 exports.createCheckoutSession = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated

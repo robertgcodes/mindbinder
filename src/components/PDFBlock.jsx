@@ -37,6 +37,7 @@ const PDFBlock = ({
   onChange,
   onDragStart,
   onDragEnd,
+  onDragMove,
   onDoubleClick
 }) => {
   const groupRef = useRef();
@@ -240,6 +241,7 @@ const PDFBlock = ({
         onClick={handleClick}
         onDblClick={onDoubleClick}
         onDragStart={onDragStart}
+        onDragMove={onDragMove}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
         onMouseEnter={() => setIsHovered(true)}

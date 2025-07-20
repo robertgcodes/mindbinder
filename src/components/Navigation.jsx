@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit } from 'lucide-react';
+import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit, User, Circle, Triangle, Minus, Shapes } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
 import BoardSwitcher from './BoardSwitcher';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, board, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock }) => {
+const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boardId, board, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock }) => {
   const { theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isShapesDropdownOpen, setIsShapesDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const shapesDropdownRef = useRef(null);
 
   const blockTypes = [
     { type: 'text', icon: Type, label: 'Text' },
@@ -34,19 +36,40 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, board,
     { type: 'pdf', icon: FileDown, label: 'PDF' },
     { type: 'book', icon: Book, label: 'Book' },
     { type: 'ai-image', icon: Image, label: 'AI Image' },
+    { type: 'bio', icon: User, label: 'Biography' },
+  ];
+
+  const shapeTypes = [
+    { type: 'line', icon: Minus, label: 'Line' },
+    { type: 's-line', icon: Link2, label: 'Curved Line' },
+    { type: 'arrow', icon: Minus, label: 'Arrow' },
+    { type: 'circle', icon: Circle, label: 'Circle' },
+    { type: 'square', icon: Square, label: 'Square' },
+    { type: 'triangle', icon: Triangle, label: 'Triangle' },
   ];
 
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const toggleShapesDropdown = () => setIsShapesDropdownOpen(!isShapesDropdownOpen);
 
   const handleAddBlock = (type) => {
     onAddBlock(type);
     setIsDropdownOpen(false);
   };
 
+  const handleAddShape = (type) => {
+    if (onAddShape) {
+      onAddShape(type);
+    }
+    setIsShapesDropdownOpen(false);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
+      }
+      if (shapesDropdownRef.current && !shapesDropdownRef.current.contains(event.target)) {
+        setIsShapesDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -322,6 +345,59 @@ const Navigation = ({ onAddBlock, onUndo, onRedo, selectedBlock, boardId, board,
                       <button
                         key={type}
                         onClick={() => handleAddBlock(type)}
+                        className="w-full flex items-center px-4 py-2 text-sm transition-colors"
+                        style={{ color: theme.colors.textSecondary }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                          e.currentTarget.style.color = theme.colors.textPrimary;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = theme.colors.textSecondary;
+                        }}
+                      >
+                        <Icon className="h-4 w-4 mr-3" />
+                        <span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              </div>
+            )}
+            {!isReadOnly && (
+              <div className="relative" ref={shapesDropdownRef}>
+                <button
+                  onClick={toggleShapesDropdown}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: theme.colors.textSecondary }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                    e.currentTarget.style.color = theme.colors.textPrimary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.colors.textSecondary;
+                  }}
+                  title="Add Shape"
+                >
+                  <Shapes className="h-5 w-5" />
+                </button>
+              {isShapesDropdownOpen && (
+                <div 
+                  className="absolute right-0 mt-2 w-48 rounded-md shadow-lg z-20"
+                  style={{ 
+                    backgroundColor: theme.colors.modalBackground,
+                    border: `1px solid ${theme.colors.blockBorder}`,
+                    boxShadow: `0 4px 6px ${theme.colors.blockShadow}`,
+                    zIndex: 1001
+                  }}
+                >
+                  <div className="py-1">
+                    {shapeTypes.map(({ type, icon: Icon, label }) => (
+                      <button
+                        key={type}
+                        onClick={() => handleAddShape(type)}
                         className="w-full flex items-center px-4 py-2 text-sm transition-colors"
                         style={{ color: theme.colors.textSecondary }}
                         onMouseEnter={(e) => {

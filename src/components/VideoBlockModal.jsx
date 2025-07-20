@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Video, Upload, ExternalLink, X, Play, Pause } from 'lucide-react';
+import { Video, Upload, ExternalLink, X, Play, Pause, Download } from 'lucide-react';
 import { uploadVideoToStorage } from '../firebase';
 import { useTheme } from '../contexts/ThemeContext';
 import StandardModal, { FormGroup, Label, Input } from './StandardModal';
+import { getSignedVideoUrl } from '../services/videoService';
 
-export default function VideoBlockModal({ block, onChange, onClose, onDelete }) {
+export default function VideoBlockModal({ block, onChange, onClose, onDelete, boardId }) {
   const { theme } = useTheme();
   const [title, setTitle] = useState(block.data?.title || '');
   const [description, setDescription] = useState(block.data?.description || '');
@@ -14,6 +15,8 @@ export default function VideoBlockModal({ block, onChange, onClose, onDelete }) 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoMetadata, setVideoMetadata] = useState(block.data?.metadata || null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [signedVideoUrl, setSignedVideoUrl] = useState(null);
+  const [loadingVideo, setLoadingVideo] = useState(false);
   const videoRef = useRef(null);
   const metadataVideoRef = useRef(null);
 
@@ -32,11 +35,41 @@ export default function VideoBlockModal({ block, onChange, onClose, onDelete }) 
     }
   }, [uploadedFile, videoUrl]);
 
+  // Load signed URL for video when modal opens
+  useEffect(() => {
+    if (videoUrl && boardId && !uploadedFile) {
+      loadSignedUrl();
+    }
+  }, [videoUrl, boardId]);
+
+  const loadSignedUrl = async () => {
+    setLoadingVideo(true);
+    try {
+      const url = await getSignedVideoUrl(videoUrl, boardId);
+      setSignedVideoUrl(url);
+    } catch (error) {
+      console.warn('Cloud Function not available, using direct URL:', error.message);
+      // Fall back to direct URL if Cloud Function is not deployed
+      // This is temporary until the function is properly deployed
+      setSignedVideoUrl(videoUrl);
+    } finally {
+      setLoadingVideo(false);
+    }
+  };
+
   const extractVideoMetadata = async () => {
     const video = metadataVideoRef.current;
     if (!video) return;
 
-    const source = uploadedFile ? URL.createObjectURL(uploadedFile) : videoUrl;
+    let source;
+    if (uploadedFile) {
+      source = URL.createObjectURL(uploadedFile);
+    } else if (signedVideoUrl) {
+      source = signedVideoUrl;
+    } else {
+      return; // Wait for signed URL to load
+    }
+    
     video.src = source;
 
     video.onloadedmetadata = () => {
@@ -125,7 +158,7 @@ export default function VideoBlockModal({ block, onChange, onClose, onDelete }) 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const videoSource = uploadedFile ? URL.createObjectURL(uploadedFile) : videoUrl;
+  const videoSource = uploadedFile ? URL.createObjectURL(uploadedFile) : signedVideoUrl;
 
   const videoInfoStyles = {
     container: {
@@ -186,6 +219,10 @@ export default function VideoBlockModal({ block, onChange, onClose, onDelete }) 
             {uploadProgress}%
           </div>
         </div>
+      ) : loadingVideo ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ marginBottom: '12px', color: theme.colors.textSecondary }}>Loading video...</div>
+        </div>
       ) : videoSource ? (
         <div style={videoInfoStyles.container}>
           <div style={videoInfoStyles.videoContainer}>
@@ -208,6 +245,76 @@ export default function VideoBlockModal({ block, onChange, onClose, onDelete }) 
               <span>{formatFileSize(videoMetadata.size)}</span>
             </div>
           )}
+          <div style={{ 
+            display: 'flex', 
+            gap: '12px', 
+            marginTop: '12px',
+            justifyContent: 'center'
+          }}>
+            {/* Download button */}
+            <button
+              onClick={() => {
+                const a = document.createElement('a');
+                a.href = videoSource;
+                a.download = videoMetadata?.name || title || 'video.mp4';
+                a.target = '_blank';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: `1px solid ${theme.colors.blockBorder}`,
+                backgroundColor: theme.colors.modalBackground,
+                color: theme.colors.textPrimary,
+                cursor: 'pointer',
+                fontSize: '14px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = theme.colors.hoverBackground;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = theme.colors.modalBackground;
+              }}
+            >
+              <Download size={16} />
+              Download
+            </button>
+            
+            {/* Source link button */}
+            {sourceLink && (
+              <button
+                onClick={() => window.open(sourceLink, '_blank')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: `1px solid ${theme.colors.blockBorder}`,
+                  backgroundColor: theme.colors.modalBackground,
+                  color: theme.colors.textPrimary,
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = theme.colors.hoverBackground;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = theme.colors.modalBackground;
+                }}
+              >
+                <ExternalLink size={16} />
+                View Source
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div style={{
@@ -220,9 +327,89 @@ export default function VideoBlockModal({ block, onChange, onClose, onDelete }) 
         }}>
           <Upload size={40} style={{ margin: '0 auto 12px', color: theme.colors.textSecondary }} />
           <p style={{ color: theme.colors.textSecondary, marginBottom: '8px' }}>No video uploaded</p>
-          <p style={{ fontSize: '13px', color: theme.colors.textTertiary }}>
-            Upload from the canvas to add a video
-          </p>
+          <input
+            type="file"
+            accept="video/*"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                // Check file size (50MB limit)
+                if (file.size > 50 * 1024 * 1024) {
+                  alert('Video file must be less than 50MB');
+                  return;
+                }
+                
+                setIsUploading(true);
+                try {
+                  const url = await uploadVideoToStorage(
+                    file,
+                    `videos/${Date.now()}_${file.name}`,
+                    (progress) => setUploadProgress(progress)
+                  );
+                  
+                  // Extract metadata
+                  const video = document.createElement('video');
+                  video.src = URL.createObjectURL(file);
+                  video.onloadedmetadata = () => {
+                    const metadata = {
+                      duration: video.duration,
+                      width: video.videoWidth,
+                      height: video.videoHeight,
+                      size: file.size,
+                      type: file.type,
+                      name: file.name
+                    };
+                    setVideoMetadata(metadata);
+                    URL.revokeObjectURL(video.src);
+                    
+                    // Update block data
+                    const updatedData = {
+                      ...block.data,
+                      videoUrl: url,
+                      metadata: metadata,
+                    };
+                    onChange({
+                      ...block,
+                      data: updatedData
+                    });
+                  };
+                  
+                  setIsUploading(false);
+                } catch (error) {
+                  console.error('Error uploading video:', error);
+                  alert('Failed to upload video. Please try again.');
+                  setIsUploading(false);
+                }
+              }
+            }}
+            style={{ display: 'none' }}
+            id="video-upload-input"
+          />
+          <label 
+            htmlFor="video-upload-input"
+            style={{
+              padding: '8px 16px',
+              backgroundColor: theme.colors.accentPrimary,
+              color: 'white',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              display: 'inline-block',
+              marginTop: '8px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = theme.colors.accentPrimaryDark || '#2563eb';
+              e.target.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = theme.colors.accentPrimary;
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            Choose Video
+          </label>
         </div>
       )}
 
@@ -262,7 +449,18 @@ export default function VideoBlockModal({ block, onChange, onClose, onDelete }) 
       <FormGroup>
         <Label>Source Link (optional)</Label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ExternalLink size={16} style={{ color: theme.colors.textSecondary }} />
+          <ExternalLink 
+            size={16} 
+            style={{ 
+              color: sourceLink ? theme.colors.accentPrimary : theme.colors.textSecondary,
+              cursor: sourceLink ? 'pointer' : 'default'
+            }}
+            onClick={() => {
+              if (sourceLink) {
+                window.open(sourceLink, '_blank');
+              }
+            }}
+          />
           <Input
             type="url"
             value={sourceLink}

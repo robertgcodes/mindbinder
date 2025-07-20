@@ -4,7 +4,7 @@ import {
   ArrowLeft, Users, TrendingUp, DollarSign, Activity,
   Search, Filter, Download, Eye, Shield, AlertCircle,
   CheckCircle, XCircle, Clock, RefreshCw, MoreVertical,
-  Calendar, Mail, Package, CreditCard, UserCheck, UserX, X
+  Calendar, Mail, Package, CreditCard, UserCheck, UserX, X, Gift
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -12,6 +12,7 @@ import { collection, query, getDocs, where, orderBy, limit, updateDoc, doc, getD
 import { db } from '../../firebase';
 import { PRICING_TIERS, formatBytes } from '../../config/pricing';
 import ScrollableLayout from '../ScrollableLayout';
+import CouponManagement from './CouponManagement';
 
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState('users');
 
   // Check if user is admin
   useEffect(() => {
@@ -342,7 +344,40 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Users Table */}
+          {/* Tabs */}
+          <div className="flex space-x-4 mb-6">
+            <button
+              onClick={() => setActiveTab('users')}
+              className="px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{
+                backgroundColor: activeTab === 'users' ? theme.colors.accentPrimary : theme.colors.blockBackground,
+                color: activeTab === 'users' ? 'white' : theme.colors.textSecondary,
+                border: `1px solid ${activeTab === 'users' ? theme.colors.accentPrimary : theme.colors.blockBorder}`
+              }}
+            >
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4" />
+                <span>Users</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('coupons')}
+              className="px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{
+                backgroundColor: activeTab === 'coupons' ? theme.colors.accentPrimary : theme.colors.blockBackground,
+                color: activeTab === 'coupons' ? 'white' : theme.colors.textSecondary,
+                border: `1px solid ${activeTab === 'coupons' ? theme.colors.accentPrimary : theme.colors.blockBorder}`
+              }}
+            >
+              <div className="flex items-center space-x-2">
+                <Gift className="h-4 w-4" />
+                <span>Coupons</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'users' ? (
           <div className="rounded-lg" style={{ 
             backgroundColor: theme.colors.blockBackground,
             border: `1px solid ${theme.colors.blockBorder}`
@@ -538,6 +573,9 @@ const AdminDashboard = () => {
               </table>
             </div>
           </div>
+          ) : activeTab === 'coupons' ? (
+            <CouponManagement />
+          ) : null}
         </div>
 
         {/* User Details Modal */}

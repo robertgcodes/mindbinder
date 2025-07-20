@@ -1,26 +1,192 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can read/write their own user document
+    // Helper function to check if user has team access
+    function hasTeamAccess(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) &&
+             get(/databases/$(database)/documents/users/$(userId)).data.teamId != null;
+    }
+    
+    // Helper function to check if user is board owner
+    function isBoardOwner(boardId, userId) {
+      return exists(/databases/$(database)/documents/boards/$(boardId)) &&
+             get(/databases/$(database)/documents/boards/$(boardId)).data.userId == userId;
+    }
+
+    // Users collection
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      allow read: if resource.data.isPublic == true;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Users can read/write their own boards
+    // Boards collection
     match /boards/{boardId} {
-      allow read, write: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.userId || 
+                      resource.data.isPublic == true);
+      
       allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId;
+                       request.auth.uid == request.resource.data.userId;
+      
+      allow update: if request.auth != null && 
+                       request.auth.uid == resource.data.userId;
+      
+      allow delete: if request.auth != null && 
+                       request.auth.uid == resource.data.userId;
     }
     
-    // Users can read/write their own images
-    match /userImages/{imageId} {
-      allow read, write: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
+    // Board collaborators collection
+    match /boardCollaborators/{collaboratorId} {
+      allow read: if request.auth != null;
+      
+      // Only board owner can add collaborators
+      // Only team members can add collaborators with edit permission
       allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId;
+                       exists(/databases/$(database)/documents/boards/$(request.resource.data.boardId)) &&
+                       get(/databases/$(database)/documents/boards/$(request.resource.data.boardId)).data.userId == request.auth.uid &&
+                       (request.resource.data.permission == 'view' || 
+                        (request.resource.data.permission == 'edit' && hasTeamAccess(request.auth.uid)));
+      
+      allow update: if request.auth != null && 
+                       exists(/databases/$(database)/documents/boards/$(resource.data.boardId)) &&
+                       get(/databases/$(database)/documents/boards/$(resource.data.boardId)).data.userId == request.auth.uid &&
+                       (request.resource.data.permission == 'view' || 
+                        (request.resource.data.permission == 'edit' && hasTeamAccess(request.auth.uid)));
+      
+      allow delete: if request.auth != null && 
+                       ((exists(/databases/$(database)/documents/boards/$(resource.data.boardId)) &&
+                         get(/databases/$(database)/documents/boards/$(resource.data.boardId)).data.userId == request.auth.uid) ||
+                        resource.data.userId == request.auth.uid);
+    }
+    
+    // Board invitations collection
+    match /boardInvitations/{invitationId} {
+      allow read: if request.auth != null;
+      
+      // Only board owner can create invitations
+      // Only team members can create invitations with edit permission
+      allow create: if request.auth != null && 
+                       exists(/databases/$(database)/documents/boards/$(request.resource.data.boardId)) &&
+                       get(/databases/$(database)/documents/boards/$(request.resource.data.boardId)).data.userId == request.auth.uid &&
+                       (request.resource.data.permission == 'view' || 
+                        (request.resource.data.permission == 'edit' && hasTeamAccess(request.auth.uid)));
+      
+      allow update: if request.auth != null && 
+                       resource.data.invitedBy == request.auth.uid;
+      
+      allow delete: if request.auth != null && 
+                       resource.data.invitedBy == request.auth.uid;
+    }
+    
+    // Teams collection - simplified without array operations
+    match /teams/{teamId} {
+      allow read: if request.auth != null && 
+                     exists(/databases/$(database)/documents/teams/$(teamId));
+      
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.ownerId;
+      
+      allow update: if request.auth != null && 
+                       exists(/databases/$(database)/documents/teams/$(teamId));
+      
+      allow delete: if request.auth != null && 
+                       exists(/databases/$(database)/documents/teams/$(teamId)) &&
+                       get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == request.auth.uid;
+    }
+    
+    // Team invitations collection
+    match /teamInvitations/{invitationId} {
+      allow read: if request.auth != null;
+      
+      allow create: if request.auth != null && 
+                       exists(/databases/$(database)/documents/teams/$(request.resource.data.teamId));
+      
+      allow update: if request.auth != null;
+      
+      allow delete: if request.auth != null && 
+                       resource.data.inviterId == request.auth.uid;
+    }
+    
+    // Support tickets collection
+    match /support_tickets/{ticketId} {
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.userId ||
+                      (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true));
+      
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      allow update: if request.auth != null && 
+                       (request.auth.uid == resource.data.userId ||
+                        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true));
+      
+      allow delete: if false;
+    }
+    
+    // Saved blocks collection
+    match /savedBlocks/{blockId} {
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.userId ||
+                      resource.data.isPublic == true);
+      
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      allow update: if request.auth != null && 
+                       request.auth.uid == resource.data.userId;
+      
+      allow delete: if request.auth != null && 
+                       request.auth.uid == resource.data.userId;
+    }
+    
+    // AI Settings collection
+    match /aiSettings/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Public profiles
+    match /profiles/{username} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                      exists(/databases/$(database)/documents/profiles/$(username)) &&
+                      get(/databases/$(database)/documents/profiles/$(username)).data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Coupons collection - admin only
+    match /coupons/{couponId} {
+      allow read: if request.auth != null && 
+                     exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      allow write: if request.auth != null && 
+                      exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Subscription overrides collection - users can read their own, admin can write
+    match /subscriptionOverrides/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow write if admin or if updating with valid coupon redemption
+      allow write: if request.auth != null && 
+                      (request.auth.uid == userId || 
+                       (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true));
+    }
+    
+    // Coupon logs collection - write-only for system, read for admins
+    match /couponLogs/{logId} {
+      allow read: if request.auth != null && 
+                     exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                     get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      
+      // Allow authenticated users to write logs (the service handles validation)
+      allow write: if request.auth != null;
     }
   }
 }

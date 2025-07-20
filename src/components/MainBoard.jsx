@@ -10,6 +10,7 @@ import { db, auth, storage } from '../firebase';
 import imageCompression from 'browser-image-compression';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
+import { useSubscription } from '../contexts/SubscriptionContext.jsx';
 import useMobileDetect from '../hooks/useMobileDetect';
 import { useRecentBoards } from '../hooks/useRecentBoards';
 import MobileBoard from './MobileBoard';
@@ -47,6 +48,8 @@ import AiPromptBlock from './AiPromptBlock';
 import AiPromptToolbar from './AiPromptToolbar';
 import AIImageBlock from './AIImageBlock';
 import AIImageBlockModal from './AIImageBlockModal';
+import BioBlock from './BioBlock';
+import BioBlockModal from './BioBlockModal';
 import FrameBlock from './FrameBlock';
 import FrameToolbar from './FrameToolbar';
 import YearlyPlannerBlock from './YearlyPlannerBlock';
@@ -78,6 +81,15 @@ import ShareBoardModal from './ShareBoardModal';
 import { getAiResponse } from '../aiService';
 import { getBlockDefaultColors } from '../utils/themeUtils';
 
+// Import shape components
+import LineShape from './shapes/LineShape';
+import SLineShape from './shapes/SLineShape';
+import CircleShape from './shapes/CircleShape';
+import SquareShape from './shapes/SquareShape';
+import TriangleShape from './shapes/TriangleShape';
+import ShapeModal from './shapes/ShapeModal';
+import ShapeToolbar from './ShapeToolbar';
+
 const SAMPLE_QUOTES = [
   "The way to get started is to quit talking and begin doing. - Walt Disney",
   "In all thy ways acknowledge Him, and He shall direct thy paths. - Proverbs 3:6",
@@ -96,6 +108,7 @@ const ROTATING_SAMPLE_QUOTES = [
 const MainBoard = ({ board, onBack }) => {
   const { currentUser } = useAuth();
   const { theme } = useTheme();
+  const { couponOverride, isCouponExpiringSoon, getDaysUntilExpiration } = useSubscription();
   const { isMobile: isNaturallyMobile, isTablet } = useMobileDetect();
   const [forceMobileView, setForceMobileView] = useState(false);
   const [forceGridView, setForceGridView] = useState(false);
@@ -133,6 +146,16 @@ const MainBoard = ({ board, onBack }) => {
   const [lastEditor, setLastEditor] = useState(null);
   const [isPasting, setIsPasting] = useState(false);
   const [showPasteHint, setShowPasteHint] = useState(true);
+  
+  // Shape state
+  const [shapes, setShapes] = useState([]);
+  const [selectedShapeId, setSelectedShapeId] = useState(null);
+  const [activeShapeModal, setActiveShapeModal] = useState(null);
+  
+  // Connection state
+  const [isDrawingConnection, setIsDrawingConnection] = useState(false);
+  const [tempConnection, setTempConnection] = useState(null);
+  const [connectionStart, setConnectionStart] = useState(null);
   
   // Track board access for recent boards
   useRecentBoards(board);
@@ -207,10 +230,13 @@ const MainBoard = ({ board, onBack }) => {
         setIsReadOnly(permission === 'view');
         
         let loadedBlocks = board.blocks || [];
-        if (loadedBlocks.length > 0) {
+        let loadedShapes = board.shapes || []; // Load shapes from board
+        
+        if (loadedBlocks.length > 0 || loadedShapes.length > 0) {
           // Skip AI auto-refresh on initial load to prevent 529 errors
           // AI blocks will still refresh when manually triggered
           setBlocks(loadedBlocks);
+          setShapes(loadedShapes); // Set loaded shapes
           setHistory([loadedBlocks]);
           setHistoryIndex(0);
           const savedViewport = localStorage.getItem(`viewport-${board.id}`);
@@ -273,9 +299,14 @@ const MainBoard = ({ board, onBack }) => {
       }
       
       // Delete key
-      if (e.key === 'Delete' && (selectedId || selectedBlockIds.size > 0) && !isReadOnly) {
-        e.preventDefault();
-        handleDeleteBlockNav();
+      if (e.key === 'Delete' && !isReadOnly) {
+        if (selectedShapeId) {
+          e.preventDefault();
+          deleteShape(selectedShapeId);
+        } else if (selectedId || selectedBlockIds.size > 0) {
+          e.preventDefault();
+          handleDeleteBlockNav();
+        }
       }
       
       // Duplicate: Ctrl/Cmd + D
@@ -293,10 +324,10 @@ const MainBoard = ({ board, onBack }) => {
     
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, selectedBlockIds.size, isReadOnly]);
+  }, [selectedId, selectedBlockIds.size, selectedShapeId, isReadOnly]);
 
   // Save board data
-  const saveBoard = async (blocksToSave) => {
+  const saveBoard = async (blocksToSave, shapesToSave) => {
     // Don't save if in read-only mode
     if (isReadOnly) {
       console.log('Board is read-only, skipping save');
@@ -304,6 +335,7 @@ const MainBoard = ({ board, onBack }) => {
     }
     
     const blocksData = blocksToSave || blocks;
+    const shapesData = shapesToSave || shapes;
     const timestamp = new Date().toISOString();
     
     try {
@@ -311,6 +343,7 @@ const MainBoard = ({ board, onBack }) => {
       await updateDoc(docRef, {
         ...board,
         blocks: blocksData,
+        shapes: shapesData, // Save shapes too
         stagePos,
         stageScale,
         updatedAt: timestamp,
@@ -328,10 +361,10 @@ const MainBoard = ({ board, onBack }) => {
   // Auto-save every 2 seconds
   useEffect(() => {
     if (!loading) {
-      const timer = setTimeout(saveBoard, 2000);
+      const timer = setTimeout(() => saveBoard(), 2000);
       return () => clearTimeout(timer);
     }
-  }, [blocks, stagePos, stageScale, loading]);
+  }, [blocks, shapes, stagePos, stageScale, loading]);
 
   // Real-time sync for collaborative editing
   useEffect(() => {
@@ -369,6 +402,11 @@ const MainBoard = ({ board, onBack }) => {
               // Update blocks
               if (data.blocks) {
                 setBlocks(data.blocks);
+              }
+              
+              // Update shapes
+              if (data.shapes) {
+                setShapes(data.shapes);
               }
               
               // Only update viewport if user hasn't moved it recently
@@ -445,6 +483,137 @@ const MainBoard = ({ board, onBack }) => {
       return { x: centerX, y: centerY };
     }
     return { x: 300, y: 200 }; // Fallback
+  };
+
+  // Smart placement function to find empty space on canvas
+  const findEmptySpace = (width, height) => {
+    const center = getCenterOfViewport();
+    const padding = 50; // Minimum space between objects
+    const gridSize = 50; // Grid snap size
+    
+    // Try center first
+    let candidateX = center.x - width / 2;
+    let candidateY = center.y - height / 2;
+    
+    // Check if center is occupied by any block or shape
+    const isOccupied = (x, y, w, h) => {
+      // Check blocks
+      for (const block of blocks) {
+        if (
+          x < block.x + block.width + padding &&
+          x + w > block.x - padding &&
+          y < block.y + block.height + padding &&
+          y + h > block.y - padding
+        ) {
+          return true;
+        }
+      }
+      
+      // Check shapes
+      for (const shape of shapes) {
+        const shapeBounds = getShapeBounds(shape);
+        if (
+          x < shapeBounds.x + shapeBounds.width + padding &&
+          x + w > shapeBounds.x - padding &&
+          y < shapeBounds.y + shapeBounds.height + padding &&
+          y + h > shapeBounds.y - padding
+        ) {
+          return true;
+        }
+      }
+      
+      return false;
+    };
+    
+    // Get bounds of a shape
+    const getShapeBounds = (shape) => {
+      switch (shape.type) {
+        case 'line':
+        case 's-line':
+        case 'arrow':
+          const points = shape.data?.points || [0, 0, 100, 0];
+          const minX = Math.min(...points.filter((_, i) => i % 2 === 0));
+          const maxX = Math.max(...points.filter((_, i) => i % 2 === 0));
+          const minY = Math.min(...points.filter((_, i) => i % 2 === 1));
+          const maxY = Math.max(...points.filter((_, i) => i % 2 === 1));
+          return {
+            x: shape.x + minX,
+            y: shape.y + minY,
+            width: maxX - minX,
+            height: maxY - minY
+          };
+        case 'circle':
+          const radius = shape.data?.radius || 50;
+          return {
+            x: shape.x - radius,
+            y: shape.y - radius,
+            width: radius * 2,
+            height: radius * 2
+          };
+        case 'square':
+          return {
+            x: shape.x,
+            y: shape.y,
+            width: shape.data?.width || 100,
+            height: shape.data?.height || 100
+          };
+        case 'triangle':
+          const size = shape.data?.size || 100;
+          const triangleHeight = (Math.sqrt(3) / 2) * size;
+          return {
+            x: shape.x - size / 2,
+            y: shape.y - triangleHeight / 2,
+            width: size,
+            height: triangleHeight
+          };
+        default:
+          return { x: shape.x, y: shape.y, width: 100, height: 100 };
+      }
+    };
+    
+    // If center is not occupied, use it
+    if (!isOccupied(candidateX, candidateY, width, height)) {
+      return {
+        x: Math.round(candidateX / gridSize) * gridSize,
+        y: Math.round(candidateY / gridSize) * gridSize
+      };
+    }
+    
+    // Try spiral pattern around center
+    const spiralSteps = 8;
+    const spiralDistance = 100;
+    
+    for (let ring = 1; ring <= 5; ring++) {
+      for (let step = 0; step < spiralSteps; step++) {
+        const angle = (step / spiralSteps) * Math.PI * 2;
+        const distance = ring * spiralDistance;
+        
+        candidateX = center.x + Math.cos(angle) * distance - width / 2;
+        candidateY = center.y + Math.sin(angle) * distance - height / 2;
+        
+        if (!isOccupied(candidateX, candidateY, width, height)) {
+          return {
+            x: Math.round(candidateX / gridSize) * gridSize,
+            y: Math.round(candidateY / gridSize) * gridSize
+          };
+        }
+      }
+    }
+    
+    // Fallback: place below all existing content
+    let maxY = 0;
+    blocks.forEach(block => {
+      maxY = Math.max(maxY, block.y + block.height);
+    });
+    shapes.forEach(shape => {
+      const bounds = getShapeBounds(shape);
+      maxY = Math.max(maxY, bounds.y + bounds.height);
+    });
+    
+    return {
+      x: Math.round(center.x / gridSize) * gridSize - width / 2,
+      y: Math.round((maxY + padding) / gridSize) * gridSize
+    };
   };
 
   const addNewTextBlock = () => {
@@ -573,6 +742,43 @@ const MainBoard = ({ board, onBack }) => {
     setHistoryIndex(newHistory.length - 1);
     setBlocks(newBlocks);
     saveBoard(newBlocks);
+    
+    // Update connected shapes if block position changed
+    if (updates.x !== undefined || updates.y !== undefined) {
+      updateConnectedShapes(id, newBlocks);
+    }
+  };
+  
+  const updateConnectedShapes = (blockId, updatedBlocks = blocks) => {
+    setShapes(prevShapes => 
+      prevShapes.map(shape => {
+        if (shape.type === 'line' && shape.data?.connectedBlocks) {
+          const { start, end } = shape.data.connectedBlocks;
+          
+          // Check if this shape is connected to the moved block
+          if (start.blockId === blockId || end.blockId === blockId) {
+            const startBlock = updatedBlocks.find(b => b.id === start.blockId);
+            const endBlock = updatedBlocks.find(b => b.id === end.blockId);
+            
+            if (startBlock && endBlock) {
+              const startPoint = getHandlePosition(startBlock, start.handleId);
+              const endPoint = getHandlePosition(endBlock, end.handleId);
+              
+              return {
+                ...shape,
+                x: startPoint.x,
+                y: startPoint.y,
+                data: {
+                  ...shape.data,
+                  points: [0, 0, endPoint.x - startPoint.x, endPoint.y - startPoint.y]
+                }
+              };
+            }
+          }
+        }
+        return shape;
+      })
+    );
   };
 
   const deleteSelectedBlock = () => {
@@ -724,6 +930,7 @@ const MainBoard = ({ board, onBack }) => {
       } else {
         // In normal mode, clear all selections
         setSelectedId(null);
+        setSelectedShapeId(null); // Also deselect shapes
         if (selectedBlockIds.size > 0) {
           setSelectedBlockIds(new Set());
         }
@@ -747,6 +954,85 @@ const MainBoard = ({ board, onBack }) => {
       localStorage.setItem(`lastViewportMove-${board.id}`, Date.now().toString());
     }
     setIsDraggingStage(false);
+  };
+
+  const handleConnectionStart = ({ blockId, handleId, x, y }) => {
+    console.log('Starting connection from block:', blockId, 'handle:', handleId);
+    setIsDrawingConnection(true);
+    setConnectionStart({ blockId, handleId, x, y });
+    
+    // Create a temporary line shape
+    const tempLine = {
+      id: 'temp-connection',
+      type: 'line',
+      x: x,
+      y: y,
+      data: {
+        points: [0, 0, 0, 0],
+        stroke: theme.colors.accentPrimary || '#3b82f6',
+        strokeWidth: 2,
+        opacity: 0.8,
+        showArrow: true
+      }
+    };
+    setTempConnection(tempLine);
+  };
+
+  const handleConnectionEnd = ({ blockId, handleId }) => {
+    console.log('Ending connection at block:', blockId, 'handle:', handleId);
+    
+    if (isDrawingConnection && connectionStart && connectionStart.blockId !== blockId) {
+      // Create a new line shape connecting the two blocks
+      const startBlock = blocks.find(b => b.id === connectionStart.blockId);
+      const endBlock = blocks.find(b => b.id === blockId);
+      
+      if (startBlock && endBlock) {
+        // Calculate connection points based on handle positions
+        const startPoint = getHandlePosition(startBlock, connectionStart.handleId);
+        const endPoint = getHandlePosition(endBlock, handleId);
+        
+        const newLine = {
+          id: uuidv4(),
+          type: 'line',
+          x: startPoint.x,
+          y: startPoint.y,
+          data: {
+            points: [0, 0, endPoint.x - startPoint.x, endPoint.y - startPoint.y],
+            stroke: theme.colors.accentPrimary || '#3b82f6',
+            strokeWidth: 2,
+            opacity: 1,
+            showArrow: true,
+            connectedBlocks: {
+              start: { blockId: connectionStart.blockId, handleId: connectionStart.handleId },
+              end: { blockId, handleId }
+            }
+          }
+        };
+        
+        setShapes([...shapes, newLine]);
+      }
+    }
+    
+    // Clear connection state
+    setIsDrawingConnection(false);
+    setConnectionStart(null);
+    setTempConnection(null);
+  };
+
+  const getHandlePosition = (block, handleId) => {
+    const { x, y, width, height } = block;
+    switch (handleId) {
+      case 'top':
+        return { x: x + width / 2, y: y };
+      case 'right':
+        return { x: x + width, y: y + height / 2 };
+      case 'bottom':
+        return { x: x + width / 2, y: y + height };
+      case 'left':
+        return { x: x, y: y + height / 2 };
+      default:
+        return { x: x + width / 2, y: y + height / 2 };
+    }
   };
 
   const handleBlockDragStart = (e, blockId) => {
@@ -836,11 +1122,15 @@ const MainBoard = ({ board, onBack }) => {
       newHistory.push(updatedBlocks);
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
-      saveBoard(updatedBlocks);
+      saveBoard(updatedBlocks, shapes);
       setMultiDragStartPositions(null);
+      console.log('Multi-block drag completed, moved', selectedBlockIds.size, 'blocks');
     } else if (block.type === 'frame' && block.grouped) {
       // Handle frame blocks with grouped content
       const frame = block;
+      const deltaX = newX - frame.x;
+      const deltaY = newY - frame.y;
+      
       const updatedBlocks = blocks.map(b => {
         if (b.id === frame.id) {
           return { ...b, x: newX, y: newY };
@@ -1043,7 +1333,9 @@ const MainBoard = ({ board, onBack }) => {
       onChange: (updates) => updateBlock(id, updates),
       onDragStart: (e) => handleBlockDragStart(e, id),
       onDragMove: (e) => handleBlockDragMove(e, id),
-      onDragEnd: (e) => handleBlockDragEnd(e, id)
+      onDragEnd: (e) => handleBlockDragEnd(e, id),
+      onConnectionStart: handleConnectionStart,
+      onConnectionEnd: handleConnectionEnd
     };
 
     switch (block.type) {
@@ -1053,6 +1345,8 @@ const MainBoard = ({ board, onBack }) => {
         return <AiPromptBlock key={id} {...commonProps} {...block} onChange={(updates) => updateBlock(id, updates)} onDoubleClick={isReadOnly ? undefined : () => openModal('ai-prompt', block)} />;
       case 'ai-image':
         return <AIImageBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('ai-image', block)} />;
+      case 'bio':
+        return <BioBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('bio', block)} />;
       case 'youtube':
         return <YouTubeBlock key={id} {...commonProps} {...block} onDoubleClick={isReadOnly ? undefined : () => openModal('youtube', block)} />;
       case 'text':
@@ -1113,11 +1407,59 @@ const MainBoard = ({ board, onBack }) => {
             setSelectedId(null);
           }}
           onDoubleClick={isReadOnly ? undefined : () => openModal('video', block)}
+          boardId={board?.id}
         />;
       case 'google-embed':
         return <GoogleEmbedBlock key={id} {...commonProps} theme={theme} block={block} onUpdate={(updates) => updateBlock(id, updates)} onDoubleClick={isReadOnly ? undefined : () => openModal('google-embed', block)} />;
       case 'action-item':
         return <ActionItemBlock key={id} {...commonProps} {...block} onUpdate={(updates) => updateBlock(id, updates)} onDoubleClick={isReadOnly ? undefined : () => openModal('action-item', block)} />;
+      default:
+        return null;
+    }
+  };
+
+  // Render shape function
+  const renderShape = (shape) => {
+    const commonProps = {
+      id: shape.id,
+      x: shape.x,
+      y: shape.y,
+      rotation: shape.rotation || 0,
+      isSelected: selectedShapeId === shape.id,
+      onSelect: (id) => {
+        setSelectedShapeId(id);
+        setSelectedId(null); // Deselect blocks
+      },
+      onChange: (updates) => updateShape(shape.id, updates),
+      onDragStart: () => {
+        setIsDraggingBlock(true); // Prevent stage dragging
+        console.log('Dragging shape:', shape.id);
+      },
+      onDragEnd: () => {
+        setIsDraggingBlock(false); // Re-enable stage dragging
+        console.log('Drag ended for shape:', shape.id);
+      },
+      onDoubleClick: () => {
+        if (!isReadOnly) {
+          setActiveShapeModal(shape);
+        }
+      },
+      isReadOnly: isReadOnly,
+      ...shape.data
+    };
+
+    switch (shape.type) {
+      case 'line':
+      case 'arrow':
+        return <LineShape key={shape.id} {...commonProps} />;
+      case 's-line':
+        return <SLineShape key={shape.id} {...commonProps} />;
+      case 'circle':
+        return <CircleShape key={shape.id} {...commonProps} />;
+      case 'square':
+        return <SquareShape key={shape.id} {...commonProps} />;
+      case 'triangle':
+        return <TriangleShape key={shape.id} {...commonProps} />;
       default:
         return null;
     }
@@ -1140,7 +1482,8 @@ const MainBoard = ({ board, onBack }) => {
         deleteSelectedBlock();
         setActiveModal(null);
         setModalBlock(null);
-      }
+      },
+      boardId: board?.id
     };
 
     switch (activeModal) {
@@ -1156,6 +1499,8 @@ const MainBoard = ({ board, onBack }) => {
         return <AiPromptToolbar {...commonProps} />;
       case 'ai-image':
         return <AIImageBlockModal {...commonProps} onSave={(updates) => updateBlock(modalBlock.id, updates)} />;
+      case 'bio':
+        return <BioBlockModal {...commonProps} onUpdate={(updates) => updateBlock(modalBlock.id, updates)} />;
       case 'youtube':
         return <YouTubeToolbar {...commonProps} />;
       case 'text':
@@ -1277,6 +1622,34 @@ const MainBoard = ({ board, onBack }) => {
         aspectRatio: '1:1',
         quality: 'standard',
         history: []
+      },
+      rotation: 0,
+    };
+    setBlocks([...blocks, newBlock]);
+    setSelectedId(newBlock.id);
+  };
+
+  const addNewBioBlock = () => {
+    const center = getCenterOfViewport();
+    const newBlock = {
+      id: uuidv4(),
+      type: 'bio',
+      x: center.x - 150,
+      y: center.y - 175,
+      width: 300,
+      height: 350,
+      data: {
+        name: 'New Person',
+        title: '',
+        organization: '',
+        location: '',
+        imageUrl: '',
+        summary: '',
+        wikipediaUrl: '',
+        notes: '',
+        research: '',
+        customFields: [],
+        lastUpdated: new Date().toISOString()
       },
       rotation: 0,
     };
@@ -1771,6 +2144,9 @@ const MainBoard = ({ board, onBack }) => {
       case 'ai-image':
         addNewAIImageBlock();
         break;
+      case 'bio':
+        addNewBioBlock();
+        break;
       case 'frame':
         addNewFrameBlock();
         break;
@@ -1820,6 +2196,182 @@ const MainBoard = ({ board, onBack }) => {
       default:
         break;
     }
+  };
+
+  // Add shape handler
+  const handleAddShape = (type) => {
+    if (isReadOnly) {
+      console.log('Board is read-only, cannot add shapes');
+      return;
+    }
+
+    const newShape = {
+      id: `shape-${Date.now()}-${type}`,
+      type: type,
+      x: 0,
+      y: 0,
+      rotation: 0,
+      data: {}
+    };
+
+    // Set default data based on shape type
+    switch (type) {
+      case 'line':
+        const linePos = findEmptySpace(100, 20);
+        newShape.x = linePos.x;
+        newShape.y = linePos.y;
+        newShape.data = {
+          points: [0, 0, 100, 0],
+          stroke: theme.colors.textSecondary || '#666666',
+          strokeWidth: 2,
+          opacity: 1,
+          showArrow: type === 'arrow',
+          arrowColor: theme.colors.textSecondary || '#666666'
+        };
+        break;
+      
+      case 's-line':
+        const sLinePos = findEmptySpace(100, 60);
+        newShape.x = sLinePos.x;
+        newShape.y = sLinePos.y;
+        newShape.data = {
+          points: [0, 0, 50, -30, 100, 0],
+          stroke: theme.colors.textSecondary || '#666666',
+          strokeWidth: 2,
+          opacity: 1,
+          tension: 0.5,
+          showArrow: false,
+          arrowColor: theme.colors.textSecondary || '#666666'
+        };
+        break;
+      
+      case 'arrow':
+        const arrowPos = findEmptySpace(100, 20);
+        newShape.x = arrowPos.x;
+        newShape.y = arrowPos.y;
+        newShape.data = {
+          points: [0, 0, 100, 0],
+          stroke: theme.colors.textSecondary || '#666666',
+          strokeWidth: 2,
+          opacity: 1,
+          showArrow: true,
+          arrowColor: theme.colors.textSecondary || '#666666'
+        };
+        break;
+      
+      case 'circle':
+        const circlePos = findEmptySpace(100, 100);
+        newShape.x = circlePos.x + 50; // Center position
+        newShape.y = circlePos.y + 50;
+        newShape.data = {
+          radius: 50,
+          fill: 'transparent',
+          stroke: theme.colors.textSecondary || '#666666',
+          strokeWidth: 2,
+          opacity: 1
+        };
+        break;
+      
+      case 'square':
+        const squarePos = findEmptySpace(100, 100);
+        newShape.x = squarePos.x;
+        newShape.y = squarePos.y;
+        newShape.data = {
+          width: 100,
+          height: 100,
+          fill: 'transparent',
+          stroke: theme.colors.textSecondary || '#666666',
+          strokeWidth: 2,
+          opacity: 1,
+          cornerRadius: 0
+        };
+        break;
+      
+      case 'triangle':
+        const trianglePos = findEmptySpace(100, 90);
+        newShape.x = trianglePos.x + 50; // Center position
+        newShape.y = trianglePos.y + 45;
+        newShape.data = {
+          size: 100,
+          fill: 'transparent',
+          stroke: theme.colors.textSecondary || '#666666',
+          strokeWidth: 2,
+          opacity: 1
+        };
+        break;
+    }
+
+    setShapes([...shapes, newShape]);
+    setSelectedShapeId(newShape.id);
+    setSelectedId(null); // Deselect blocks when selecting shape
+  };
+
+  // Handle shape update
+  const updateShape = (id, updates) => {
+    if (isReadOnly) {
+      console.log('Board is read-only, cannot update shapes');
+      return;
+    }
+
+    const newShapes = shapes.map(shape => {
+      if (shape.id === id) {
+        // If updates contain data, merge with existing data
+        if (updates.data) {
+          return {
+            ...shape,
+            ...updates,
+            data: { ...shape.data, ...updates.data }
+          };
+        }
+        return { ...shape, ...updates };
+      }
+      return shape;
+    });
+    setShapes(newShapes);
+    // Save shapes after update
+    saveBoard(blocks, newShapes);
+  };
+
+  // Handle shape deletion
+  const deleteShape = (id) => {
+    if (isReadOnly) {
+      console.log('Board is read-only, cannot delete shapes');
+      return;
+    }
+
+    const newShapes = shapes.filter(shape => shape.id !== id);
+    setShapes(newShapes);
+    if (selectedShapeId === id) {
+      setSelectedShapeId(null);
+    }
+    // Save shapes after deletion
+    saveBoard(blocks, newShapes);
+  };
+
+  // Handle shape duplication
+  const duplicateShape = (id) => {
+    if (isReadOnly) {
+      console.log('Board is read-only, cannot duplicate shapes');
+      return;
+    }
+
+    const shape = shapes.find(s => s.id === id);
+    if (!shape) return;
+
+    const newShape = {
+      ...shape,
+      id: `shape-${Date.now()}-${shape.type}`,
+      x: shape.x + 20,
+      y: shape.y + 20,
+      data: { ...shape.data }
+    };
+
+    const newShapes = [...shapes, newShape];
+    setShapes(newShapes);
+    setSelectedShapeId(newShape.id);
+    
+    // Save shapes after duplication
+    saveBoard(blocks, newShapes);
   };
 
   // Handle share board
@@ -2145,8 +2697,35 @@ const MainBoard = ({ board, onBack }) => {
 
   return (
     <div className="flex flex-col h-screen" style={{ backgroundColor: theme.colors.canvasBackground }}>
+      {/* Coupon Expiration Warning Banner */}
+      {couponOverride && isCouponExpiringSoon && isCouponExpiringSoon() && (
+        <div className="relative z-50" style={{ 
+          backgroundColor: theme.colors.yellow,
+          color: '#000'
+        }}>
+          <div className="max-w-7xl mx-auto px-4 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">
+                  ⚠️ Your coupon benefits expire in {getDaysUntilExpiration()} days
+                </span>
+                <span className="text-sm">
+                  · Access to {couponOverride.grantedFeatures?.join(', ').replace('pro', 'Pro features')} ends on {new Date(couponOverride.expiresAt.seconds * 1000).toLocaleDateString()}
+                </span>
+              </div>
+              <button
+                onClick={() => window.location.href = '/profile?tab=coupons'}
+                className="text-sm underline hover:no-underline"
+              >
+                Redeem new code
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Navigation 
         onAddBlock={handleAddBlock} 
+        onAddShape={handleAddShape}
         onUndo={handleUndo} 
         onRedo={handleRedo}
         selectedBlock={selectedBlock}
@@ -2283,13 +2862,49 @@ const MainBoard = ({ board, onBack }) => {
           onWheel={handleWheel}
           onClick={handleStageClick}
           onMouseDown={isSelectionMode ? handleSelectionStart : undefined}
-          onMouseMove={isSelectionMode ? handleSelectionMove : undefined}
-          onMouseUp={isSelectionMode ? handleSelectionEnd : undefined}
+          onMouseMove={(e) => {
+            if (isSelectionMode) {
+              handleSelectionMove(e);
+            } else if (isDrawingConnection && tempConnection) {
+              // Update temporary connection line
+              const stage = e.target.getStage();
+              const pos = stage.getPointerPosition();
+              const scale = stage.scaleX();
+              
+              const worldX = (pos.x - stage.x()) / scale;
+              const worldY = (pos.y - stage.y()) / scale;
+              
+              setTempConnection(prev => ({
+                ...prev,
+                data: {
+                  ...prev.data,
+                  points: [0, 0, worldX - prev.x, worldY - prev.y]
+                }
+              }));
+            }
+          }}
+          onMouseUp={(e) => {
+            if (isSelectionMode) {
+              handleSelectionEnd(e);
+            } else if (isDrawingConnection) {
+              // Cancel connection if mouse up on empty space
+              setIsDrawingConnection(false);
+              setConnectionStart(null);
+              setTempConnection(null);
+            }
+          }}
           x={stagePos.x}
           y={stagePos.y}
           scaleX={stageScale}
           scaleY={stageScale}
         >
+          {/* Shapes Layer - rendered behind blocks */}
+          <Layer>
+            {shapes.map(renderShape)}
+            {tempConnection && renderShape(tempConnection)}
+          </Layer>
+          
+          {/* Blocks Layer */}
           <Layer>
             {blocks.map(renderBlock)}
             
@@ -2341,6 +2956,27 @@ const MainBoard = ({ board, onBack }) => {
           <div className="absolute top-20 right-4 z-50">
             {renderModalContent()}
           </div>
+        )}
+
+        {activeShapeModal && (
+          <ShapeModal
+            shape={activeShapeModal}
+            onClose={() => setActiveShapeModal(null)}
+            onUpdate={(updates) => {
+              updateShape(activeShapeModal.id, updates);
+              setActiveShapeModal(null);
+            }}
+          />
+        )}
+
+        {selectedShapeId && !isReadOnly && (
+          <ShapeToolbar
+            shape={shapes.find(s => s.id === selectedShapeId)}
+            onDuplicate={() => duplicateShape(selectedShapeId)}
+            onDelete={() => deleteShape(selectedShapeId)}
+            onEdit={() => setActiveShapeModal(shapes.find(s => s.id === selectedShapeId))}
+            isReadOnly={isReadOnly}
+          />
         )}
 
         {showImageLibrary && (

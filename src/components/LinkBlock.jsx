@@ -30,6 +30,7 @@ const LinkBlock = ({
   onChange,
   onDragStart,
   onDragEnd,
+  onDragMove,
   onDoubleClick,
 }) => {
   const [image] = useImage(imageUrl, 'anonymous');
@@ -213,6 +214,7 @@ const LinkBlock = ({
         onClick={onSelect}
         onDblClick={handleClick}
         onDragStart={onDragStart}
+        onDragMove={onDragMove}
         onDragEnd={(e) => {
           onChange({
             x: e.target.x(),

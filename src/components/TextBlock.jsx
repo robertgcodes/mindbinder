@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Group, Rect, Text, Transformer } from 'react-konva';
+import ConnectionHandles from './ConnectionHandles';
 
 const TextBlock = ({
   id,
@@ -24,7 +25,10 @@ const TextBlock = ({
   onDragStart,
   onDragEnd,
   onDragMove,
-  onDoubleClick
+  onDoubleClick,
+  onConnectionStart,
+  onConnectionEnd,
+  isReadOnly
 }) => {
   const groupRef = useRef();
   const transformerRef = useRef();
@@ -140,9 +144,21 @@ const TextBlock = ({
           wrap="word"
           ellipsis={!autoResize}
         />
+        
+        {/* Connection Handles */}
+        <ConnectionHandles
+          width={width}
+          height={height}
+          rotation={rotation}
+          blockId={id}
+          isSelected={isSelected}
+          isReadOnly={isReadOnly}
+          onConnectionStart={onConnectionStart}
+          onConnectionEnd={onConnectionEnd}
+        />
       </Group>
       
-      {isSelected && (
+      {isSelected && !isReadOnly && (
         <Transformer
           ref={transformerRef}
           boundBoxFunc={(oldBox, newBox) => {

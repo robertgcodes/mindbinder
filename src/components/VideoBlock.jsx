@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Group, Rect, Text, Image as KonvaImage } from 'react-konva';
+import { Group, Rect, Text, Image as KonvaImage, Transformer } from 'react-konva';
 import { Html } from 'react-konva-utils';
 import { Play, Upload, Video as VideoIcon, Edit, ExternalLink } from 'lucide-react';
-import { deleteVideoFromStorage } from '../firebase';
+import { deleteVideoFromStorage, uploadVideoToStorage } from '../firebase';
 import { useTheme } from '../contexts/ThemeContext';
+import ConnectionHandles from './ConnectionHandles';
+import { getSignedVideoUrl, preloadVideoUrl } from '../services/videoService';
 
 export default function VideoBlock({ 
   id,
@@ -18,38 +20,97 @@ export default function VideoBlock({
   onChange,
   onDragStart,
   onDragEnd,
+  onDragMove,
   onDoubleClick,
   updateBlock,
-  deleteBlock
+  deleteBlock,
+  onConnectionStart,
+  onConnectionEnd,
+  isReadOnly,
+  boardId
 }) {
   const { theme } = useTheme();
   const [isHovered, setIsHovered] = useState(false);
   const [thumbnailImage, setThumbnailImage] = useState(null);
   const groupRef = useRef();
+  const transformerRef = useRef();
 
   const { videoUrl, title, description, sourceLink, showText, metadata } = data;
 
+  // Attach transformer when selected
+  useEffect(() => {
+    if (isSelected && transformerRef.current && groupRef.current) {
+      transformerRef.current.nodes([groupRef.current]);
+      transformerRef.current.getLayer().batchDraw();
+    }
+  }, [isSelected]);
+
   // Extract thumbnail from video
   useEffect(() => {
-    if (videoUrl) {
-      const video = document.createElement('video');
-      video.src = videoUrl;
-      video.crossOrigin = 'anonymous';
-      video.addEventListener('loadeddata', () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
-        
-        const img = new window.Image();
-        img.onload = () => {
-          setThumbnailImage(img);
-        };
-        img.src = canvas.toDataURL();
-      });
+    if (videoUrl && boardId) {
+      let isMounted = true;
+      
+      const loadThumbnail = async () => {
+        try {
+          let videoSrc = videoUrl;
+          
+          // Try to get signed URL if Cloud Function is available
+          try {
+            const signedUrl = await getSignedVideoUrl(videoUrl, boardId);
+            videoSrc = signedUrl;
+          } catch (error) {
+            console.warn('Cloud Function not available, using direct URL:', error.message);
+            // Fall back to direct URL if Cloud Function is not deployed
+            // This is temporary until the function is properly deployed
+          }
+          
+          if (!isMounted) return;
+          
+          const video = document.createElement('video');
+          video.src = videoSrc;
+          video.crossOrigin = 'anonymous';
+          video.preload = 'metadata';
+          
+          const extractThumbnail = () => {
+            // Seek to 1 second to get a better thumbnail
+            video.currentTime = 1;
+          };
+          
+          video.addEventListener('loadedmetadata', extractThumbnail);
+          
+          video.addEventListener('seeked', () => {
+            if (!isMounted) return;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            const img = new window.Image();
+            img.onload = () => {
+              if (isMounted) {
+                setThumbnailImage(img);
+              }
+            };
+            img.src = canvas.toDataURL();
+          });
+          
+          video.addEventListener('error', (e) => {
+            console.error('Error loading video for thumbnail:', e);
+          });
+        } catch (error) {
+          console.error('Error getting signed URL for thumbnail:', error);
+        }
+      };
+      
+      loadThumbnail();
+      
+      return () => {
+        isMounted = false;
+      };
     }
-  }, [videoUrl]);
+  }, [videoUrl, boardId]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -66,6 +127,30 @@ export default function VideoBlock({
     if (onSelect) {
       onSelect();
     }
+  };
+
+  const handleDragEnd = (e) => {
+    const node = e.target;
+    onChange({
+      x: node.x(),
+      y: node.y(),
+    });
+    if (onDragEnd) onDragEnd(e);
+  };
+
+  const handleTransformEnd = () => {
+    const node = groupRef.current;
+    const scaleX = node.scaleX();
+    const scaleY = node.scaleY();
+    node.scaleX(1);
+    node.scaleY(1);
+    onChange({
+      x: node.x(),
+      y: node.y(),
+      width: Math.max(200, width * scaleX),
+      height: Math.max(150, height * scaleY),
+      rotation: node.rotation(),
+    });
   };
 
 
@@ -97,13 +182,15 @@ export default function VideoBlock({
         width={width}
         height={height}
         rotation={rotation}
-        draggable
+        draggable={!isReadOnly}
         onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
+        onDragMove={onDragMove}
+        onDragEnd={handleDragEnd}
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onDblClick={onDoubleClick}
+        onTransformEnd={handleTransformEnd}
       >
         {/* Background */}
         <Rect
@@ -195,26 +282,6 @@ export default function VideoBlock({
           </>
         )}
 
-        {/* Play button overlay */}
-        {videoUrl && (
-          <Group x={width / 2 - 30} y={videoY + videoHeight / 2 - 30}>
-            <Rect
-              width={60}
-              height={60}
-              fill="rgba(255, 255, 255, 0.9)"
-              cornerRadius={30}
-              shadowBlur={10}
-              shadowOpacity={0.3}
-            />
-            <Text
-              x={20}
-              y={20}
-              text="▶"
-              fontSize={20}
-              fill={theme.colors.textPrimary}
-            />
-          </Group>
-        )}
 
         {/* Metadata footer */}
         {showText && metadata && (
@@ -247,9 +314,58 @@ export default function VideoBlock({
             />
           </>
         )}
+        
+        {/* Source link icon */}
+        {sourceLink && (
+          <Text
+            x={width - 25}
+            y={8}
+            text="🔗"
+            fontSize={16}
+            fill="#fff"
+            shadowColor="rgba(0, 0, 0, 0.5)"
+            shadowBlur={2}
+            shadowOffset={{ x: 0, y: 1 }}
+            onClick={(e) => {
+              e.cancelBubble = true;
+              window.open(sourceLink, '_blank');
+            }}
+            onMouseEnter={() => {
+              document.body.style.cursor = 'pointer';
+            }}
+            onMouseLeave={() => {
+              document.body.style.cursor = 'default';
+            }}
+          />
+        )}
+        
+        {/* Connection Handles */}
+        <ConnectionHandles
+          width={width}
+          height={height}
+          rotation={rotation}
+          blockId={id}
+          isSelected={isSelected}
+          isReadOnly={isReadOnly}
+          onConnectionStart={onConnectionStart}
+          onConnectionEnd={onConnectionEnd}
+        />
 
       </Group>
 
+      {isSelected && !isReadOnly && (
+        <Transformer
+          ref={transformerRef}
+          boundBoxFunc={(oldBox, newBox) => {
+            if (newBox.width < 200 || newBox.height < 150) {
+              return oldBox;
+            }
+            return newBox;
+          }}
+          rotationSnaps={[0, 90, 180, 270]}
+          rotationSnapTolerance={5}
+        />
+      )}
     </>
   );
 }

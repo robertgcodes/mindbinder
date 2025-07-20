@@ -4,6 +4,7 @@ import { getCurrentSubscription, getSubscriptionTier } from '../services/stripe'
 import { getCurrentTier, PRICING_TIERS } from '../config/pricing';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getUserActiveCoupon } from '../services/couponService';
 
 const SubscriptionContext = createContext();
 
@@ -22,6 +23,7 @@ export const SubscriptionProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [storageUsed, setStorageUsed] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [couponOverride, setCouponOverride] = useState(null);
 
   // Load subscription data
   useEffect(() => {
@@ -61,6 +63,15 @@ export const SubscriptionProvider = ({ children }) => {
               setTier(PRICING_TIERS.FREE);
             }
           }
+          
+          // Check for active coupon override
+          try {
+            const activeCoupon = await getUserActiveCoupon(currentUser.uid);
+            setCouponOverride(activeCoupon);
+          } catch (error) {
+            console.error('Error checking coupon override:', error);
+            setCouponOverride(null);
+          }
         }
         setLoading(false);
       },
@@ -74,6 +85,20 @@ export const SubscriptionProvider = ({ children }) => {
   }, [currentUser]);
 
   const canUseFeature = (feature) => {
+    // Check coupon overrides first
+    if (couponOverride && couponOverride.grantedFeatures) {
+      // Check if feature is granted by coupon
+      if (couponOverride.grantedFeatures.includes(feature)) {
+        return true;
+      }
+      // Check if coupon grants pro or specific tier access
+      if (couponOverride.grantedFeatures.includes('pro') || 
+          couponOverride.grantedFeatures.includes('all_features')) {
+        return true;
+      }
+    }
+    
+    // Default tier-based checks
     switch (feature) {
       case 'ai_blocks':
         return tier.limitations.aiBlocksEnabled;
@@ -103,21 +128,51 @@ export const SubscriptionProvider = ({ children }) => {
     return Math.min(100, (storageUsed / tier.limitations.storageLimit) * 100);
   };
 
+  // Check if user has pro access through coupon
+  const hasCouponProAccess = couponOverride && (
+    couponOverride.grantedFeatures.includes('pro') ||
+    couponOverride.grantedFeatures.includes('all_features') ||
+    couponOverride.type === 'feature_access'
+  );
+
+  // Calculate days until expiration
+  const getDaysUntilExpiration = () => {
+    if (!couponOverride || !couponOverride.expiresAt) return null;
+    
+    const now = new Date();
+    const expiresAt = couponOverride.expiresAt.toDate ? couponOverride.expiresAt.toDate() : new Date(couponOverride.expiresAt.seconds * 1000);
+    const diffTime = expiresAt - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  // Check if coupon is expiring soon (within 7 days)
+  const isCouponExpiringSoon = () => {
+    const daysLeft = getDaysUntilExpiration();
+    return daysLeft !== null && daysLeft <= 7 && daysLeft > 0;
+  };
+  
   const value = {
     subscription,
     tier,
     loading,
     storageUsed,
     isAdmin,
+    couponOverride,
     canUseFeature,
     checkStorageLimit,
     checkFileSize,
     getStoragePercentage,
-    isFreeTier: tier.id === 'free',
-    isProTier: tier.id === 'pro',
+    isFreeTier: tier.id === 'free' && !hasCouponProAccess,
+    isProTier: tier.id === 'pro' || hasCouponProAccess,
     isTeamTier: tier.id === 'team',
-    hasActiveSubscription: subscription?.status === 'active',
-    hasProAccess: isAdmin || tier.id === 'pro' || tier.id === 'team'
+    hasActiveSubscription: subscription?.status === 'active' || !!couponOverride,
+    hasProAccess: isAdmin || tier.id === 'pro' || tier.id === 'team' || hasCouponProAccess,
+    couponCode: couponOverride?.couponCode,
+    couponExpiresAt: couponOverride?.expiresAt,
+    getDaysUntilExpiration,
+    isCouponExpiringSoon
   };
 
   return (

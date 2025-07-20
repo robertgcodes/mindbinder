@@ -3,17 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { User, Link as LinkIcon, Globe, Instagram, Twitter, Linkedin, ArrowLeft, Palette, AtSign, Check, X, Loader, Eye, ExternalLink } from 'lucide-react';
+import { User, Link as LinkIcon, Globe, Instagram, Twitter, Linkedin, ArrowLeft, Palette, AtSign, Check, X, Loader, Eye, ExternalLink, Gift } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import ThemeSettings from './ThemeSettings';
 import { Link } from 'react-router-dom';
 import { validateUsername, checkUsernameAvailability, isUsernameReserved } from '../utils/usernameValidation';
+import { validateCoupon, redeemCoupon } from '../services/couponService';
+import { useSubscription } from '../contexts/SubscriptionContext';
 
 const UserProfile = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { couponOverride, couponCode, getDaysUntilExpiration, isCouponExpiringSoon } = useSubscription();
   const [activeSection, setActiveSection] = useState('profile');
   const [publicBlocks, setPublicBlocks] = useState([]);
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [redeemingCoupon, setRedeemingCoupon] = useState(false);
   const [profile, setProfile] = useState({
     username: '',
     displayName: '',
@@ -170,6 +176,50 @@ const UserProfile = () => {
     return getDownloadURL(photoRef);
   };
 
+  const handleRedeemCoupon = async () => {
+    if (!couponCodeInput.trim()) {
+      alert('Please enter a coupon code');
+      return;
+    }
+
+    setValidatingCoupon(true);
+    
+    try {
+      // First validate the coupon
+      const validation = await validateCoupon(couponCodeInput, auth.currentUser.uid);
+      
+      if (!validation.valid) {
+        alert(validation.error);
+        setValidatingCoupon(false);
+        return;
+      }
+
+      // If valid, proceed to redeem
+      setValidatingCoupon(false);
+      setRedeemingCoupon(true);
+      
+      const result = await redeemCoupon(
+        couponCodeInput, 
+        auth.currentUser.uid,
+        auth.currentUser.email
+      );
+      
+      if (result.success) {
+        alert(result.message || 'Coupon redeemed successfully!');
+        setCouponCodeInput('');
+        // The subscription context will automatically update with the new coupon
+      } else {
+        alert(result.error || 'Failed to redeem coupon');
+      }
+    } catch (error) {
+      console.error('Error redeeming coupon:', error);
+      alert('Failed to redeem coupon');
+    } finally {
+      setValidatingCoupon(false);
+      setRedeemingCoupon(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -268,6 +318,21 @@ const UserProfile = () => {
               <div className="flex items-center space-x-2">
                 <Palette className="w-4 h-4" />
                 <span>Theme</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveSection('coupons')}
+              className={`pb-3 px-1 transition-colors ${
+                activeSection === 'coupons' ? 'border-b-2' : ''
+              }`}
+              style={{ 
+                color: activeSection === 'coupons' ? theme.colors.accentPrimary : theme.colors.textSecondary,
+                borderColor: theme.colors.accentPrimary
+              }}
+            >
+              <div className="flex items-center space-x-2">
+                <Gift className="w-4 h-4" />
+                <span>Redeem Coupon</span>
               </div>
             </button>
           </div>
@@ -723,6 +788,169 @@ const UserProfile = () => {
           {activeSection === 'theme' && (
             <div className="overflow-y-auto">
               <ThemeSettings />
+            </div>
+          )}
+
+          {activeSection === 'coupons' && (
+            <div className="space-y-6">
+              {/* Current Active Coupon */}
+              {couponOverride && (
+                <div className="p-4 rounded-lg" style={{ 
+                  backgroundColor: theme.colors.hoverBackground,
+                  border: `1px solid ${isCouponExpiringSoon() ? theme.colors.yellow : theme.colors.blockBorder}`
+                }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium" style={{ color: theme.colors.textPrimary }}>
+                      Active Coupon
+                    </h3>
+                    <span className="px-2 py-1 text-xs rounded-full" style={{
+                      backgroundColor: isCouponExpiringSoon() ? `${theme.colors.yellow}20` : `${theme.colors.green}20`,
+                      color: isCouponExpiringSoon() ? theme.colors.yellow : theme.colors.green
+                    }}>
+                      {isCouponExpiringSoon() ? `Expires in ${getDaysUntilExpiration()} days` : 'Active'}
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span style={{ color: theme.colors.textSecondary }}>Code:</span>
+                      <code className="font-mono" style={{ color: theme.colors.textPrimary }}>
+                        {couponCode}
+                      </code>
+                    </div>
+                    {couponOverride.grantedFeatures && couponOverride.grantedFeatures.length > 0 && (
+                      <div className="flex justify-between">
+                        <span style={{ color: theme.colors.textSecondary }}>Features:</span>
+                        <span style={{ color: theme.colors.textPrimary }}>
+                          {couponOverride.grantedFeatures.map(f => 
+                            f === 'pro' ? 'Pro Access' : 
+                            f === 'ai_features' ? 'AI Features' :
+                            f === 'unlimited_boards' ? 'Unlimited Boards' : f
+                          ).join(', ')}
+                        </span>
+                      </div>
+                    )}
+                    {couponOverride.expiresAt && (
+                      <div>
+                        <div className="flex justify-between">
+                          <span style={{ color: theme.colors.textSecondary }}>Expires:</span>
+                          <span style={{ 
+                            color: isCouponExpiringSoon() ? theme.colors.yellow : theme.colors.textPrimary,
+                            fontWeight: isCouponExpiringSoon() ? 'bold' : 'normal'
+                          }}>
+                            {new Date(couponOverride.expiresAt.seconds * 1000).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span style={{ color: theme.colors.textSecondary }}>Time remaining:</span>
+                          <span style={{ 
+                            color: isCouponExpiringSoon() ? theme.colors.yellow : theme.colors.textPrimary
+                          }}>
+                            {getDaysUntilExpiration()} days
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {isCouponExpiringSoon() && (
+                    <div className="mt-3 p-3 rounded" style={{ 
+                      backgroundColor: `${theme.colors.yellow}10`,
+                      border: `1px solid ${theme.colors.yellow}30`
+                    }}>
+                      <div className="flex items-start space-x-2">
+                        <AlertCircle className="h-4 w-4 mt-0.5" style={{ color: theme.colors.yellow }} />
+                        <div className="text-sm" style={{ color: theme.colors.textPrimary }}>
+                          <p className="font-medium">Your coupon benefits are expiring soon!</p>
+                          <p className="mt-1" style={{ color: theme.colors.textSecondary }}>
+                            To continue enjoying these features after {new Date(couponOverride.expiresAt.seconds * 1000).toLocaleDateString()}, 
+                            you'll need to redeem a new coupon code below.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Redeem New Coupon */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium mb-2" style={{ color: theme.colors.textPrimary }}>
+                    Redeem a Coupon Code
+                  </h3>
+                  <p className="text-sm mb-4" style={{ color: theme.colors.textSecondary }}>
+                    Enter a coupon code to unlock special features, discounts, or access.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                    placeholder="Enter coupon code"
+                    className="w-full px-4 py-2 rounded-lg focus:outline-none"
+                    style={{ 
+                      backgroundColor: theme.colors.inputBackground,
+                      border: `1px solid ${theme.colors.inputBorder}`,
+                      color: theme.colors.inputText
+                    }}
+                    disabled={redeemingCoupon || validatingCoupon}
+                  />
+
+                  <button
+                    onClick={handleRedeemCoupon}
+                    disabled={!couponCodeInput.trim() || redeemingCoupon || validatingCoupon}
+                    className="w-full py-2 rounded-lg font-medium transition-all flex items-center justify-center space-x-2"
+                    style={{
+                      backgroundColor: (!couponCodeInput.trim() || redeemingCoupon || validatingCoupon) 
+                        ? theme.colors.blockBorder 
+                        : theme.colors.accentPrimary,
+                      color: (!couponCodeInput.trim() || redeemingCoupon || validatingCoupon) 
+                        ? theme.colors.textTertiary 
+                        : 'white',
+                      cursor: (!couponCodeInput.trim() || redeemingCoupon || validatingCoupon) 
+                        ? 'not-allowed' 
+                        : 'pointer'
+                    }}
+                  >
+                    {validatingCoupon ? (
+                      <>
+                        <Loader className="h-4 w-4 animate-spin" />
+                        <span>Validating...</span>
+                      </>
+                    ) : redeemingCoupon ? (
+                      <>
+                        <Loader className="h-4 w-4 animate-spin" />
+                        <span>Redeeming...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Gift className="h-4 w-4" />
+                        <span>Redeem Coupon</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Info */}
+                <div className="p-4 rounded-lg" style={{ 
+                  backgroundColor: theme.colors.hoverBackground 
+                }}>
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="h-5 w-5 mt-0.5" style={{ color: theme.colors.textSecondary }} />
+                    <div className="space-y-2 text-sm" style={{ color: theme.colors.textSecondary }}>
+                      <p>
+                        Coupon codes can provide temporary access to premium features, 
+                        discounts on subscriptions, or unlock special functionality.
+                      </p>
+                      <p>
+                        Each coupon can only be redeemed once per account.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           </div>

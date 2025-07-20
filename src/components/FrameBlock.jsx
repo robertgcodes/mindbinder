@@ -18,6 +18,7 @@ const FrameBlock = ({
   onChange,
   onDragStart,
   onDragEnd,
+  onDragMove,
   onDoubleClick,
 }) => {
   const groupRef = useRef();
@@ -163,6 +164,7 @@ const FrameBlock = ({
         onClick={onSelect}
         onDblClick={onDoubleClick}
         onDragStart={onDragStart}
+        onDragMove={onDragMove}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       >

@@ -21,6 +21,7 @@ const ImageBlock = ({
   onChange,
   onDragStart,
   onDragEnd,
+  onDragMove,
   onDoubleClick
 }) => {
   const groupRef = useRef();
@@ -115,7 +116,7 @@ const ImageBlock = ({
     });
     
     if (onDragEnd) {
-      onDragEnd();
+      onDragEnd(e);
     }
   };
 
@@ -242,6 +243,7 @@ const ImageBlock = ({
         onClick={handleClick}
         onDblClick={handleDoubleClick}
         onDragStart={handleDragStart}
+        onDragMove={onDragMove}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
         clipFunc={(ctx) => {

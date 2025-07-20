@@ -1,19 +1,70 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow users to read/write their own files
+    // User profile photos
+    match /profile_photos/{userId} {
+      allow read: if true; // Public profiles
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User uploaded images
+    match /images/{userId}/{allPaths=**} {
+      allow read: if true; // Images can be viewed by anyone with the link
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // PDF uploads - SECURE VERSION: requires ownership validation
+    match /pdfs/{userId}/{boardId}/{fileName} {
+      allow read: if true; // PDFs can be viewed by anyone with the link
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // PDF thumbnails - SECURE VERSION
+    match /pdf-thumbnails/{userId}/{boardId}/{fileName} {
+      allow read: if true; // Thumbnails can be viewed by anyone
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Book covers - organized by user
+    match /book-covers/{userId}/{blockId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Book PDFs - organized by user
+    match /book-pdfs/{userId}/{blockId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Bio images - profile photos for biography blocks
+    match /bio-images/{userId}/{allPaths=**} {
+      allow read: if true; // Bio images can be viewed by anyone with the link
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Video uploads - PRIVATE: only owner can access
+    match /users/{userId}/videos/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User library files (legacy path)
     match /user-library/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Allow users to read/write their own link images
+    // Link images (legacy path)
     match /link-images/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Allow authenticated users to read any uploaded images (for sharing)
-    match /{allPaths=**} {
-      allow read: if request.auth != null;
     }
   }
 }

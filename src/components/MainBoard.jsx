@@ -421,7 +421,7 @@ const MainBoard = ({ board, onBack }) => {
           }
           
           // Check if this update is from another user
-          if (data.lastEditedBy && data.lastEditedBy !== currentUser?.uid && data.updatedAt !== lastSaveTimestamp) {
+          if (data.lastEditedBy && data.lastEditedBy !== currentUser?.uid) {
             // Don't update if we're currently dragging or actively editing
             if (isDraggingBlock || isDraggingStage) {
               console.log('Skipping real-time update while dragging');
@@ -429,6 +429,7 @@ const MainBoard = ({ board, onBack }) => {
             }
             
             console.log(`Real-time update from ${data.lastEditedByEmail || 'another user'}`);
+            console.log(`Blocks count: ${data.blocks?.length || 0}, Shapes count: ${data.shapes?.length || 0}`);
             
             // Update last editor info
             if (data.lastEditedByEmail && data.lastEditedByEmail !== currentUser?.email) {
@@ -441,51 +442,18 @@ const MainBoard = ({ board, onBack }) => {
               setTimeout(() => setLastEditor(null), 5000);
             }
             
-            // Merge blocks instead of replacing - preserves blocks that might be in-progress
+            // Update blocks from database
             if (data.blocks && Array.isArray(data.blocks)) {
-              setBlocks(prevBlocks => {
-                // Create a map of existing blocks by ID
-                const blockMap = new Map();
-                
-                // Add all blocks from database
-                data.blocks.forEach(block => {
-                  if (block && block.id) {
-                    blockMap.set(block.id, block);
-                  }
-                });
-                
-                // Preserve any local blocks that aren't in the database yet
-                prevBlocks.forEach(block => {
-                  if (block && block.id && !blockMap.has(block.id)) {
-                    // This is a new local block that hasn't been saved yet
-                    blockMap.set(block.id, block);
-                  }
-                });
-                
-                return Array.from(blockMap.values());
-              });
+              setBlocks(data.blocks);
             }
             
-            // Merge shapes similarly
+            // Update shapes from database
             if (data.shapes && Array.isArray(data.shapes)) {
-              setShapes(prevShapes => {
-                const shapeMap = new Map();
-                
-                data.shapes.forEach(shape => {
-                  if (shape && shape.id) {
-                    shapeMap.set(shape.id, shape);
-                  }
-                });
-                
-                prevShapes.forEach(shape => {
-                  if (shape && shape.id && !shapeMap.has(shape.id)) {
-                    shapeMap.set(shape.id, shape);
-                  }
-                });
-                
-                return Array.from(shapeMap.values());
-              });
+              setShapes(data.shapes);
             }
+            
+            // Update the last save timestamp to prevent re-processing
+            setLastSaveTimestamp(data.updatedAt);
             
             // Only update viewport if user hasn't moved it recently
             const timeSinceLastMove = Date.now() - (localStorage.getItem(`lastViewportMove-${board.id}`) || 0);

@@ -22,6 +22,15 @@ const AffirmationsBlockModal = ({ block, onChange, onClose, onDelete }) => {
   const [textColor, setTextColor] = useState(block.textColor || '#ffffff');
   const [accentColor, setAccentColor] = useState(block.accentColor || '#22c55e');
   const [checkColor, setCheckColor] = useState(block.checkColor || '#10b981');
+  const [useThemeColors, setUseThemeColors] = useState(block.useThemeColors || false);
+
+  // Get theme defaults
+  const themeDefaults = {
+    backgroundColor: theme.colors.blockBackground,
+    textColor: theme.colors.textPrimary,
+    accentColor: theme.colors.accentPrimary,
+    checkColor: '#10b981'
+  };
 
   const fontFamilies = [
     'Inter', 'Arial', 'Helvetica', 'Times New Roman', 'Georgia',

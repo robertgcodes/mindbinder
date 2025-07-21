@@ -89,23 +89,30 @@ const PDFBlock = ({
   }, [thumbnailUrl]);
 
   const handleDragEnd = (e) => {
-    onChange({ x: e.target.x(), y: e.target.y() });
+    if (onChange) {
+      onChange({ x: e.target.x(), y: e.target.y() });
+    }
     if (onDragEnd) onDragEnd(e);
   };
 
   const handleTransformEnd = () => {
     const node = groupRef.current;
+    if (!node) return;
+    
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
     node.scaleX(1);
     node.scaleY(1);
-    onChange({
-      x: node.x(),
-      y: node.y(),
-      width: Math.max(200, node.width() * scaleX),
-      height: Math.max(250, node.height() * scaleY),
-      rotation: node.rotation()
-    });
+    
+    if (onChange) {
+      onChange({
+        x: node.x(),
+        y: node.y(),
+        width: Math.max(200, node.width() * scaleX),
+        height: Math.max(250, node.height() * scaleY),
+        rotation: node.rotation()
+      });
+    }
   };
 
   const generatePDFThumbnail = async (file) => {
@@ -217,7 +224,9 @@ const PDFBlock = ({
 
   const handleClick = (e) => {
     // Just select the block
-    onSelect();
+    if (onSelect) {
+      onSelect();
+    }
   };
 
   const handleThumbnailClick = (e) => {
@@ -291,7 +300,9 @@ const PDFBlock = ({
               fontStyle={titleFontWeight}
               fill={textColor}
               width={width - 80}
+              height={20}
               ellipsis={true}
+              wrap="none"
             />
           </Group>
           
@@ -524,7 +535,6 @@ const PDFBlock = ({
       {isSelected && (
         <Transformer
           ref={transformerRef}
-          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 200 || newBox.height < 250) {
               return oldBox;

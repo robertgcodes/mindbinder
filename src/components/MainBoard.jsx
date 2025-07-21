@@ -356,16 +356,23 @@ const MainBoard = ({ board, onBack }) => {
       return;
     }
     
+    // Don't save if no user
+    if (!currentUser?.uid) {
+      console.error('Cannot save board: No authenticated user');
+      return;
+    }
+    
     const blocksData = blocksToSave || blocks;
     const shapesData = shapesToSave || shapes;
     const timestamp = new Date().toISOString();
     
     try {
       const docRef = doc(db, 'boards', board.id);
+      
+      // Only update specific fields, not the entire board object
       await updateDoc(docRef, {
-        ...board,
         blocks: blocksData,
-        shapes: shapesData, // Save shapes too
+        shapes: shapesData,
         stagePos,
         stageScale,
         updatedAt: timestamp,
@@ -377,6 +384,34 @@ const MainBoard = ({ board, onBack }) => {
       localStorage.setItem(`viewport-${board.id}`, JSON.stringify({ stagePos, stageScale }));
     } catch (error) {
       console.error('Error saving board:', error);
+      
+      // If permission denied, check if user is a collaborator
+      if (error.code === 'permission-denied') {
+        console.error('Permission denied. Checking collaborator status...');
+        console.error('Board ID:', board.id);
+        console.error('User ID:', currentUser.uid);
+        console.error('User Email:', currentUser.email);
+        
+        try {
+          const collabDoc = await getDoc(doc(db, 'boardCollaborators', `${board.id}_${currentUser.uid}`));
+          if (collabDoc.exists()) {
+            console.log('User is a collaborator with permission:', collabDoc.data().permission);
+            console.log('Collaborator data:', collabDoc.data());
+          } else {
+            console.log('User is not a collaborator on this board');
+            console.log('Expected collaborator doc ID:', `${board.id}_${currentUser.uid}`);
+          }
+          
+          // Also check board ownership
+          const boardDoc = await getDoc(doc(db, 'boards', board.id));
+          if (boardDoc.exists()) {
+            console.log('Board owner:', boardDoc.data().userId);
+            console.log('Is user the owner?', boardDoc.data().userId === currentUser.uid);
+          }
+        } catch (collabError) {
+          console.error('Error checking collaborator status:', collabError);
+        }
+      }
     }
   };
 

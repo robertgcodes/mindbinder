@@ -313,6 +313,7 @@ const PDFBlock = ({
               y={10}
               onClick={handleThumbnailClick}
               onTap={handleThumbnailClick}
+              listening={true}
             >
               <Rect
                 x={-4}
@@ -320,11 +321,12 @@ const PDFBlock = ({
                 width={28}
                 height={28}
                 fill="transparent"
+                listening={true}
               />
               <Html
                 divProps={{
                   style: {
-                    pointerEvents: 'auto',
+                    pointerEvents: 'none',
                     cursor: 'pointer'
                   }
                 }}
@@ -407,7 +409,7 @@ const PDFBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: thumbnailUrl ? 'none' : 'auto',
+              pointerEvents: 'none',
               display: 'flex',
               flexDirection: 'column',
               padding: '10px',
@@ -429,6 +431,7 @@ const PDFBlock = ({
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
+              pointerEvents: 'auto',
               userSelect: 'none',
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',

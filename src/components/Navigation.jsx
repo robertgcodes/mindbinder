@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit, User, Circle, Triangle, Minus, Shapes, Search, Ruler, Grid3x3, Magnet } from 'lucide-react';
+import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit, User, Circle, Triangle, Minus, Shapes, Search, Ruler, Grid, Magnet } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
 import BoardSwitcher from './BoardSwitcher';
@@ -270,7 +270,7 @@ const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boa
                 }}
                 title={showGrid ? "Hide Grid" : "Show Grid"}
               >
-                <Grid3x3 className="h-5 w-5" />
+                <Grid className="h-5 w-5" />
               </button>
             )}
             {onToggleSnapToGrid && (

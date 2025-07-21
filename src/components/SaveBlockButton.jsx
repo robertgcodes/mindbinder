@@ -17,6 +17,7 @@ const SaveBlockButton = ({ block, boardId }) => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState('bottom');
 
   useEffect(() => {
     checkIfSaved();
@@ -165,15 +166,32 @@ const SaveBlockButton = ({ block, boardId }) => {
     }
   };
 
+  const calculateDropdownPosition = (buttonElement) => {
+    if (!buttonElement) return 'bottom';
+    
+    const rect = buttonElement.getBoundingClientRect();
+    const dropdownHeight = 200; // Approximate height of dropdown
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    
+    // If not enough space below but enough above, show on top
+    if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+      return 'top';
+    }
+    
+    return 'bottom';
+  };
+
   if (!block) return null;
 
   return (
     <div className="relative">
       <button
-        onClick={() => {
+        onClick={(e) => {
           if (!isSaved) {
             handleToggleSave();
           } else {
+            setDropdownPosition(calculateDropdownPosition(e.currentTarget));
             setShowMenu(!showMenu);
           }
         }}
@@ -203,7 +221,9 @@ const SaveBlockButton = ({ block, boardId }) => {
       {/* Dropdown Menu */}
       {showMenu && isSaved && (
         <div 
-          className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg z-50"
+          className={`absolute right-0 w-56 rounded-lg shadow-lg z-50 ${
+            dropdownPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+          }`}
           style={{ 
             backgroundColor: theme.colors.modalBackground,
             border: `1px solid ${theme.colors.blockBorder}`,

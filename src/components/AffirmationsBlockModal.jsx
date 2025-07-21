@@ -65,10 +65,11 @@ const AffirmationsBlockModal = ({ block, onChange, onClose, onDelete }) => {
       descriptionFontFamily,
       affirmationFontSize,
       affirmationFontFamily,
-      backgroundColor,
-      textColor,
-      accentColor,
-      checkColor
+      backgroundColor: useThemeColors ? '' : backgroundColor,
+      textColor: useThemeColors ? '' : textColor,
+      accentColor: useThemeColors ? '' : accentColor,
+      checkColor: useThemeColors ? '' : checkColor,
+      useThemeColors
     });
     onClose();
   };
@@ -423,6 +424,33 @@ const AffirmationsBlockModal = ({ block, onChange, onClose, onDelete }) => {
             </div>
           </div>
         </div>
+      </FormGroup>
+
+      {/* Theme Colors Toggle */}
+      <FormGroup>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Label>Use Theme Colors</Label>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useThemeColors}
+              onChange={(e) => {
+                setUseThemeColors(e.target.checked);
+                if (e.target.checked) {
+                  setBackgroundColor(themeDefaults.backgroundColor);
+                  setTextColor(themeDefaults.textColor);
+                  setAccentColor(themeDefaults.accentColor);
+                  setCheckColor(themeDefaults.checkColor);
+                }
+              }}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+        <p style={{ color: theme.colors.textSecondary, fontSize: '12px', marginTop: '4px' }}>
+          When enabled, colors will automatically update with theme changes
+        </p>
       </FormGroup>
     </StandardModal>
   );

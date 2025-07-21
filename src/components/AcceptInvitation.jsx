@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, deleteDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc, setDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -91,8 +91,8 @@ const AcceptInvitation = () => {
       const existingCollab = await getDoc(doc(db, 'boardCollaborators', `${invitation.boardId}_${currentUser.uid}`));
       
       if (!existingCollab.exists()) {
-        // Add user as collaborator
-        await addDoc(collection(db, 'boardCollaborators'), {
+        // Add user as collaborator with predictable ID
+        await setDoc(doc(db, 'boardCollaborators', `${invitation.boardId}_${currentUser.uid}`), {
           boardId: invitation.boardId,
           userId: currentUser.uid,
           email: currentUser.email,

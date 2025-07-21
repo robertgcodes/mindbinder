@@ -102,10 +102,22 @@ const ActionItemBlock = ({
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    
+    // Parse the date string as local date, not UTC
+    const [year, month, day] = dateString.split('T')[0].split('-');
+    const date = new Date(year, month - 1, day);
+    
+    // Get today's date at midnight
     const today = new Date();
-    const diffTime = date - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    today.setHours(0, 0, 0, 0);
+    
+    // Get the date at midnight for comparison
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    
+    // Calculate difference in days
+    const diffTime = compareDate - today;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Tomorrow';
@@ -413,10 +425,23 @@ const ActionItemBlock = ({
                 fill={theme.colors.textPrimary}
                 textDecoration={subtask.completed ? 'line-through' : ''}
                 opacity={subtask.completed ? 0.6 : 1}
-                width={width - 70}
+                width={width - 150}
                 ellipsis={true}
                 verticalAlign="middle"
               />
+              
+              {/* Subtask due date */}
+              {subtask.dueDate && (
+                <Text
+                  x={width - 90}
+                  y={2}
+                  text={formatDate(subtask.dueDate)}
+                  fontSize={11}
+                  fill={theme.colors.textSecondary}
+                  align="right"
+                  verticalAlign="middle"
+                />
+              )}
             </Group>
           ))}
         </Group>

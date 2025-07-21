@@ -200,7 +200,7 @@ const SortableBlock = ({ id, children, isReorderMode }) => {
 
 const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal, onExitMobileView, onAddBlock, onOpenBlockPicker }) => {
   const { theme } = useTheme();
-  const [blocks, setBlocks] = useState([]);
+  const [blocks, setBlocks] = useState(board?.blocks || []);
   const [isReorderMode, setIsReorderMode] = useState(false);
   const [mobileOrder, setMobileOrder] = useState([]);
   const [hideShapes, setHideShapes] = useState(false);
@@ -219,10 +219,16 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal,
     })
   );
 
+  // Update blocks whenever board.blocks changes
+  useEffect(() => {
+    if (board?.blocks && JSON.stringify(board.blocks) !== JSON.stringify(blocks)) {
+      setBlocks(board.blocks);
+    }
+  }, [board?.blocks]);
+
   // Load blocks and mobile order
   useEffect(() => {
     if (board?.blocks) {
-      setBlocks(board.blocks);
       
       // Get existing mobile order or initialize
       let currentOrder = board.mobileOrder || [];
@@ -256,7 +262,7 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal,
         saveMobileOrder(currentOrder);
       }
     }
-  }, [board]);
+  }, [board, board?.blocks?.length]); // Also watch for changes in blocks length
 
   // Update container width on resize
   useEffect(() => {
@@ -473,6 +479,16 @@ const MobileBoard = ({ board, onBack, onUpdateBlock, onDeleteBlock, onOpenModal,
   const handleQuickAddBlock = (type) => {
     if (onAddBlock) {
       onAddBlock(type);
+      // Force scroll to bottom after a short delay to show the new block
+      setTimeout(() => {
+        const scrollContainer = containerRef.current?.querySelector('.overflow-y-auto');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
     }
   };
 

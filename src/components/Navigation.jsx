@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit, User, Circle, Triangle, Minus, Shapes, Search } from 'lucide-react';
+import { LayoutGrid, Plus, Type, MessageSquare, Image, List, Code, Link2, FileText, Rss, Calendar, Table, Film, Bot, Square, GanttChartSquare, CheckSquare, Heart, Sparkles, Clock, BarChart3, Undo, Redo, MousePointer2, Share2, Trash2, Copy, FileSpreadsheet, FileDown, Book, Maximize2, Move, Video, ListTodo, Edit, User, Circle, Triangle, Minus, Shapes, Search, Ruler, Grid3x3, Magnet } from 'lucide-react';
 import UserMenu from './UserMenu';
 import SaveBlockButton from './SaveBlockButton';
 import BoardSwitcher from './BoardSwitcher';
 import { useTheme } from '../contexts/ThemeContext';
 
-const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boardId, board, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock, onOpenBlockSearch }) => {
+const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boardId, board, isSelectionMode, onToggleSelectionMode, onShare, isReadOnly, onDeleteBlock, onDuplicateBlock, hasMultiSelection, onCenterView, onBringIntoView, onEditBlock, onOpenBlockSearch, showRulers, onToggleRulers, showGrid, onToggleGrid, snapToGrid, onToggleSnapToGrid }) => {
   const { theme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isShapesDropdownOpen, setIsShapesDropdownOpen] = useState(false);
@@ -220,6 +220,84 @@ const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boa
                 <Move className="h-5 w-5" />
               </button>
             )}
+            {onToggleRulers && (
+              <>
+                <div className="h-6 w-px" style={{ backgroundColor: theme.colors.blockBorder }} />
+                <button
+                  onClick={onToggleRulers}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ 
+                    color: showRulers ? theme.colors.accentPrimary : theme.colors.textSecondary,
+                    backgroundColor: showRulers ? theme.colors.hoverBackground : 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showRulers) {
+                      e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                      e.currentTarget.style.color = theme.colors.textPrimary;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!showRulers) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = theme.colors.textSecondary;
+                    }
+                  }}
+                  title={showRulers ? "Hide Rulers" : "Show Rulers"}
+                >
+                  <Ruler className="h-5 w-5" />
+                </button>
+              </>
+            )}
+            {onToggleGrid && (
+              <button
+                onClick={onToggleGrid}
+                className="p-2 rounded-lg transition-colors"
+                style={{ 
+                  color: showGrid ? theme.colors.accentPrimary : theme.colors.textSecondary,
+                  backgroundColor: showGrid ? theme.colors.hoverBackground : 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  if (!showGrid) {
+                    e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                    e.currentTarget.style.color = theme.colors.textPrimary;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showGrid) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.colors.textSecondary;
+                  }
+                }}
+                title={showGrid ? "Hide Grid" : "Show Grid"}
+              >
+                <Grid3x3 className="h-5 w-5" />
+              </button>
+            )}
+            {onToggleSnapToGrid && (
+              <button
+                onClick={onToggleSnapToGrid}
+                className="p-2 rounded-lg transition-colors"
+                style={{ 
+                  color: snapToGrid ? theme.colors.accentPrimary : theme.colors.textSecondary,
+                  backgroundColor: snapToGrid ? theme.colors.hoverBackground : 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  if (!snapToGrid) {
+                    e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                    e.currentTarget.style.color = theme.colors.textPrimary;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!snapToGrid) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = theme.colors.textSecondary;
+                  }
+                }}
+                title={snapToGrid ? "Disable Snap to Grid" : "Enable Snap to Grid"}
+              >
+                <Magnet className="h-5 w-5" />
+              </button>
+            )}
             {!isReadOnly && onOpenBlockSearch && (
               <button
                 onClick={onOpenBlockSearch}
@@ -350,20 +428,23 @@ const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boa
                 </button>
               {isDropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-48 rounded-md shadow-lg z-20"
+                  className="absolute right-0 mt-2 rounded-md shadow-lg z-20"
                   style={{ 
                     backgroundColor: theme.colors.modalBackground,
                     border: `1px solid ${theme.colors.blockBorder}`,
                     boxShadow: `0 4px 6px ${theme.colors.blockShadow}`,
-                    zIndex: 1001
+                    zIndex: 1001,
+                    width: '400px',
+                    maxHeight: '70vh',
+                    overflowY: 'auto'
                   }}
                 >
-                  <div className="py-1">
+                  <div className="p-2 grid grid-cols-2 gap-1">
                     {blockTypes.map(({ type, icon: Icon, label }) => (
                       <button
                         key={type}
                         onClick={() => handleAddBlock(type)}
-                        className="w-full flex items-center px-4 py-2 text-sm transition-colors"
+                        className="flex items-center px-3 py-2 text-sm transition-colors rounded"
                         style={{ color: theme.colors.textSecondary }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
@@ -374,8 +455,8 @@ const Navigation = ({ onAddBlock, onAddShape, onUndo, onRedo, selectedBlock, boa
                           e.currentTarget.style.color = theme.colors.textSecondary;
                         }}
                       >
-                        <Icon className="h-4 w-4 mr-3" />
-                        <span>{label}</span>
+                        <Icon className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">{label}</span>
                       </button>
                     ))}
                   </div>

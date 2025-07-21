@@ -10,7 +10,10 @@ const YearlyPlannerModal = ({ block, onSave, onClose, onDelete }) => {
   const [title, setTitle] = useState(block.title);
   const [description, setDescription] = useState(block.description);
   const [layout, setLayout] = useState(block.layout);
-  const [quarters, setQuarters] = useState(block.quarters);
+  const [quarters, setQuarters] = useState({
+    ...block.quarters,
+    collapsedQuarters: block.quarters?.collapsedQuarters || {}
+  });
 
   const [titleFontSize, setTitleFontSize] = useState(block.titleFontSize || 24);
   const [descriptionFontSize, setDescriptionFontSize] = useState(block.descriptionFontSize || 14);
@@ -57,6 +60,7 @@ const YearlyPlannerModal = ({ block, onSave, onClose, onDelete }) => {
       bulletStyle,
       borderWidth,
     });
+    onClose();
   };
 
   const handleDelete = () => {

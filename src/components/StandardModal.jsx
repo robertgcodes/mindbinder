@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import DatePicker from './DatePicker';
 
 const StandardModal = ({ 
   isOpen, 
@@ -25,12 +26,13 @@ const StandardModal = ({
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
-      backdropFilter: 'blur(4px)'
+      zIndex: 9999,
+      backdropFilter: 'blur(8px)',
+      padding: '20px'
     },
     modalContent: {
       backgroundColor: theme.colors.background,
@@ -38,17 +40,18 @@ const StandardModal = ({
       padding: '24px',
       width: '90%',
       maxWidth,
-      maxHeight: '90vh',
+      maxHeight: '80vh',
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
       border: `1px solid ${theme.colors.blockBorder}`,
       background: `linear-gradient(145deg, 
-        rgba(0, 0, 0, 0.4), 
-        rgba(0, 0, 0, 0.6)
-      ), linear-gradient(145deg, ${theme.colors.blockBackground} 0%, ${theme.colors.background} 100%)`,
-      backdropFilter: 'blur(10px)'
+        rgba(0, 0, 0, 0.95), 
+        rgba(0, 0, 0, 0.9)
+      )`,
+      backdropFilter: 'blur(20px)',
+      margin: 'auto'
     },
     modalHeader: {
       display: 'flex',
@@ -349,5 +352,8 @@ export const Select = ({ style = {}, onFocus, onBlur, children, ...props }) => {
     </select>
   );
 };
+
+// Export DatePicker for consistent date selection across modals
+export { DatePicker };
 
 export default StandardModal;

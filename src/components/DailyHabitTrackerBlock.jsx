@@ -352,7 +352,6 @@ const DailyHabitTrackerBlock = ({
       {isSelected && (
         <Transformer
           ref={transformerRef}
-          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 250 || newBox.height < 200) {
               return oldBox;

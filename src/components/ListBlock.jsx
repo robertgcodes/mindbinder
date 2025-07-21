@@ -273,6 +273,19 @@ const ListBlock = ({
                       }}>
                         {item.text}
                       </span>
+                      {item.dueDate && (
+                        <span style={{
+                          fontSize: '12px',
+                          color: textColor,
+                          opacity: 0.7,
+                          marginLeft: '8px'
+                        }}>
+                          {new Date(item.dueDate).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
@@ -285,7 +298,6 @@ const ListBlock = ({
       {isSelected && (
         <Transformer
           ref={transformerRef}
-          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 200 || newBox.height < 150) {
               return oldBox;

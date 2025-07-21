@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, UserPlus, X, Users, Loader } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, UserPlus, X, Users, Loader, ArrowLeft } from 'lucide-react';
 import { 
   collection, 
   query, 
@@ -18,10 +18,12 @@ import {
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import UserMenu from './UserMenu';
 
 const Friends = () => {
   const { currentUser } = useAuth();
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [friends, setFriends] = useState([]);
@@ -137,12 +139,13 @@ const Friends = () => {
     setSearching(true);
     try {
       const results = [];
+      const searchTerm = searchQuery.trim().toLowerCase();
       
       // Search by username
       const usernameQuery = query(
         collection(db, 'users'),
-        where('username', '>=', searchQuery.toLowerCase()),
-        where('username', '<=', searchQuery.toLowerCase() + '\uf8ff'),
+        where('username', '>=', searchTerm),
+        where('username', '<=', searchTerm + '\uf8ff'),
         orderBy('username'),
         limit(10)
       );
@@ -160,8 +163,19 @@ const Friends = () => {
       
       const displayNameSnapshot = await getDocs(displayNameQuery);
       
+      // Search by email (exact match for privacy)
+      let emailSnapshot = { docs: [] };
+      if (searchTerm.includes('@')) {
+        const emailQuery = query(
+          collection(db, 'users'),
+          where('email', '==', searchTerm),
+          limit(1)
+        );
+        emailSnapshot = await getDocs(emailQuery);
+      }
+      
       // Combine and deduplicate results
-      const allDocs = [...usernameSnapshot.docs, ...displayNameSnapshot.docs];
+      const allDocs = [...usernameSnapshot.docs, ...displayNameSnapshot.docs, ...emailSnapshot.docs];
       const uniqueUsers = new Map();
       
       for (const doc of allDocs) {
@@ -450,9 +464,79 @@ const Friends = () => {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.content}>
-        <div style={styles.header}>
+    <div style={{ minHeight: '100vh', backgroundColor: theme.colors.background }}>
+      {/* Navigation Bar */}
+      <nav 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '64px',
+          backgroundColor: theme.colors.navigationBackground,
+          borderBottom: `1px solid ${theme.colors.blockBorder}`,
+          zIndex: 1000,
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}
+      >
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '0 20px',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={() => navigate('/boards')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: theme.colors.hoverBackground,
+                color: theme.colors.textPrimary,
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.colors.accentPrimary;
+                e.currentTarget.style.color = 'white';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = theme.colors.hoverBackground;
+                e.currentTarget.style.color = theme.colors.textPrimary;
+              }}
+            >
+              <ArrowLeft size={18} />
+              Back to Boards
+            </button>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: theme.colors.textPrimary
+            }}>
+              <Users size={24} style={{ color: theme.colors.accentPrimary }} />
+              Friends
+            </div>
+          </div>
+          <UserMenu />
+        </div>
+      </nav>
+      
+      <div style={styles.container}>
+        <div style={styles.content}>
+          <div style={styles.header}>
           <h1 style={styles.title}>
             <Users size={32} />
             Friends
@@ -469,7 +553,7 @@ const Friends = () => {
           <div style={styles.searchContainer}>
             <input
               type="text"
-              placeholder="Search by username or name..."
+              placeholder="Search by username, name, or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && searchUsers()}
@@ -669,6 +753,7 @@ const Friends = () => {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { User, Link as LinkIcon, Globe, Instagram, Twitter, Linkedin, ArrowLeft, Palette, AtSign, Check, X, Loader, Eye, ExternalLink, Gift } from 'lucide-react';
+import { User, Link as LinkIcon, Globe, Instagram, Twitter, Linkedin, ArrowLeft, Palette, AtSign, Check, X, Loader, Eye, ExternalLink, Gift, AlertCircle } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import ThemeSettings from './ThemeSettings';
 import { Link } from 'react-router-dom';

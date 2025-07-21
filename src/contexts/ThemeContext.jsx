@@ -96,6 +96,7 @@ export const useTheme = () => {
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(defaultDarkTheme);
   const [customTheme, setCustomTheme] = useState(null);
+  const [customColors, setCustomColors] = useState({ light: null, dark: null });
   const [loading, setLoading] = useState(true);
 
   // Apply theme to CSS variables whenever theme changes
@@ -139,6 +140,11 @@ export const ThemeProvider = ({ children }) => {
         } else {
           setTheme(savedTheme.mode === 'light' ? defaultLightTheme : defaultDarkTheme);
         }
+        
+        // Load custom colors if they exist
+        if (userDoc.data().customColors) {
+          setCustomColors(userDoc.data().customColors);
+        }
       }
     } catch (error) {
       console.error('Error loading theme:', error);
@@ -157,6 +163,7 @@ export const ThemeProvider = ({ children }) => {
           mode: newTheme.mode,
           custom: customTheme
         },
+        customColors: customColors,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     } catch (error) {
@@ -165,9 +172,24 @@ export const ThemeProvider = ({ children }) => {
   };
 
   const toggleTheme = () => {
-    const newTheme = theme.mode === 'light' ? defaultDarkTheme : defaultLightTheme;
+    const newMode = theme.mode === 'light' ? 'dark' : 'light';
+    const baseTheme = newMode === 'light' ? defaultLightTheme : defaultDarkTheme;
+    
+    // Preserve custom colors if they exist for the new mode
+    let newTheme;
+    if (customColors[newMode]) {
+      newTheme = {
+        ...baseTheme,
+        colors: {
+          ...baseTheme.colors,
+          ...customColors[newMode]
+        }
+      };
+    } else {
+      newTheme = baseTheme;
+    }
+    
     setTheme(newTheme);
-    setCustomTheme(null);
     saveTheme(newTheme);
   };
 
@@ -181,6 +203,14 @@ export const ThemeProvider = ({ children }) => {
     };
     setTheme(updatedTheme);
     setCustomTheme(updatedTheme);
+    
+    // Save custom colors for the current mode
+    const newCustomColors = {
+      ...customColors,
+      [theme.mode]: colorUpdates
+    };
+    setCustomColors(newCustomColors);
+    
     saveTheme(updatedTheme);
   };
 
@@ -255,9 +285,23 @@ export const ThemeProvider = ({ children }) => {
   };
 
   const setThemeMode = (mode) => {
-    const newTheme = mode === 'light' ? defaultLightTheme : defaultDarkTheme;
+    const baseTheme = mode === 'light' ? defaultLightTheme : defaultDarkTheme;
+    
+    // Preserve custom colors if they exist for the mode
+    let newTheme;
+    if (customColors[mode]) {
+      newTheme = {
+        ...baseTheme,
+        colors: {
+          ...baseTheme.colors,
+          ...customColors[mode]
+        }
+      };
+    } else {
+      newTheme = baseTheme;
+    }
+    
     setTheme(newTheme);
-    setCustomTheme(null);
     saveTheme(newTheme);
   };
 

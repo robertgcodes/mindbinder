@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Group, Rect, Text, Transformer } from 'react-konva';
 import { Html } from 'react-konva-utils';
 import { CheckCircle2, Circle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { useBlockThemeDefaults } from '../utils/blockThemeDefaults';
 
 const AffirmationsBlock = ({
   id,
@@ -20,10 +22,11 @@ const AffirmationsBlock = ({
   descriptionFontFamily = 'Inter',
   affirmationFontSize = 16,
   affirmationFontFamily = 'Inter',
-  backgroundColor = 'rgba(34, 197, 94, 0.1)',
-  textColor = '#ffffff',
-  accentColor = '#22c55e',
-  checkColor = '#10b981',
+  backgroundColor,
+  textColor,
+  accentColor,
+  checkColor,
+  useThemeColors = false,
   borderRadius = 12,
   rotation = 0,
   isSelected,
@@ -37,6 +40,14 @@ const AffirmationsBlock = ({
   const transformerRef = useRef();
   const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
   const [activeCheckbox, setActiveCheckbox] = useState(null);
+  const { theme } = useTheme();
+  const themeDefaults = useBlockThemeDefaults('affirmations');
+  
+  // Use theme colors if enabled, otherwise use custom colors or defaults
+  const bgColor = useThemeColors ? themeDefaults.backgroundColor : (backgroundColor || themeDefaults.backgroundColor);
+  const txtColor = useThemeColors ? themeDefaults.textColor : (textColor || themeDefaults.textColor);
+  const accColor = useThemeColors ? themeDefaults.accentColor : (accentColor || themeDefaults.accentColor);
+  const chkColor = useThemeColors ? themeDefaults.checkColor : (checkColor || themeDefaults.checkColor);
 
   useEffect(() => {
     if (isSelected && transformerRef.current && groupRef.current) {
@@ -161,8 +172,8 @@ const AffirmationsBlock = ({
         <Rect
           width={width}
           height={height}
-          fill={backgroundColor}
-          stroke={isSelected ? accentColor : 'transparent'}
+          fill={bgColor}
+          stroke={isSelected ? accColor : 'transparent'}
           strokeWidth={isSelected ? 2 : 0}
           cornerRadius={borderRadius}
           shadowBlur={10}
@@ -180,7 +191,7 @@ const AffirmationsBlock = ({
               flexDirection: 'column',
               padding: '16px',
               boxSizing: 'border-box',
-              color: textColor,
+              color: txtColor,
               fontFamily: 'Inter, sans-serif',
             }
           }}
@@ -218,9 +229,9 @@ const AffirmationsBlock = ({
             <div style={{
               width: `${progress}%`,
               height: '100%',
-              backgroundColor: isComplete ? checkColor : accentColor,
+              backgroundColor: isComplete ? chkColor : accColor,
               transition: 'width 0.3s ease',
-              boxShadow: isComplete ? `0 0 10px ${checkColor}` : 'none'
+              boxShadow: isComplete ? `0 0 10px ${chkColor}` : 'none'
             }} />
           </div>
 
@@ -234,7 +245,7 @@ const AffirmationsBlock = ({
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
             borderRadius: '8px',
             pointerEvents: 'auto',
-            boxShadow: isComplete ? `0 0 15px ${checkColor}` : 'none',
+            boxShadow: isComplete ? `0 0 15px ${chkColor}` : 'none',
             transition: 'box-shadow 0.3s ease'
           }}>
             <button
@@ -242,7 +253,7 @@ const AffirmationsBlock = ({
               style={{
                 background: 'none',
                 border: 'none',
-                color: textColor,
+                color: txtColor,
                 cursor: 'pointer',
                 padding: '4px',
                 opacity: 0.7
@@ -267,7 +278,7 @@ const AffirmationsBlock = ({
               style={{
                 background: 'none',
                 border: 'none',
-                color: textColor,
+                color: txtColor,
                 cursor: 'pointer',
                 padding: '4px',
                 opacity: 0.7
@@ -321,8 +332,8 @@ const AffirmationsBlock = ({
                               borderRadius: '8px',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
-                              border: `1px solid ${isChecked ? checkColor : 'transparent'}`,
-                              boxShadow: isActive ? `0 0 10px ${checkColor}` : 'none',
+                              border: `1px solid ${isChecked ? chkColor : 'transparent'}`,
+                              boxShadow: isActive ? `0 0 10px ${chkColor}` : 'none',
                               transform: isActive ? 'scale(1.02)' : 'scale(1)'
                             }}
                             onMouseEnter={(e) => {
@@ -347,11 +358,11 @@ const AffirmationsBlock = ({
                             </span>
                             <span style={{ 
                               fontSize: '20px',
-                              color: isChecked ? checkColor : 'rgba(255, 255, 255, 0.3)',
+                              color: isChecked ? chkColor : 'rgba(255, 255, 255, 0.3)',
                               transition: 'all 0.2s ease'
                             }}>
                               {isChecked ? (
-                                <CheckCircle2 size={20} style={{ fill: checkColor, color: 'white' }} />
+                                <CheckCircle2 size={20} style={{ fill: chkColor, color: 'white' }} />
                               ) : (
                                 <Circle size={20} />
                               )}
@@ -371,7 +382,6 @@ const AffirmationsBlock = ({
       {isSelected && (
         <Transformer
           ref={transformerRef}
-          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 250 || newBox.height < 200) {
               return oldBox;

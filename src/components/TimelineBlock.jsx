@@ -117,7 +117,7 @@ const TimelineBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: 'auto',
+              pointerEvents: 'none',
               display: 'flex',
               flexDirection: 'column',
               padding: '16px',
@@ -300,7 +300,6 @@ const TimelineBlock = ({
       {isSelected && (
         <Transformer
           ref={transformerRef}
-          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 300 || newBox.height < 400) {
               return oldBox;

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { CheckSquare, Plus, X, Calendar, Link, FileText, AlertCircle, Phone, Users, Mail, ShoppingCart, Globe, Search, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import StandardModal, { FormGroup, Label, Input, Select } from './StandardModal';
+import StandardModal, { FormGroup, Label, Input, Select, DatePicker } from './StandardModal';
 import { v4 as uuidv4 } from 'uuid';
 
 const ActionItemModal = ({ block, onChange, onClose, onDelete }) => {
@@ -56,7 +56,8 @@ const ActionItemModal = ({ block, onChange, onClose, onDelete }) => {
       const newTask = {
         id: uuidv4(),
         title: newSubtask.trim(),
-        completed: false
+        completed: false,
+        dueDate: null
       };
       handleInputChange('subtasks', [...formData.subtasks, newTask]);
       setNewSubtask('');
@@ -81,6 +82,13 @@ const ActionItemModal = ({ block, onChange, onClose, onDelete }) => {
     );
     handleInputChange('subtasks', updatedSubtasks);
     setEditingSubtask(null);
+  };
+
+  const handleUpdateSubtaskDueDate = (subtaskId, dueDate) => {
+    const updatedSubtasks = formData.subtasks.map(task =>
+      task.id === subtaskId ? { ...task, dueDate } : task
+    );
+    handleInputChange('subtasks', updatedSubtasks);
   };
   
   const handleDragStart = (index) => {
@@ -406,6 +414,13 @@ const ActionItemModal = ({ block, onChange, onClose, onDelete }) => {
                   {subtask.title}
                 </span>
               )}
+              
+              <DatePicker
+                value={subtask.dueDate}
+                onChange={(date) => handleUpdateSubtaskDueDate(subtask.id, date)}
+                placeholder="Due date"
+                style={{ width: '140px', marginLeft: '8px', marginRight: '8px' }}
+              />
               
               <button
                 onClick={() => handleDeleteSubtask(subtask.id)}

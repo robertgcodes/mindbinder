@@ -71,6 +71,12 @@ const YearlyPlannerBlock = ({
     });
   };
 
+  const toggleQuarter = (quarterKey) => {
+    const newCollapsed = { ...collapsedQuarters, [quarterKey]: !collapsedQuarters[quarterKey] };
+    setCollapsedQuarters(newCollapsed);
+    onChange({ quarters: { ...quarters, collapsedQuarters: newCollapsed } });
+  };
+
   // Calculate progress for each quarter based on completed goals
   const calculateQuarterProgress = (quarterData) => {
     if (!quarterData || !quarterData.goals || quarterData.goals.length === 0) return 0;
@@ -201,13 +207,17 @@ const YearlyPlannerBlock = ({
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  {/* Quarter Header */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '8px'
-                  }}>
+                  {/* Quarter Header - Clickable */}
+                  <div 
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '8px',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => toggleQuarter(q)}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '20px' }}>{quarterInfo.icon}</span>
                       <div>
@@ -227,7 +237,13 @@ const YearlyPlannerBlock = ({
                         </div>
                       </div>
                     </div>
-                    <Target size={16} style={{ color: quarterInfo.color, opacity: 0.8 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Target size={16} style={{ color: quarterInfo.color, opacity: 0.8 }} />
+                      {collapsedQuarters[q] ? 
+                        <ChevronRight size={16} style={{ color: textColor, opacity: 0.6 }} /> : 
+                        <ChevronDown size={16} style={{ color: textColor, opacity: 0.6 }} />
+                      }
+                    </div>
                   </div>
 
                   {/* Progress Bar */}
@@ -246,17 +262,18 @@ const YearlyPlannerBlock = ({
                     }} />
                   </div>
 
-                  {/* Goals */}
-                  <div style={{ 
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    fontSize: `${goalFontSize}px`,
-                    color: textColor,
-                    opacity: 0.9
-                  }}>
-                    {goals.length > 0 ? (
+                  {/* Goals - Collapsible */}
+                  {!collapsedQuarters[q] && (
+                    <div style={{ 
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      fontSize: `${goalFontSize}px`,
+                      color: textColor,
+                      opacity: 0.9
+                    }}>
+                      {goals.length > 0 ? (
                       goals.slice(0, 3).map((goal, index) => (
                         <div 
                           key={index} 
@@ -300,8 +317,9 @@ const YearlyPlannerBlock = ({
                       }}>
                         +{goals.length - 3} more...
                       </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Completion indicator */}
                   {progress === 100 && (
@@ -344,7 +362,6 @@ const YearlyPlannerBlock = ({
       {isSelected && (
         <Transformer
           ref={transformerRef}
-          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 400 || newBox.height < 300) {
               return oldBox;

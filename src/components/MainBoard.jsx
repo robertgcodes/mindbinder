@@ -81,6 +81,10 @@ import ShareBoardModal from './ShareBoardModal';
 import BlockSearchModal from './BlockSearchModal';
 import { getAiResponse } from '../aiService';
 import { getBlockDefaultColors } from '../utils/themeUtils';
+import { findFreePosition, getDefaultBlockSize } from '../utils/blockPlacement';
+import { snapToGrid as snapToGridFn } from '../utils/gridUtils';
+import GridOverlay from './GridOverlay';
+import RulerOverlay from './RulerOverlay';
 
 // Import shape components
 import LineShape from './shapes/LineShape';
@@ -158,6 +162,22 @@ const MainBoard = ({ board, onBack }) => {
   const [isDrawingConnection, setIsDrawingConnection] = useState(false);
   const [tempConnection, setTempConnection] = useState(null);
   const [connectionStart, setConnectionStart] = useState(null);
+  
+  // CAD features state
+  const [showRulers, setShowRulers] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  const [snapToGrid, setSnapToGrid] = useState(false);
+  
+  // Helper function to apply snap to grid if enabled
+  const applySnapToGrid = (position) => {
+    if (snapToGrid) {
+      return {
+        x: snapToGridFn(position.x),
+        y: snapToGridFn(position.y)
+      };
+    }
+    return position;
+  };
   
   // Track board access for recent boards
   useRecentBoards(board);
@@ -677,14 +697,21 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewTextBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = getDefaultBlockSize('text');
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
+    
     const newBlock = {
       id: Date.now().toString(),
       type: 'text',
-      x: center.x - 100,
-      y: center.y - 40,
-      width: 200,
-      height: 80,
+      x: position.x,
+      y: position.y,
+      width: defaultSize.width,
+      height: defaultSize.height,
       text: 'Click to edit this text',
       fontSize: 16,
       fontFamily: 'Inter',
@@ -751,14 +778,21 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewImageBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = getDefaultBlockSize('image');
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
+    
     const newBlock = {
       id: Date.now().toString() + '-image',
       type: 'image',
-      x: center.x - 100,
-      y: center.y - 75,
-      width: 200,
-      height: 150,
+      x: position.x,
+      y: position.y,
+      width: defaultSize.width,
+      height: defaultSize.height,
       images: [],
       currentImageIndex: 0,
       autoRotate: false,
@@ -1154,8 +1188,17 @@ const MainBoard = ({ board, onBack }) => {
     const block = blocks.find(b => b.id === blockId);
     if (!block) return;
 
-    const newX = e.target.x();
-    const newY = e.target.y();
+    let newX = e.target.x();
+    let newY = e.target.y();
+    
+    // Apply snap to grid if enabled
+    if (snapToGrid) {
+      newX = snapToGridFn(newX);
+      newY = snapToGridFn(newY);
+      // Update the visual position immediately
+      e.target.x(newX);
+      e.target.y(newY);
+    }
 
     // Check if this block is part of a multi-selection
     if (selectedBlockIds.has(blockId) && selectedBlockIds.size > 1 && multiDragStartPositions) {
@@ -1163,8 +1206,16 @@ const MainBoard = ({ board, onBack }) => {
       const originalPos = multiDragStartPositions[blockId];
       if (!originalPos) return;
       
-      const deltaX = newX - originalPos.x;
-      const deltaY = newY - originalPos.y;
+      let deltaX = newX - originalPos.x;
+      let deltaY = newY - originalPos.y;
+      
+      // If snap to grid is enabled, snap the delta
+      if (snapToGrid) {
+        // Round delta to grid increments to maintain relative positions
+        const gridSize = 20; // Default grid size
+        deltaX = Math.round(deltaX / gridSize) * gridSize;
+        deltaY = Math.round(deltaY / gridSize) * gridSize;
+      }
       
       const updatedBlocks = blocks.map(b => {
         if (selectedBlockIds.has(b.id) && multiDragStartPositions[b.id]) {
@@ -1612,14 +1663,21 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewRichTextBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = getDefaultBlockSize('rich-text');
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
+    
     const newBlock = {
       id: Date.now().toString(),
       type: 'rich-text',
-      x: center.x - 150,
-      y: center.y - 100,
-      width: 300,
-      height: 200,
+      x: position.x,
+      y: position.y,
+      width: defaultSize.width,
+      height: defaultSize.height,
       html: '<p>This is a rich text block.</p>',
       backgroundColor: 'rgba(255, 255, 255, 1)',
       borderStyle: 'rounded',
@@ -1630,14 +1688,21 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewYouTubeBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = getDefaultBlockSize('youtube');
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
+    
     const newBlock = {
       id: Date.now().toString(),
       type: 'youtube',
-      x: center.x - 150,
-      y: center.y - 100,
-      width: 300,
-      height: 200,
+      x: position.x,
+      y: position.y,
+      width: defaultSize.width,
+      height: defaultSize.height,
       youtubeUrls: [],
       rotation: 0,
     };
@@ -1965,15 +2030,22 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewAnalyticsBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = getDefaultBlockSize('analytics');
+    const position = findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    });
     const { blockBackground, textColor } = getBlockDefaultColors(theme);
+    
     const newBlock = {
       id: `analytics-${Date.now()}`,
       type: 'analytics',
-      x: center.x - 150,
-      y: center.y - 125,
-      width: 300,
-      height: 250,
+      x: position.x,
+      y: position.y,
+      width: defaultSize.width,
+      height: defaultSize.height,
       title: 'Board Analytics',
       description: 'Your progress at a glance',
       enabledMetrics: {
@@ -2581,15 +2653,22 @@ const MainBoard = ({ board, onBack }) => {
       const snapshot = await uploadBytes(storageRef, compressedFile);
       const downloadURL = await getDownloadURL(snapshot.ref);
       
-      // Create new image block at center of viewport
-      const center = getCenterOfViewport();
+      // Create new image block at smart position
+      const defaultSize = getDefaultBlockSize('image');
+      const position = findFreePosition(blocks, defaultSize, {
+        stagePos,
+        stageScale,
+        width: window.innerWidth,
+        height: window.innerHeight - 64
+      });
+      
       const newBlock = {
         id: Date.now().toString() + '-image',
         type: 'image',
-        x: center.x - 150,
-        y: center.y - 100,
-        width: 300,
-        height: 200,
+        x: position.x,
+        y: position.y,
+        width: defaultSize.width,
+        height: defaultSize.height,
         images: [downloadURL],
         currentImageIndex: 0,
         autoRotate: false,
@@ -2823,6 +2902,12 @@ const MainBoard = ({ board, onBack }) => {
         onEditBlock={handleEditBlock}
         hasMultiSelection={selectedBlockIds.size > 0}
         onOpenBlockSearch={() => setShowBlockSearch(true)}
+        showRulers={showRulers}
+        onToggleRulers={() => setShowRulers(!showRulers)}
+        showGrid={showGrid}
+        onToggleGrid={() => setShowGrid(!showGrid)}
+        snapToGrid={snapToGrid}
+        onToggleSnapToGrid={() => setSnapToGrid(!snapToGrid)}
       />
       <div className="flex-1 relative">
         <div className="absolute top-4 left-4 z-10 flex items-center space-x-4">
@@ -2980,6 +3065,17 @@ const MainBoard = ({ board, onBack }) => {
           scaleX={stageScale}
           scaleY={stageScale}
         >
+          {/* Grid Overlay - rendered behind everything */}
+          {showGrid && (
+            <GridOverlay
+              width={window.innerWidth}
+              height={window.innerHeight - 64}
+              scale={stageScale}
+              offset={stagePos}
+              theme={theme}
+            />
+          )}
+          
           {/* Shapes Layer - rendered behind blocks */}
           <Layer>
             {shapes.map(renderShape)}
@@ -3032,6 +3128,15 @@ const MainBoard = ({ board, onBack }) => {
               />
             )}
           </Layer>
+          
+          {/* Ruler Overlay - rendered on top */}
+          {showRulers && selectedBlock && (
+            <RulerOverlay
+              selectedBlock={selectedBlock}
+              blocks={blocks}
+              theme={theme}
+            />
+          )}
         </Stage>
 
         {activeModal && (

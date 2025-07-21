@@ -16,6 +16,12 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/boards/$(boardId)) &&
              get(/databases/$(database)/documents/boards/$(boardId)).data.userId == userId;
     }
+    
+    // Helper function to check if user is a collaborator with edit permission
+    function isCollaboratorWithEditPermission(boardId, userId) {
+      return exists(/databases/$(database)/documents/boardCollaborators/$(boardId + '_' + userId)) &&
+             get(/databases/$(database)/documents/boardCollaborators/$(boardId + '_' + userId)).data.permission == 'edit';
+    }
 
     // Users collection
     match /users/{userId} {
@@ -34,8 +40,12 @@ service cloud.firestore {
       allow create: if request.auth != null && 
                        request.auth.uid == request.resource.data.userId;
       
+      // Allow update if:
+      // 1. User is the board owner
+      // 2. User is a collaborator with edit permission
       allow update: if request.auth != null && 
-                       request.auth.uid == resource.data.userId;
+                       (request.auth.uid == resource.data.userId ||
+                        isCollaboratorWithEditPermission(boardId, request.auth.uid));
       
       allow delete: if request.auth != null && 
                        request.auth.uid == resource.data.userId;
@@ -220,6 +230,21 @@ service cloud.firestore {
       
       allow delete: if request.auth != null && 
                        request.auth.uid == resource.data.userId;
+    }
+    
+    // Theme presets - users can manage their own theme presets
+    match /users/{userId}/themePresets/{presetId} {
+      allow read: if request.auth != null && 
+                     request.auth.uid == userId;
+      
+      allow create: if request.auth != null && 
+                       request.auth.uid == userId;
+      
+      allow update: if request.auth != null && 
+                       request.auth.uid == userId;
+      
+      allow delete: if request.auth != null && 
+                       request.auth.uid == userId;
     }
   }
 }

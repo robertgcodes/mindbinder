@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Droplet, RefreshCw, ArrowUp, ArrowDown, Trash, List } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useTheme } from '../contexts/ThemeContext';
-import StandardModal, { FormGroup, Label, Input, Textarea } from './StandardModal';
+import StandardModal, { FormGroup, Label, Input, Textarea, DatePicker } from './StandardModal';
 
 const ListBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
   const { theme } = useTheme();
@@ -23,7 +23,22 @@ const ListBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
   }, [block]);
 
   const handleSave = () => {
-    onChange({ title, description, items, inverted, backgroundColor: isTransparent ? 'transparent' : (inverted ? 'black' : 'white') });
+    const updates = { 
+      title, 
+      description, 
+      items, 
+      inverted 
+    };
+    
+    // Only update backgroundColor if it's specifically set to transparent
+    if (isTransparent) {
+      updates.backgroundColor = 'transparent';
+    } else if (block.backgroundColor === 'transparent' && !isTransparent) {
+      // If it was transparent and now it's not, restore to default
+      updates.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+    }
+    
+    onChange(updates);
     onClose();
   };
 
@@ -35,7 +50,7 @@ const ListBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
   };
 
   const handleAddItem = () => {
-    setItems([...items, { id: uuidv4(), text: '', isCompleted: false }]);
+    setItems([...items, { id: uuidv4(), text: '', isCompleted: false, dueDate: null }]);
   };
 
   const handleRemoveItem = (id) => {
@@ -44,6 +59,10 @@ const ListBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
 
   const handleItemChange = (id, text) => {
     setItems(items.map(item => (item.id === id ? { ...item, text } : item)));
+  };
+
+  const handleItemDueDateChange = (id, dueDate) => {
+    setItems(items.map(item => (item.id === id ? { ...item, dueDate } : item)));
   };
 
   const moveItem = (index, direction) => {
@@ -137,6 +156,12 @@ const ListBlockToolbar = ({ block, onChange, onClose, onDelete }) => {
                 onChange={e => handleItemChange(item.id, e.target.value)}
                 placeholder="List item"
                 style={{ flex: 1 }}
+              />
+              <DatePicker
+                value={item.dueDate}
+                onChange={(date) => handleItemDueDateChange(item.id, date)}
+                placeholder="Due date"
+                style={{ width: '140px' }}
               />
               <button
                 onClick={() => handleRemoveItem(item.id)}

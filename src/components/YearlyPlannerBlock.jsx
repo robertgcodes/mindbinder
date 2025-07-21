@@ -131,7 +131,7 @@ const YearlyPlannerBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: 'none',
+              pointerEvents: 'auto',
               userSelect: 'none',
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',
@@ -225,7 +225,10 @@ const YearlyPlannerBlock = ({
                       marginBottom: '8px',
                       cursor: 'pointer'
                     }}
-                    onClick={() => toggleQuarter(q)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleQuarter(q);
+                    }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '20px' }}>{quarterInfo.icon}</span>

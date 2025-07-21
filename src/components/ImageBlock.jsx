@@ -301,7 +301,7 @@ const ImageBlock = ({
               cornerRadius={getCornerRadius()}
             />
             <Text
-              text="📷\nClick to add image"
+              text="📷 Click to add image"
               x={0}
               y={0}
               width={width}

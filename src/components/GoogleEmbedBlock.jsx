@@ -242,6 +242,10 @@ const GoogleEmbedBlock = ({ block, isSelected, onSelect, onUpdate, onAction, onD
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  MozUserSelect: 'none',
+                  msUserSelect: 'none',
                 }
               }}
               offsetX={0}
@@ -314,6 +318,10 @@ const GoogleEmbedBlock = ({ block, isSelected, onSelect, onUpdate, onAction, onD
                   overflow: 'hidden',
                   borderRadius: '0 0 12px 12px',
                   backgroundColor: 'white',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  MozUserSelect: 'none',
+                  msUserSelect: 'none',
                 }
               }}
               offsetX={0}

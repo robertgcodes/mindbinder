@@ -242,7 +242,11 @@ const AIImageBlock = ({
                 left: '10px',
                 width: `${width - 20}px`,
                 height: `${height - 60}px`,
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none'
               }
             }}
           >

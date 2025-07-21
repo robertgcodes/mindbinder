@@ -334,6 +334,10 @@ const BookBlock = ({
               position: 'relative',
               color: textColor,
               fontFamily: 'Inter, sans-serif',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none',
             }
           }}
         >

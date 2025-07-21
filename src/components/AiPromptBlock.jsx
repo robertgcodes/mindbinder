@@ -124,6 +124,10 @@ const AiPromptBlock = ({
               boxSizing: 'border-box',
               color: 'white',
               fontFamily: 'Inter, sans-serif',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none',
             }
           }}
         >

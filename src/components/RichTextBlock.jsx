@@ -91,6 +91,10 @@ const RichTextBlock = ({
               padding: '10px',
               fontFamily: 'Inter',
               pointerEvents: 'none',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none',
             }
           }}
         >

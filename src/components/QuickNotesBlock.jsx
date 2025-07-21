@@ -172,6 +172,10 @@ const QuickNotesBlock = ({
                   right: '10px',
                   top: '10px',
                   pointerEvents: 'all',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  MozUserSelect: 'none',
+                  msUserSelect: 'none',
                 },
               }}
             >
@@ -198,6 +202,10 @@ const QuickNotesBlock = ({
                   right: '10px',
                   bottom: '10px',
                   pointerEvents: 'all',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  MozUserSelect: 'none',
+                  msUserSelect: 'none',
                 },
               }}
             >

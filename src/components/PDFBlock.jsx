@@ -20,6 +20,7 @@ const PDFBlock = ({
   height,
   title = 'PDF Document',
   description = 'Click to view',
+  notes = '',
   pdfUrl = '',
   thumbnailUrl = '',
   titleFontSize = 18,
@@ -27,6 +28,8 @@ const PDFBlock = ({
   titleFontWeight = 'bold',
   descriptionFontSize = 14,
   descriptionFontFamily = 'Inter',
+  notesFontSize = 13,
+  notesFontFamily = 'Inter',
   backgroundColor = 'rgba(239, 68, 68, 0.1)',
   textColor = '#ffffff',
   accentColor = '#ef4444',
@@ -247,6 +250,7 @@ const PDFBlock = ({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
+        {/* Main background */}
         <Rect
           width={width}
           height={height}
@@ -259,56 +263,133 @@ const PDFBlock = ({
           shadowOpacity={0.2}
         />
         
-        {/* PDF Thumbnail or Upload Area */}
-        {thumbnailUrl ? (
-          <Group
-            onClick={handleThumbnailClick}
-            onTap={handleThumbnailClick}
-          >
-            {image ? (
-              <KonvaImage
-                image={image}
-                x={10}
-                y={10}
-                width={width - 20}
-                height={height - 80}
-                cornerRadius={8}
-              />
-            ) : (
-              <Rect
-                x={10}
-                y={10}
-                width={width - 20}
-                height={height - 80}
-                fill="rgba(255, 255, 255, 0.1)"
-                cornerRadius={8}
-              />
-            )}
-            {/* Hover overlay */}
-            {isHovered && (
-              <Rect
-                x={10}
-                y={10}
-                width={width - 20}
-                height={height - 80}
-                fill="rgba(0, 0, 0, 0.5)"
-                cornerRadius={8}
-              />
-            )}
-          </Group>
-        ) : (
+        {/* Title bar at the top */}
+        <Group>
           <Rect
-            x={10}
-            y={10}
-            width={width - 20}
-            height={height - 80}
-            fill="rgba(255, 255, 255, 0.05)"
-            stroke="rgba(255, 255, 255, 0.1)"
-            strokeWidth={2}
-            cornerRadius={8}
-            dash={[8, 4]}
+            x={0}
+            y={0}
+            width={width}
+            height={40}
+            fill={backgroundColor}
+            stroke={'rgba(255, 255, 255, 0.1)'}
+            strokeWidth={1}
+            cornerRadius={[12, 12, 0, 0]}
           />
-        )}
+          
+          {/* Title bar content */}
+          <Group x={12} y={10}>
+            <Text
+              text="📄"
+              fontSize={20}
+              y={-2}
+            />
+            <Text
+              x={28}
+              text={title}
+              fontSize={titleFontSize}
+              fontFamily={titleFontFamily}
+              fontStyle={titleFontWeight}
+              fill={textColor}
+              width={width - 80}
+              ellipsis={true}
+            />
+          </Group>
+          
+          {/* External link icon */}
+          {pdfUrl && (
+            <Group 
+              x={width - 32} 
+              y={10}
+              onClick={handleThumbnailClick}
+              onTap={handleThumbnailClick}
+            >
+              <Rect
+                x={-4}
+                y={-4}
+                width={28}
+                height={28}
+                fill="transparent"
+              />
+              <Html
+                divProps={{
+                  style: {
+                    pointerEvents: 'auto',
+                    cursor: 'pointer'
+                  }
+                }}
+              >
+                <ExternalLink size={20} style={{ color: textColor, opacity: 0.7 }} />
+              </Html>
+            </Group>
+          )}
+        </Group>
+        
+        {/* PDF Thumbnail or Upload Area */}
+        <Group y={50}>
+          {thumbnailUrl ? (
+            <Group
+              onClick={handleThumbnailClick}
+              onTap={handleThumbnailClick}
+            >
+              {image ? (
+                <KonvaImage
+                  image={image}
+                  x={10}
+                  y={0}
+                  width={width - 20}
+                  height={height - 150}
+                  cornerRadius={8}
+                />
+              ) : (
+                <Rect
+                  x={10}
+                  y={0}
+                  width={width - 20}
+                  height={height - 150}
+                  fill="rgba(255, 255, 255, 0.1)"
+                  cornerRadius={8}
+                />
+              )}
+              {/* Hover overlay for thumbnail */}
+              {isHovered && (
+                <Group>
+                  <Rect
+                    x={10}
+                    y={0}
+                    width={width - 20}
+                    height={height - 150}
+                    fill="rgba(0, 0, 0, 0.5)"
+                    cornerRadius={8}
+                  />
+                  <Html
+                    divProps={{
+                      style: {
+                        position: 'absolute',
+                        left: `${width/2 - 24}px`,
+                        top: `${(height - 150)/2 - 24}px`,
+                        pointerEvents: 'none'
+                      }
+                    }}
+                  >
+                    <ExternalLink size={48} style={{ color: 'white', opacity: 0.9 }} />
+                  </Html>
+                </Group>
+              )}
+            </Group>
+          ) : (
+            <Rect
+              x={10}
+              y={0}
+              width={width - 20}
+              height={height - 150}
+              fill="rgba(255, 255, 255, 0.05)"
+              stroke="rgba(255, 255, 255, 0.1)"
+              strokeWidth={2}
+              cornerRadius={8}
+              dash={[8, 4]}
+            />
+          )}
+        </Group>
 
         <Html
           divProps={{
@@ -325,15 +406,22 @@ const PDFBlock = ({
             }
           }}
         >
-          {/* Upload area or hover icon */}
+          {/* Upload area */}
           {!thumbnailUrl ? (
             <div style={{
-              flex: 1,
+              position: 'absolute',
+              top: '50px',
+              left: '10px',
+              right: '10px',
+              height: `${height - 150}px`,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: '70px'
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none'
             }}>
               {isUploading ? (
                 <div style={{ textAlign: 'center' }}>
@@ -363,8 +451,10 @@ const PDFBlock = ({
                     onChange={handleFileUpload}
                     style={{
                       position: 'absolute',
-                      width: '100%',
-                      height: '100%',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
                       opacity: 0,
                       cursor: 'pointer'
                     }}
@@ -375,53 +465,25 @@ const PDFBlock = ({
             </div>
           ) : null}
 
-          {/* Hover icon for opening PDF */}
-          {thumbnailUrl && isHovered && (
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              pointerEvents: 'none'
-            }}>
-              <ExternalLink size={48} style={{ color: 'white', opacity: 0.9 }} />
-            </div>
-          )}
-
-          {/* Title and Description */}
+          {/* Notes/Summary section at the bottom */}
           <div style={{
             position: 'absolute',
             bottom: '10px',
             left: '10px',
             right: '10px',
+            height: '80px',
             pointerEvents: 'none',
-            userSelect: 'none'
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            MozUserSelect: 'none',
+            msUserSelect: 'none'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '4px'
-            }}>
-              <FileText size={16} style={{ opacity: 0.8 }} />
-              <h3 style={{ 
-                margin: 0, 
-                fontSize: `${titleFontSize}px`, 
-                fontWeight: titleFontWeight,
-                fontFamily: titleFontFamily,
-                color: textColor,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}>
-                {title}
-              </h3>
-            </div>
+            {/* Description */}
             <p style={{ 
-              margin: 0, 
+              margin: '0 0 8px 0', 
               fontSize: `${descriptionFontSize}px`,
               fontFamily: descriptionFontFamily,
-              opacity: 0.8,
+              opacity: 0.7,
               color: textColor,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -429,6 +491,32 @@ const PDFBlock = ({
             }}>
               {description}
             </p>
+            
+            {/* Notes/Summary */}
+            {notes && (
+              <div style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '6px',
+                padding: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: `${notesFontSize}px`,
+                  fontFamily: notesFontFamily,
+                  color: textColor,
+                  opacity: 0.9,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  lineHeight: 1.4
+                }}>
+                  {notes}
+                </p>
+              </div>
+            )}
           </div>
         </Html>
       </Group>

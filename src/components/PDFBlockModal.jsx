@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import StandardModal, { FormGroup, Label, Input, Select } from './StandardModal';
+import StandardModal, { FormGroup, Label, Input, Select, Textarea } from './StandardModal';
 
 const PDFBlockModal = ({ block, onChange, onClose, onDelete }) => {
   const { theme } = useTheme();
   const [title, setTitle] = useState(block.title || 'PDF Document');
   const [description, setDescription] = useState(block.description || 'Click to view');
+  const [notes, setNotes] = useState(block.notes || '');
   const [titleFontSize, setTitleFontSize] = useState(block.titleFontSize || 18);
   const [titleFontFamily, setTitleFontFamily] = useState(block.titleFontFamily || 'Inter');
   const [titleFontWeight, setTitleFontWeight] = useState(block.titleFontWeight || 'bold');
   const [descriptionFontSize, setDescriptionFontSize] = useState(block.descriptionFontSize || 14);
   const [descriptionFontFamily, setDescriptionFontFamily] = useState(block.descriptionFontFamily || 'Inter');
+  const [notesFontSize, setNotesFontSize] = useState(block.notesFontSize || 13);
+  const [notesFontFamily, setNotesFontFamily] = useState(block.notesFontFamily || 'Inter');
   const [backgroundColor, setBackgroundColor] = useState(block.backgroundColor || 'rgba(239, 68, 68, 0.1)');
   const [textColor, setTextColor] = useState(block.textColor || '#ffffff');
   const [accentColor, setAccentColor] = useState(block.accentColor || '#ef4444');
@@ -28,11 +31,14 @@ const PDFBlockModal = ({ block, onChange, onClose, onDelete }) => {
       ...block,
       title,
       description,
+      notes,
       titleFontSize,
       titleFontFamily,
       titleFontWeight,
       descriptionFontSize,
       descriptionFontFamily,
+      notesFontSize,
+      notesFontFamily,
       backgroundColor,
       textColor,
       accentColor
@@ -131,6 +137,17 @@ const PDFBlockModal = ({ block, onChange, onClose, onDelete }) => {
         />
       </FormGroup>
 
+      <FormGroup>
+        <Label>Notes / Summary</Label>
+        <Textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add notes or summary about this PDF..."
+          rows={3}
+          style={{ resize: 'vertical' }}
+        />
+      </FormGroup>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
         <FormGroup>
           <Label>Title Font Size</Label>
@@ -185,6 +202,31 @@ const PDFBlockModal = ({ block, onChange, onClose, onDelete }) => {
           <Select
             value={descriptionFontFamily}
             onChange={(e) => setDescriptionFontFamily(e.target.value)}
+          >
+            {fontFamilies.map(font => (
+              <option key={font} value={font}>{font}</option>
+            ))}
+          </Select>
+        </FormGroup>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+        <FormGroup>
+          <Label>Notes Font Size</Label>
+          <Input
+            type="number"
+            value={notesFontSize}
+            onChange={(e) => setNotesFontSize(Number(e.target.value))}
+            min="10"
+            max="20"
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <Label>Notes Font Family</Label>
+          <Select
+            value={notesFontFamily}
+            onChange={(e) => setNotesFontFamily(e.target.value)}
           >
             {fontFamilies.map(font => (
               <option key={font} value={font}>{font}</option>

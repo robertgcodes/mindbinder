@@ -115,6 +115,10 @@ const YouTubeBlock = ({
                 width: `${width}px`,
                 height: `${height}px`,
                 pointerEvents: isSelected ? 'all' : 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none',
               }
             }}
           >
@@ -153,6 +157,10 @@ const YouTubeBlock = ({
                       top: `${height / 2 - 20}px`,
                       left: '10px',
                       pointerEvents: 'all',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
                     }
                   }}
                 >
@@ -167,6 +175,10 @@ const YouTubeBlock = ({
                       top: `${height / 2 - 20}px`,
                       right: '10px',
                       pointerEvents: 'all',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
                     }
                   }}
                 >
@@ -183,6 +195,10 @@ const YouTubeBlock = ({
                   top: '10px',
                   right: '10px',
                   pointerEvents: 'all',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  MozUserSelect: 'none',
+                  msUserSelect: 'none',
                 }
               }}
             >

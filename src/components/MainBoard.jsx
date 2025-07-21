@@ -697,13 +697,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewRotatingQuoteBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 300, height: 120 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const defaultColors = getBlockDefaultColors(theme);
     const newBlock = {
       id: Date.now().toString() + '-rotating',
       type: 'rotating-quote',
-      x: center.x - 150,
-      y: center.y - 60,
+      x: position.x,
+      y: position.y,
       width: 300,
       height: 120,
       quotes: [
@@ -1689,12 +1695,18 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewAiPromptBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 300, height: 220 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const newBlock = {
       id: uuidv4(),
       type: 'ai-prompt',
-      x: center.x - 150,
-      y: center.y - 110,
+      x: position.x,
+      y: position.y,
       width: 300,
       height: 220,
       title: 'AI Assistant',
@@ -1710,12 +1722,18 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewAIImageBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 350, height: 250 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const newBlock = {
       id: uuidv4(),
       type: 'ai-image',
-      x: center.x - 175,
-      y: center.y - 125,
+      x: position.x,
+      y: position.y,
       width: 350,
       height: 250,
       data: {
@@ -1733,12 +1751,18 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewBioBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 300, height: 350 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const newBlock = {
       id: uuidv4(),
       type: 'bio',
-      x: center.x - 150,
-      y: center.y - 175,
+      x: position.x,
+      y: position.y,
       width: 300,
       height: 350,
       data: {
@@ -1761,12 +1785,18 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewFrameBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 400, height: 300 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const newBlock = {
       id: uuidv4(),
       type: 'frame',
-      x: center.x - 200,
-      y: center.y - 150,
+      x: position.x,
+      y: position.y,
       width: 400,
       height: 300,
       title: 'My Frame',
@@ -1789,13 +1819,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewYearlyPlannerBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 500, height: 500 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `yearly-planner-${Date.now()}`,
       type: 'yearly-planner',
-      x: center.x - 250,
-      y: center.y - 250,
+      x: position.x,
+      y: position.y,
       width: 500,
       height: 500,
       title: 'My Yearly Plan',
@@ -1821,13 +1857,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewDailyHabitTrackerBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 350, height: 300 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `daily-habit-tracker-${Date.now()}`,
       type: 'daily-habit-tracker',
-      x: center.x - 175,
-      y: center.y - 150,
+      x: position.x,
+      y: position.y,
       width: 350,
       height: 300,
       title: 'Daily Habits',
@@ -1858,13 +1900,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewQuickNotesBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 300, height: 200 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `quick-notes-${Date.now()}`,
       type: 'quick-notes',
-      x: center.x - 150,
-      y: center.y - 100,
+      x: position.x,
+      y: position.y,
       width: 300,
       height: 200,
       text: 'This is a quick note...',
@@ -1879,12 +1927,18 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewLinkBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 300, height: 200 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const newBlock = {
       id: `link-${Date.now()}`,
       type: 'link',
-      x: center.x - 150,
-      y: center.y - 100,
+      x: position.x,
+      y: position.y,
       width: 300,
       height: 200,
       title: 'New Link',
@@ -1899,15 +1953,21 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewGratitudeBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = getDefaultBlockSize('gratitude');
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `gratitude-${Date.now()}`,
       type: 'gratitude',
-      x: center.x - 175,
-      y: center.y - 150,
-      width: 350,
-      height: 300,
+      x: position.x,
+      y: position.y,
+      width: defaultSize.width,
+      height: defaultSize.height,
       title: 'Gratitude Journal',
       description: 'What are you grateful for today?',
       items: [
@@ -1934,13 +1994,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewAffirmationsBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 350, height: 350 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `affirmations-${Date.now()}`,
       type: 'affirmations',
-      x: center.x - 175,
-      y: center.y - 175,
+      x: position.x,
+      y: position.y,
       width: 350,
       height: 350,
       title: 'Daily Affirmations',
@@ -1977,13 +2043,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewTimelineBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 300, height: 400 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `timeline-${Date.now()}`,
       type: 'timeline',
-      x: center.x - 150,
-      y: center.y - 200,
+      x: position.x,
+      y: position.y,
       width: 300,
       height: 400,
       title: 'Life Timeline',
@@ -2052,13 +2124,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewListBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 350, height: 300 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `list-${Date.now()}`,
       type: 'list',
-      x: center.x - 175,
-      y: center.y - 150,
+      x: position.x,
+      y: position.y,
       width: 350,
       height: 300,
       title: 'Todo List',
@@ -2087,13 +2165,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewPDFBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 200, height: 250 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `pdf-${Date.now()}`,
       type: 'pdf',
-      x: center.x - 100,
-      y: center.y - 125,
+      x: position.x,
+      y: position.y,
       width: 200,
       height: 250,
       title: 'PDF Document',
@@ -2116,13 +2200,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewBookBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 350, height: 200 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `book-${Date.now()}`,
       type: 'book',
-      x: center.x - 175,
-      y: center.y - 100,
+      x: position.x,
+      y: position.y,
       width: 350,
       height: 200,
       title: 'Book Title',
@@ -2154,12 +2244,18 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewVideoBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 400, height: 300 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const newBlock = {
       id: `video-${Date.now()}`,
       type: 'video',
-      x: center.x - 200,
-      y: center.y - 150,
+      x: position.x,
+      y: position.y,
       width: 400,
       height: 300,
       rotation: 0,
@@ -2177,13 +2273,19 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const addNewGoogleEmbedBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 400, height: 300 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const { blockBackground, textColor, accentColor } = getBlockDefaultColors(theme);
     const newBlock = {
       id: `google-embed-${Date.now()}`,
       type: 'google-embed',
-      x: center.x - 200,
-      y: center.y - 150,
+      x: position.x,
+      y: position.y,
       width: 400,
       height: 300,
       url: '',
@@ -2198,12 +2300,18 @@ const MainBoard = ({ board, onBack }) => {
   };
   
   const addNewActionItemBlock = () => {
-    const center = getCenterOfViewport();
+    const defaultSize = { width: 300, height: 120 };
+    const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+      stagePos,
+      stageScale,
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    }));
     const newBlock = {
       id: `action-item-${Date.now()}`,
       type: 'action-item',
-      x: center.x - 150,
-      y: center.y - 60,
+      x: position.x,
+      y: position.y,
       width: 300,
       height: 120,
       title: 'New Action Item',
@@ -2722,7 +2830,6 @@ const MainBoard = ({ board, onBack }) => {
   };
 
   const handlePasteText = (text) => {
-    const center = getCenterOfViewport();
     const trimmedText = text.trim();
     
     // Check if the pasted text is a URL
@@ -2731,11 +2838,19 @@ const MainBoard = ({ board, onBack }) => {
       const url = ensureProtocol(trimmedText);
       const title = getTitleFromUrl(url);
       
+      const defaultSize = { width: 300, height: 200 };
+      const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+        stagePos,
+        stageScale,
+        width: window.innerWidth,
+        height: window.innerHeight - 64
+      }));
+      
       const newBlock = {
         id: `link-${Date.now()}`,
         type: 'link',
-        x: center.x - 150,
-        y: center.y - 100,
+        x: position.x,
+        y: position.y,
         width: 300,
         height: 200,
         title: title,
@@ -2756,11 +2871,19 @@ const MainBoard = ({ board, onBack }) => {
       const estimatedWidth = Math.min(Math.max(200, text.length * 8), 400);
       const estimatedHeight = Math.min(Math.max(80, Math.ceil(text.length / 40) * 25), 300);
       
+      const defaultSize = { width: estimatedWidth, height: estimatedHeight };
+      const position = applySnapToGrid(findFreePosition(blocks, defaultSize, {
+        stagePos,
+        stageScale,
+        width: window.innerWidth,
+        height: window.innerHeight - 64
+      }));
+      
       const newBlock = {
         id: Date.now().toString(),
         type: 'text',
-        x: center.x - estimatedWidth / 2,
-        y: center.y - estimatedHeight / 2,
+        x: position.x,
+        y: position.y,
         width: estimatedWidth,
         height: estimatedHeight,
         text: text,

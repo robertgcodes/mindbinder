@@ -790,6 +790,16 @@ const MainBoard = ({ board, onBack }) => {
           if (Array.isArray(updates[key])) {
             // For arrays, create a new array to ensure React detects the change
             updatedBlock[key] = [...updates[key]];
+          } else if (key === 'quarters' && typeof updates[key] === 'object' && block.quarters) {
+            // Special handling for quarters to preserve existing data
+            updatedBlock[key] = {
+              ...block.quarters,
+              ...updates[key],
+              collapsedQuarters: {
+                ...block.quarters?.collapsedQuarters,
+                ...updates[key]?.collapsedQuarters
+              }
+            };
           } else {
             updatedBlock[key] = updates[key];
           }

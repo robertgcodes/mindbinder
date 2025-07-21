@@ -74,7 +74,12 @@ const YearlyPlannerBlock = ({
   const toggleQuarter = (quarterKey) => {
     const currentCollapsed = quarters?.collapsedQuarters || {};
     const newCollapsed = { ...currentCollapsed, [quarterKey]: !currentCollapsed[quarterKey] };
-    onChange({ quarters: { ...quarters, collapsedQuarters: newCollapsed } });
+    // Ensure we preserve all quarter data
+    const updatedQuarters = {
+      ...quarters,
+      collapsedQuarters: newCollapsed
+    };
+    onChange({ quarters: updatedQuarters });
   };
 
   // Calculate progress for each quarter based on completed goals

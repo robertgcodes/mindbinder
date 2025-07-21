@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Group, Rect, Transformer } from 'react-konva';
 import { Html } from 'react-konva-utils';
-import { Calendar, Target, TrendingUp, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Calendar, Target, TrendingUp, CheckCircle2, ChevronRight, ChevronDown } from 'lucide-react';
 
 const QUARTER_KEYS = ['q1', 'q2', 'q3', 'q4'];
 const QUARTER_DATA = {
@@ -72,8 +72,8 @@ const YearlyPlannerBlock = ({
   };
 
   const toggleQuarter = (quarterKey) => {
-    const newCollapsed = { ...collapsedQuarters, [quarterKey]: !collapsedQuarters[quarterKey] };
-    setCollapsedQuarters(newCollapsed);
+    const currentCollapsed = quarters?.collapsedQuarters || {};
+    const newCollapsed = { ...currentCollapsed, [quarterKey]: !currentCollapsed[quarterKey] };
     onChange({ quarters: { ...quarters, collapsedQuarters: newCollapsed } });
   };
 
@@ -239,7 +239,7 @@ const YearlyPlannerBlock = ({
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Target size={16} style={{ color: quarterInfo.color, opacity: 0.8 }} />
-                      {collapsedQuarters[q] ? 
+                      {quarters?.collapsedQuarters?.[q] ? 
                         <ChevronRight size={16} style={{ color: textColor, opacity: 0.6 }} /> : 
                         <ChevronDown size={16} style={{ color: textColor, opacity: 0.6 }} />
                       }
@@ -263,7 +263,7 @@ const YearlyPlannerBlock = ({
                   </div>
 
                   {/* Goals - Collapsible */}
-                  {!collapsedQuarters[q] && (
+                  {!quarters?.collapsedQuarters?.[q] && (
                     <div style={{ 
                       flex: 1,
                       display: 'flex',

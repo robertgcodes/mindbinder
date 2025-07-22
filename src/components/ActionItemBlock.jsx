@@ -249,9 +249,9 @@ const ActionItemBlock = ({
       )}
       
       
-      {/* Progress section */}
+      {/* Progress section - moved higher to avoid overlap */}
       {totalSubtasks > 0 && showProgress && (
-        <Group y={actualHeight - 35}>
+        <Group y={actualHeight - 60}>
           {/* Progress bar background */}
           <Rect
             x={15}

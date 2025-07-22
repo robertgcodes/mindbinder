@@ -377,8 +377,9 @@ const MainBoard = ({ board, onBack }) => {
       await updateDoc(docRef, {
         blocks: blocksData,
         shapes: shapesData,
-        stagePos,
-        stageScale,
+        // Don't save viewport data - each user maintains their own view
+        // stagePos,
+        // stageScale,
         updatedAt: timestamp,
         lastEditedBy: currentUser.uid,
         lastEditedByEmail: currentUser.email
@@ -536,16 +537,8 @@ const MainBoard = ({ board, onBack }) => {
             // Update the last save timestamp to prevent re-processing
             setLastSaveTimestamp(data.updatedAt);
             
-            // Only update viewport if user hasn't moved it recently
-            const timeSinceLastMove = Date.now() - (localStorage.getItem(`lastViewportMove-${board.id}`) || 0);
-            if (timeSinceLastMove > 5000) { // 5 seconds
-              if (data.stagePos) {
-                setStagePos(data.stagePos);
-              }
-              if (data.stageScale) {
-                setStageScale(data.stageScale);
-              }
-            }
+            // Don't sync viewport for collaborators - each user maintains their own view
+            // This prevents jarring viewport changes while users are working
             
             // Update our timestamp to match the database
             setLastSaveTimestamp(data.updatedAt);

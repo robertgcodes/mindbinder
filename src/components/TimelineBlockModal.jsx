@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { Calendar, Plus, Trash2, GripVertical, Clock } from 'lucide-react';
+import { Calendar, Plus, Trash2, GripVertical, Clock, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import StandardModal, { FormGroup, Label, Input } from './StandardModal';
 
@@ -11,6 +11,7 @@ const TimelineBlockModal = ({ block, onChange, onClose, onDelete }) => {
   const [events, setEvents] = useState(block?.events || []);
   const [newEventDate, setNewEventDate] = useState('');
   const [newEventLabel, setNewEventLabel] = useState('');
+  const [sortOrder, setSortOrder] = useState('manual'); // 'manual', 'asc', 'desc'
 
   const handleAddEvent = () => {
     if (newEventDate && newEventLabel.trim()) {
@@ -37,6 +38,19 @@ const TimelineBlockModal = ({ block, onChange, onClose, onDelete }) => {
     items.splice(result.destination.index, 0, reorderedItem);
 
     setEvents(items);
+    setSortOrder('manual'); // Reset to manual when user drags
+  };
+
+  const sortEvents = (order) => {
+    setSortOrder(order);
+    if (order === 'manual') return;
+
+    const sorted = [...events].sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return order === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+    setEvents(sorted);
   };
 
   const handleSave = () => {
@@ -227,7 +241,80 @@ const TimelineBlockModal = ({ block, onChange, onClose, onDelete }) => {
       </FormGroup>
 
       <FormGroup>
-        <Label>Timeline Events</Label>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '12px'
+        }}>
+          <Label style={{ margin: 0 }}>Timeline Events</Label>
+          {events.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => sortEvents('asc')}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  backgroundColor: sortOrder === 'asc' ? '#8b5cf6' : 'rgba(139, 92, 246, 0.2)',
+                  color: theme.colors.textPrimary,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.2s ease'
+                }}
+                title="Sort oldest to newest"
+              >
+                <ArrowUp size={14} />
+                Oldest First
+              </button>
+              <button
+                onClick={() => sortEvents('desc')}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  backgroundColor: sortOrder === 'desc' ? '#8b5cf6' : 'rgba(139, 92, 246, 0.2)',
+                  color: theme.colors.textPrimary,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.2s ease'
+                }}
+                title="Sort newest to oldest"
+              >
+                <ArrowDown size={14} />
+                Newest First
+              </button>
+              {sortOrder !== 'manual' && (
+                <button
+                  onClick={() => sortEvents('manual')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    border: 'none',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                    color: theme.colors.textPrimary,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title="Manual order"
+                >
+                  <GripVertical size={14} />
+                  Manual
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         {events.length === 0 ? (
           <div style={timelineStyles.emptyState}>
             <Calendar size={48} style={{ marginBottom: '16px', opacity: 0.6 }} />

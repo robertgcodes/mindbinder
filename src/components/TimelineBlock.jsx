@@ -117,7 +117,7 @@ const TimelineBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: 'none',
+              pointerEvents: isSelected ? 'none' : 'auto',
               userSelect: 'none',
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',
@@ -184,8 +184,12 @@ const TimelineBlock = ({
               position: 'relative',
               maxHeight: `${height - 100}px`,
               scrollbarWidth: 'thin',
-              scrollbarColor: `${accentColor} transparent`
-            }}>
+              scrollbarColor: `${accentColor} transparent`,
+              pointerEvents: 'auto',
+              cursor: 'default'
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}>
             {sortedEvents.length === 0 ? (
               <div style={{
                 textAlign: 'center',

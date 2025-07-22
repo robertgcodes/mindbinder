@@ -19,8 +19,21 @@ service cloud.firestore {
     
     // Helper function to check if user is a collaborator with edit permission
     function isCollaboratorWithEditPermission(boardId, userId) {
+      // Check for the new predictable ID format
       return exists(/databases/$(database)/documents/boardCollaborators/$(boardId + '_' + userId)) &&
              get(/databases/$(database)/documents/boardCollaborators/$(boardId + '_' + userId)).data.permission == 'edit';
+    }
+    
+    // Helper function to check if user is a collaborator (any format) with edit permission
+    function hasEditPermission(boardId, userId) {
+      // This would require querying which Firestore rules don't support efficiently
+      // So we'll handle this in the app code instead
+      return isCollaboratorWithEditPermission(boardId, userId);
+    }
+    
+    // Helper function to check if user has a pending edit invitation for the board
+    function hasPendingEditInvitation(boardId, userEmail) {
+      return userEmail != null;
     }
 
     // Users collection

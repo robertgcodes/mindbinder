@@ -11,6 +11,7 @@ import imageCompression from 'browser-image-compression';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
 import { useSubscription } from '../contexts/SubscriptionContext.jsx';
+import { ensureCollaboratorAccess, hasCollaboratorAccess } from '../utils/collaboratorFix';
 import useMobileDetect from '../hooks/useMobileDetect';
 import { useRecentBoards } from '../hooks/useRecentBoards';
 import MobileBoard from './MobileBoard';
@@ -196,17 +197,10 @@ const MainBoard = ({ board, onBack }) => {
       return 'view';
     }
     
-    // Check collaborators
+    // Check collaborators (handles both old and new ID formats)
     try {
-      const collaboratorsQuery = query(
-        collection(db, 'boardCollaborators'),
-        where('boardId', '==', board.id),
-        where('userId', '==', currentUser.uid)
-      );
-      const snapshot = await getDocs(collaboratorsQuery);
-      
-      if (!snapshot.empty) {
-        const collaborator = snapshot.docs[0].data();
+      const collaborator = await hasCollaboratorAccess(board.id, currentUser.uid);
+      if (collaborator) {
         return collaborator.permission || 'view';
       }
     } catch (error) {
@@ -246,6 +240,16 @@ const MainBoard = ({ board, onBack }) => {
           // TODO: Redirect to error page or show access denied message
           setLoading(false);
           return;
+        }
+        
+        // Fix collaborator access if needed (handles legacy ID format)
+        if (currentUser && permission === 'edit' && board.userId !== currentUser.uid) {
+          try {
+            const result = await ensureCollaboratorAccess(board.id, currentUser.uid, currentUser.email);
+            console.log('Collaborator access check:', result);
+          } catch (error) {
+            console.error('Error ensuring collaborator access:', error);
+          }
         }
         
         // Set read-only mode for viewers
@@ -348,8 +352,8 @@ const MainBoard = ({ board, onBack }) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, selectedBlockIds.size, selectedShapeId, isReadOnly]);
 
-  // Save board data
-  const saveBoard = async (blocksToSave, shapesToSave) => {
+  // Save board data with retry logic for collaborators
+  const saveBoard = async (blocksToSave, shapesToSave, retryCount = 0) => {
     // Don't save if in read-only mode
     if (isReadOnly) {
       console.log('Board is read-only, skipping save');
@@ -382,15 +386,51 @@ const MainBoard = ({ board, onBack }) => {
       
       setLastSaveTimestamp(timestamp);
       localStorage.setItem(`viewport-${board.id}`, JSON.stringify({ stagePos, stageScale }));
+      
+      // Clear any error state on successful save
+      if (window.saveBoardError) {
+        window.saveBoardError = null;
+      }
     } catch (error) {
       console.error('Error saving board:', error);
       
-      // If permission denied, check if user is a collaborator
+      // If permission denied and this is the first attempt, try to fix collaborator access
+      if (error.code === 'permission-denied' && retryCount === 0) {
+        console.log('Permission denied. Attempting to fix collaborator access...');
+        
+        try {
+          // Ensure collaborator access is properly set up
+          const result = await ensureCollaboratorAccess(board.id, currentUser.uid, currentUser.email);
+          console.log('Collaborator access fix result:', result);
+          
+          if (result.success) {
+            // Wait a bit for Firestore rules to recognize the change
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Retry the save after fixing access
+            console.log('Retrying save after fixing collaborator access...');
+            await saveBoard(blocksToSave, shapesToSave, retryCount + 1);
+            return;
+          }
+        } catch (fixError) {
+          console.error('Error fixing collaborator access:', fixError);
+        }
+      }
+      
+      // Store error for display
+      window.saveBoardError = {
+        message: error.message,
+        code: error.code,
+        timestamp: new Date()
+      };
+      
+      // If still failing, log detailed info
       if (error.code === 'permission-denied') {
-        console.error('Permission denied. Checking collaborator status...');
+        console.error('Permission denied details:');
         console.error('Board ID:', board.id);
         console.error('User ID:', currentUser.uid);
         console.error('User Email:', currentUser.email);
+        console.error('Retry count:', retryCount);
         
         try {
           const collabDoc = await getDoc(doc(db, 'boardCollaborators', `${board.id}_${currentUser.uid}`));
@@ -400,6 +440,12 @@ const MainBoard = ({ board, onBack }) => {
           } else {
             console.log('User is not a collaborator on this board');
             console.log('Expected collaborator doc ID:', `${board.id}_${currentUser.uid}`);
+            
+            // Check for any collaborator record
+            const collaborator = await hasCollaboratorAccess(board.id, currentUser.uid);
+            if (collaborator) {
+              console.log('Found collaborator record with different ID format:', collaborator);
+            }
           }
           
           // Also check board ownership

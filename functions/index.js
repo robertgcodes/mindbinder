@@ -634,3 +634,184 @@ exports.calculateStorageUsage = functions.https.onCall(async (data, context) => 
     );
   }
 });
+
+// Migrate collaborator records to new ID format
+exports.migrateCollaboratorRecords = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated'
+    );
+  }
+
+  const { boardId } = data;
+
+  try {
+    // Get all collaborators for the board
+    const collaboratorsSnapshot = await admin.firestore()
+      .collection('boardCollaborators')
+      .where('boardId', '==', boardId)
+      .get();
+
+    const migrationResults = [];
+    
+    for (const doc of collaboratorsSnapshot.docs) {
+      const collaboratorData = doc.data();
+      const oldId = doc.id;
+      const expectedId = `${collaboratorData.boardId}_${collaboratorData.userId}`;
+      
+      // Check if this record needs migration (has wrong ID format)
+      if (oldId !== expectedId) {
+        try {
+          // Create new document with correct ID
+          await admin.firestore()
+            .collection('boardCollaborators')
+            .doc(expectedId)
+            .set(collaboratorData);
+          
+          // Delete old document
+          await admin.firestore()
+            .collection('boardCollaborators')
+            .doc(oldId)
+            .delete();
+          
+          migrationResults.push({
+            success: true,
+            oldId,
+            newId: expectedId,
+            email: collaboratorData.email
+          });
+        } catch (error) {
+          migrationResults.push({
+            success: false,
+            oldId,
+            newId: expectedId,
+            email: collaboratorData.email,
+            error: error.message
+          });
+        }
+      }
+    }
+
+    return { 
+      success: true,
+      migratedCount: migrationResults.filter(r => r.success).length,
+      results: migrationResults
+    };
+  } catch (error) {
+    console.error('Error migrating collaborator records:', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to migrate collaborator records'
+    );
+  }
+});
+
+// Fix collaborator access - ensures user has proper collaborator record
+exports.ensureCollaboratorAccess = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated'
+    );
+  }
+
+  const { boardId } = data;
+  const userId = context.auth.uid;
+  const userEmail = context.auth.token.email;
+
+  try {
+    // Check if user already has access with correct ID format
+    const expectedId = `${boardId}_${userId}`;
+    const existingDoc = await admin.firestore()
+      .collection('boardCollaborators')
+      .doc(expectedId)
+      .get();
+
+    if (existingDoc.exists()) {
+      return {
+        success: true,
+        message: 'Collaborator access already exists',
+        collaboratorId: expectedId
+      };
+    }
+
+    // Check if user has any collaborator record for this board
+    const collaboratorsSnapshot = await admin.firestore()
+      .collection('boardCollaborators')
+      .where('boardId', '==', boardId)
+      .where('userId', '==', userId)
+      .get();
+
+    if (!collaboratorsSnapshot.empty) {
+      // User has access but with wrong ID format - migrate it
+      const oldDoc = collaboratorsSnapshot.docs[0];
+      const collaboratorData = oldDoc.data();
+      
+      // Create with correct ID
+      await admin.firestore()
+        .collection('boardCollaborators')
+        .doc(expectedId)
+        .set(collaboratorData);
+      
+      // Delete old record
+      await oldDoc.ref.delete();
+      
+      return {
+        success: true,
+        message: 'Migrated existing collaborator record',
+        collaboratorId: expectedId
+      };
+    }
+
+    // Check if user has a pending invitation they accepted
+    const invitationsSnapshot = await admin.firestore()
+      .collection('boardInvitations')
+      .where('boardId', '==', boardId)
+      .where('email', '==', userEmail)
+      .where('status', '==', 'accepted')
+      .get();
+
+    if (!invitationsSnapshot.empty) {
+      // User accepted invitation but collaborator record is missing
+      const invitation = invitationsSnapshot.docs[0].data();
+      
+      await admin.firestore()
+        .collection('boardCollaborators')
+        .doc(expectedId)
+        .set({
+          boardId: boardId,
+          userId: userId,
+          email: userEmail,
+          displayName: context.auth.token.name || userEmail,
+          permission: invitation.permission || 'view',
+          joinedAt: new Date().toISOString(),
+          invitedBy: invitation.invitedBy,
+          invitedByName: invitation.invitedByName
+        });
+      
+      return {
+        success: true,
+        message: 'Created collaborator record from accepted invitation',
+        collaboratorId: expectedId
+      };
+    }
+
+    // No access found
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'No collaborator access found for this board'
+    );
+
+  } catch (error) {
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    
+    console.error('Error ensuring collaborator access:', error);
+    throw new functions.https.HttpsError(
+      'internal',
+      'Failed to ensure collaborator access'
+    );
+  }
+});

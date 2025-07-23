@@ -94,12 +94,11 @@ const TimelineBlock = ({
         height={height}
         rotation={rotation}
         draggable
-        onClick={onSelect}
-        onDblClick={onDoubleClick}
         onDragStart={onDragStart}
         onDragEnd={handleDragEnd}
         onTransformEnd={handleTransformEnd}
       >
+        {/* Background rect for selection */}
         <Rect
           width={width}
           height={height}
@@ -110,6 +109,8 @@ const TimelineBlock = ({
           shadowBlur={10}
           shadowColor="#000000"
           shadowOpacity={0.2}
+          onClick={onSelect}
+          onDblClick={onDoubleClick}
         />
         
         <Html
@@ -117,7 +118,7 @@ const TimelineBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: 'none',
+              pointerEvents: 'auto',
               userSelect: 'none',
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',
@@ -128,7 +129,6 @@ const TimelineBlock = ({
               boxSizing: 'border-box',
               color: textColor,
               fontFamily: 'Inter, sans-serif',
-              position: 'relative',
             }
           }}
         >
@@ -148,15 +148,10 @@ const TimelineBlock = ({
               opacity: 1;
             }
           `}</style>
-          {/* Header - clickable to select block */}
+          {/* Header */}
           <div style={{ 
             marginBottom: '16px',
-            pointerEvents: 'auto',
             cursor: 'move'
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect();
           }}>
             <h3 style={{ 
               margin: '0 0 4px 0', 
@@ -194,12 +189,8 @@ const TimelineBlock = ({
               maxHeight: `${height - 100}px`,
               scrollbarWidth: 'thin',
               scrollbarColor: `${accentColor} transparent`,
-              pointerEvents: 'auto',
               cursor: 'default'
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onWheel={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}>
+            }}>
             {sortedEvents.length === 0 ? (
               <div style={{
                 textAlign: 'center',

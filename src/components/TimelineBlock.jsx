@@ -240,9 +240,10 @@ const TimelineBlock = ({
                         width: '16px',
                         height: '16px',
                         borderRadius: '50%',
-                        backgroundColor: isPast ? accentColor : 'transparent',
+                        backgroundColor: accentColor,
                         border: `2px solid ${accentColor}`,
-                        boxShadow: isPast ? `0 0 10px ${accentColor}` : 'none',
+                        boxShadow: `0 0 10px ${accentColor}`,
+                        opacity: isPast ? 1 : 0.7,
                         zIndex: 1
                       }} />
 

@@ -301,14 +301,14 @@ const ActionItemBlock = ({
             y={2}
             onClick={(e) => {
               e.cancelBubble = true;
-              if (links[0]) {
-                window.open(links[0], '_blank');
+              if (links[0] && links[0].url) {
+                window.open(links[0].url, '_blank');
               }
             }}
             onTap={(e) => {
               e.cancelBubble = true;
-              if (links[0]) {
-                window.open(links[0], '_blank');
+              if (links[0] && links[0].url) {
+                window.open(links[0].url, '_blank');
               }
             }}
           >

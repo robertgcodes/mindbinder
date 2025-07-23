@@ -118,7 +118,7 @@ const TimelineBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: 'auto',
+              pointerEvents: 'none',
               userSelect: 'none',
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',
@@ -189,7 +189,8 @@ const TimelineBlock = ({
               maxHeight: `${height - 100}px`,
               scrollbarWidth: 'thin',
               scrollbarColor: `${accentColor} transparent`,
-              cursor: 'default'
+              cursor: 'default',
+              pointerEvents: 'auto'
             }}>
             {sortedEvents.length === 0 ? (
               <div style={{

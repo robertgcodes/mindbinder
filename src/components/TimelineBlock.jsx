@@ -117,7 +117,7 @@ const TimelineBlock = ({
             style: {
               width: `${width}px`,
               height: `${height}px`,
-              pointerEvents: isSelected ? 'none' : 'auto',
+              pointerEvents: 'none',
               userSelect: 'none',
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',
@@ -128,6 +128,7 @@ const TimelineBlock = ({
               boxSizing: 'border-box',
               color: textColor,
               fontFamily: 'Inter, sans-serif',
+              position: 'relative',
             }
           }}
         >
@@ -147,8 +148,16 @@ const TimelineBlock = ({
               opacity: 1;
             }
           `}</style>
-          {/* Header */}
-          <div style={{ marginBottom: '16px' }}>
+          {/* Header - clickable to select block */}
+          <div style={{ 
+            marginBottom: '16px',
+            pointerEvents: 'auto',
+            cursor: 'move'
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}>
             <h3 style={{ 
               margin: '0 0 4px 0', 
               fontSize: `${titleFontSize}px`, 
@@ -173,7 +182,7 @@ const TimelineBlock = ({
             </p>
           </div>
 
-          {/* Timeline */}
+          {/* Timeline - scrollable area */}
           <div 
             className="timeline-scrollable"
             style={{ 
@@ -189,7 +198,8 @@ const TimelineBlock = ({
               cursor: 'default'
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            onWheel={(e) => e.stopPropagation()}>
+            onWheel={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}>
             {sortedEvents.length === 0 ? (
               <div style={{
                 textAlign: 'center',
